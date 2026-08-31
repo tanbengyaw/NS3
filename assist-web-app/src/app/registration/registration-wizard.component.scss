@@ -1,0 +1,146 @@
+.page header {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0 0 0.25rem;
+  }
+
+  p {
+    margin: 0;
+    color: #5f6368;
+  }
+}
+
+.steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  button {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+
+    &.active {
+      border-color: #1a73e8;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  label.full {
+    grid-column: 1 / -1;
+  }
+
+  input {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font: inherit;
+  }
+}
+
+.employee-form {
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items: end;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  button {
+    padding: 0.65rem 1rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+
+    &.primary {
+      border-color: #1a73e8;
+      background: #1a73e8;
+      color: #fff;
+    }
+
+    &.approve {
+      border-color: #137333;
+      background: #137333;
+      color: #fff;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.table-wrap {
+  margin: 1rem 0;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.65rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .empty {
+    text-align: center;
+    color: #5f6368;
+  }
+}
+
+.error {
+  color: #c5221f;
+}
+
+.message {
+  color: #1a73e8;
+}
+
+.success {
+  padding: 0.75rem 1rem;
+  background: #e6f4ea;
+  border-radius: 4px;
+  color: #137333;
+
+  a {
+    color: #137333;
+  }
+}
+
+.summary {
+  margin-bottom: 1rem;
+  color: #5f6368;
+}

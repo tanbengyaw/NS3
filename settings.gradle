@@ -1,0 +1,6 @@
+rootProject.name = 'ns3-assist'
+
+include 'assist-core'
+include 'assist-registration'
+include 'assist-identity'
+include 'assist-provider'

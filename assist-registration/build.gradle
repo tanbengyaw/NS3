@@ -1,0 +1,10 @@
+dependencies {
+    implementation project(':assist-core')
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-jersey'
+    implementation 'org.liquibase:liquibase-core'
+    implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.28'
+    runtimeOnly 'org.postgresql:postgresql'
+}

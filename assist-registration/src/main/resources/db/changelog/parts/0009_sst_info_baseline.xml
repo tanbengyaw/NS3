@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0009-temp-sst-info" author="ns3">
+        <createTable tableName="temp_sst_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_sst_info_temp_employer"
+                             references="registration.temp_employer(id)"/>
+            </column>
+            <column name="trade_name" type="VARCHAR(100)"/>
+            <column name="tour_tax_reg_no" type="VARCHAR(50)"/>
+            <column name="in_tax_ref_no" type="VARCHAR(50)"/>
+            <column name="cus_aud_ref_no" type="VARCHAR(50)"/>
+            <column name="pre_reg_no" type="VARCHAR(50)"/>
+            <column name="pre_reg_name" type="VARCHAR(100)"/>
+            <column name="date_of_replacement" type="DATE"/>
+            <column name="man_com_date" type="DATE"/>
+            <column name="date_sale_val_tax_goods" type="DATE"/>
+            <column name="fin_yr_end_mon" type="INT"/>
+            <column name="an_total_tax_sales_val" type="DECIMAL(18,2)"/>
+            <column name="business_com_date" type="DATE"/>
+            <column name="local_sales" type="DECIMAL(18,2)"/>
+            <column name="export_sales" type="DECIMAL(18,2)"/>
+            <column name="sales_to_design_area" type="DECIMAL(18,2)"/>
+            <column name="others_sales" type="DECIMAL(18,2)"/>
+            <column name="sub_contract_work" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+            <column name="updated_date" type="TIMESTAMP"/>
+        </createTable>
+        <addUniqueConstraint tableName="temp_sst_info" schemaName="registration"
+                             columnNames="temp_employer_id" constraintName="uk_temp_sst_info_temp_employer"/>
+    </changeSet>
+
+    <changeSet id="0009-temp-director-owner" author="ns3">
+        <createTable tableName="temp_director_owner" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="reg_general_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_director_reg_case"
+                             references="registration.reg_general_info(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_type_id" type="BIGINT"/>
+            <column name="identification_no" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="designation" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0009-temp-sst-tariff-code" author="ns3">
+        <createTable tableName="temp_sst_tariff_code" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_sst_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_tariff_temp_sst_info"
+                             references="registration.temp_sst_info(id)"/>
+            </column>
+            <column name="tariff_code_sales_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contract_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="finished_goods" type="VARCHAR(200)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0009-sst-info" author="ns3">
+        <createTable tableName="sst_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sst_info_employer"
+                             references="registration.employer(id)"/>
+            </column>
+            <column name="reg_general_info_id" type="BIGINT">
+                <constraints foreignKeyName="fk_sst_info_reg_case"
+                             references="registration.reg_general_info(id)"/>
+            </column>
+            <column name="smk_reg_no" type="VARCHAR(50)"/>
+            <column name="sales_tax_smk_reg_no" type="VARCHAR(50)"/>
+            <column name="service_tax_smk_reg_no" type="VARCHAR(50)"/>
+            <column name="tourism_tax_smk_reg_no" type="VARCHAR(50)"/>
+            <column name="digital_tax_smk_reg_no" type="VARCHAR(50)"/>
+            <column name="dpsp_tax_smk_reg_no" type="VARCHAR(50)"/>
+            <column name="trade_name" type="VARCHAR(100)"/>
+            <column name="tour_tax_reg_no" type="VARCHAR(50)"/>
+            <column name="in_tax_ref_no" type="VARCHAR(50)"/>
+            <column name="cus_aud_ref_no" type="VARCHAR(50)"/>
+            <column name="pre_reg_no" type="VARCHAR(50)"/>
+            <column name="pre_reg_name" type="VARCHAR(100)"/>
+            <column name="date_of_replacement" type="DATE"/>
+            <column name="man_com_date" type="DATE"/>
+            <column name="date_sale_val_tax_goods" type="DATE"/>
+            <column name="fin_yr_end_mon" type="INT"/>
+            <column name="an_total_tax_sales_val" type="DECIMAL(18,2)"/>
+            <column name="business_com_date" type="DATE"/>
+            <column name="local_sales" type="DECIMAL(18,2)"/>
+            <column name="export_sales" type="DECIMAL(18,2)"/>
+            <column name="sales_to_design_area" type="DECIMAL(18,2)"/>
+            <column name="others_sales" type="DECIMAL(18,2)"/>
+            <column name="sub_contract_work" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_auto_registration" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0009-director-owner" author="ns3">
+        <createTable tableName="director_owner" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_director_owner_employer"
+                             references="registration.employer(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_type_id" type="BIGINT"/>
+            <column name="identification_no" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="designation" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0009-sst-tariff-code" author="ns3">
+        <createTable tableName="sst_tariff_code" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sst_tariff_sst_info"
+                             references="registration.sst_info(id)"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sst_tariff_employer"
+                             references="registration.employer(id)"/>
+            </column>
+            <column name="tariff_code_sales_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contract_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="finished_goods" type="VARCHAR(200)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0009-sst-status-info" author="ns3">
+        <createTable tableName="sst_status_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_sst_status_sst_info"
+                             references="registration.sst_info(id)"/>
+            </column>
+            <column name="tax_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sst_status_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_date" type="DATE"/>
+            <column name="end_date" type="DATE"/>
+            <column name="is_current" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

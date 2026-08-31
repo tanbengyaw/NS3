@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0012-ref-branch" author="ns3">
+        <createTable tableName="ref_branch" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0012-ref-postcode-office" author="ns3">
+        <createTable tableName="ref_postcode_office" schemaName="reference">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="postcode" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="branch_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ref_postcode_office_branch"
+                             references="reference.ref_branch(id)"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_postcode_office_postcode" tableName="ref_postcode_office" schemaName="reference">
+            <column name="postcode"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0012-seed-branches" author="ns3">
+        <insert tableName="ref_branch" schemaName="reference"><column name="id" valueNumeric="1"/><column name="name" value="Pejabat PERKESO Kuala Lumpur"/><column name="sort_order" valueNumeric="1"/></insert>
+        <insert tableName="ref_branch" schemaName="reference"><column name="id" valueNumeric="2"/><column name="name" value="Pejabat PERKESO Shah Alam"/><column name="sort_order" valueNumeric="2"/></insert>
+        <insert tableName="ref_branch" schemaName="reference"><column name="id" valueNumeric="3"/><column name="name" value="Pejabat PERKESO Petaling Jaya"/><column name="sort_order" valueNumeric="3"/></insert>
+        <insert tableName="ref_branch" schemaName="reference"><column name="id" valueNumeric="4"/><column name="name" value="Pejabat PERKESO Johor Bahru"/><column name="sort_order" valueNumeric="4"/></insert>
+        <insert tableName="ref_branch" schemaName="reference"><column name="id" valueNumeric="5"/><column name="name" value="Pejabat PERKESO George Town"/><column name="sort_order" valueNumeric="5"/></insert>
+    </changeSet>
+
+    <changeSet id="0012-seed-postcode-offices" author="ns3">
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="50000"/><column name="branch_id" valueNumeric="1"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="50450"/><column name="branch_id" valueNumeric="1"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="50812"/><column name="branch_id" valueNumeric="2"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="40000"/><column name="branch_id" valueNumeric="2"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="40800"/><column name="branch_id" valueNumeric="2"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="46000"/><column name="branch_id" valueNumeric="2"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="47301"/><column name="branch_id" valueNumeric="3"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="47810"/><column name="branch_id" valueNumeric="3"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="41000"/><column name="branch_id" valueNumeric="2"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="80000"/><column name="branch_id" valueNumeric="4"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_postcode_office" schemaName="reference"><column name="postcode" value="10000"/><column name="branch_id" valueNumeric="5"/><column name="sort_order" valueNumeric="10"/></insert>
+    </changeSet>
+
+    <changeSet id="0012-premises-address-lines" author="ns3">
+        <addColumn tableName="temp_premises" schemaName="registration">
+            <column name="address_line2" type="VARCHAR(200)"/>
+            <column name="address_line3" type="VARCHAR(200)"/>
+        </addColumn>
+        <addColumn tableName="premises" schemaName="registration">
+            <column name="address_line2" type="VARCHAR(200)"/>
+            <column name="address_line3" type="VARCHAR(200)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

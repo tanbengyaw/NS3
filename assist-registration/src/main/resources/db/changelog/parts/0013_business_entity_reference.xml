@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0013-ref-business-entity" author="ns3">
+        <createTable tableName="ref_business_entity" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0013-seed-business-entities" author="ns3">
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="1"/><column name="name" value="Corporation"/><column name="sort_order" valueNumeric="1"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="2"/><column name="name" value="Partnership"/><column name="sort_order" valueNumeric="2"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="3"/><column name="name" value="Sole proprietor / Individual business"/><column name="sort_order" valueNumeric="3"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="4"/><column name="name" value="Other"/><column name="sort_order" valueNumeric="4"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="5"/><column name="name" value="Individual (domestic worker)"/><column name="sort_order" valueNumeric="5"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="6"/><column name="name" value="Association"/><column name="sort_order" valueNumeric="6"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="7"/><column name="name" value="Company"/><column name="sort_order" valueNumeric="7"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="8"/><column name="name" value="Individual"/><column name="sort_order" valueNumeric="8"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="9"/><column name="name" value="Limited liability partnership"/><column name="sort_order" valueNumeric="9"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="10"/><column name="name" value="Professional"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="11"/><column name="name" value="Public authority"/><column name="sort_order" valueNumeric="11"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="12"/><column name="name" value="Statutory body"/><column name="sort_order" valueNumeric="12"/></insert>
+        <insert tableName="ref_business_entity" schemaName="reference"><column name="id" valueNumeric="13"/><column name="name" value="Local authority"/><column name="sort_order" valueNumeric="13"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

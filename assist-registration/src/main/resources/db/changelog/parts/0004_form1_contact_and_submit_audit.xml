@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0004-temp-employer-contact-address" author="ns3">
+        <addColumn tableName="temp_employer" schemaName="registration">
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="phone" type="VARCHAR(30)"/>
+            <column name="address_line1" type="VARCHAR(200)"/>
+            <column name="address_line2" type="VARCHAR(200)"/>
+            <column name="address_line3" type="VARCHAR(200)"/>
+            <column name="state_id" type="BIGINT"/>
+            <column name="city_id" type="BIGINT"/>
+            <column name="city_name" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0004-employer-contact" author="ns3">
+        <addColumn tableName="employer" schemaName="registration">
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="phone" type="VARCHAR(30)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0004-reg-general-info-audit-dates" author="ns3">
+        <addColumn tableName="reg_general_info" schemaName="registration">
+            <column name="document_received_date" type="TIMESTAMP"/>
+            <column name="submission_date" type="TIMESTAMP"/>
+            <column name="created_by_username" type="VARCHAR(100)"/>
+            <column name="submitted_by_username" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

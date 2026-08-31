@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0015-temp-employer-contact-lines" author="ns3">
+        <addColumn tableName="temp_employer" schemaName="registration">
+            <column name="contact_phones" type="TEXT"/>
+            <column name="contact_faxes" type="TEXT"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

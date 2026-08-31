@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0010-temp-employer-correspondence" author="ns3">
+        <addColumn tableName="temp_employer" schemaName="registration">
+            <column name="corr_address_line1" type="VARCHAR(200)"/>
+            <column name="corr_address_line2" type="VARCHAR(200)"/>
+            <column name="corr_address_line3" type="VARCHAR(200)"/>
+            <column name="corr_post_code" type="VARCHAR(10)"/>
+            <column name="corr_state_id" type="BIGINT"/>
+            <column name="corr_city_id" type="BIGINT"/>
+            <column name="corr_city_name" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0010-temp-premises" author="ns3">
+        <createTable tableName="temp_premises" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="reg_general_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_premises_reg_case"
+                             references="registration.reg_general_info(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address_line" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="post_code" type="VARCHAR(10)"/>
+            <column name="city_name" type="VARCHAR(100)"/>
+            <column name="state_name" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0010-premises" author="ns3">
+        <createTable tableName="premises" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_premises_employer"
+                             references="registration.employer(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address_line" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="post_code" type="VARCHAR(10)"/>
+            <column name="city_name" type="VARCHAR(100)"/>
+            <column name="state_name" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

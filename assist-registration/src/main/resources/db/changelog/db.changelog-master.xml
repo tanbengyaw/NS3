@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="db/changelog/parts/0001_registration_baseline.xml"/>
+    <include file="db/changelog/parts/0002_sequences_and_area_code.xml"/>
+    <include file="db/changelog/parts/0003_case_section_datasource_branches.xml"/>
+    <include file="db/changelog/parts/0004_form1_contact_and_submit_audit.xml"/>
+    <include file="db/changelog/parts/0005_portal_user_and_temp_employee.xml"/>
+    <include file="db/changelog/parts/0006_employee_and_incomplete_flag.xml"/>
+    <include file="db/changelog/parts/0007_in_query_audit.xml"/>
+    <include file="db/changelog/parts/0008_portal_user_enrollment.xml"/>
+    <include file="db/changelog/parts/0009_sst_info_baseline.xml"/>
+    <include file="db/changelog/parts/0010_correspondence_and_premises.xml"/>
+    <include file="db/changelog/parts/0011_address_reference_data.xml"/>
+    <include file="db/changelog/parts/0012_office_location_and_premises_lines.xml"/>
+    <include file="db/changelog/parts/0013_business_entity_reference.xml"/>
+    <include file="db/changelog/parts/0014_identification_type_reference.xml"/>
+    <include file="db/changelog/parts/0015_contact_lines.xml"/>
+    <include file="db/changelog/parts/0016_tariff_code_sales_type_reference.xml"/>
+
+</databaseChangeLog>

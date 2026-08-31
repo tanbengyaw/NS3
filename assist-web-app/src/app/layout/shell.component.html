@@ -1,0 +1,20 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">ASSIST</div>
+    <nav>
+      <a routerLink="/employers" routerLinkActive="active">Employers</a>
+      <a routerLink="/registration" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">SOCSO new reg</a>
+      <a routerLink="/registration/sales-tax" routerLinkActive="active">Sales tax</a>
+    </nav>
+    <div class="sidebar-footer">
+      @if (session(); as user) {
+        <span class="user">{{ user.username }}</span>
+      }
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

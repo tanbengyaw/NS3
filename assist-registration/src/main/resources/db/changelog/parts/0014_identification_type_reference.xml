@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0014-ref-identification-type" author="ns3">
+        <createTable tableName="ref_identification_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="director_form_eligible" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- IDs and labels from legacy IdentificationTypeEnum -->
+    <changeSet id="0014-seed-identification-types" author="ns3">
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="2"/><column name="name" value="New IC No."/><column name="sort_order" valueNumeric="1"/><column name="director_form_eligible" valueBoolean="true"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="3"/><column name="name" value="Old IC No."/><column name="sort_order" valueNumeric="2"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="4"/><column name="name" value="New Passport No."/><column name="sort_order" valueNumeric="3"/><column name="director_form_eligible" valueBoolean="true"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="5"/><column name="name" value="Army No."/><column name="sort_order" valueNumeric="4"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="6"/><column name="name" value="Police No."/><column name="sort_order" valueNumeric="5"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="7"/><column name="name" value="Social Security No."/><column name="sort_order" valueNumeric="6"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="8"/><column name="name" value="Malaysia Permanent Resident IC No."/><column name="sort_order" valueNumeric="7"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="9"/><column name="name" value="Malaysia Temporary Resident IC No."/><column name="sort_order" valueNumeric="8"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="10"/><column name="name" value="Pseudo No."/><column name="sort_order" valueNumeric="9"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="11"/><column name="name" value="Trustee"/><column name="sort_order" valueNumeric="10"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="12"/><column name="name" value="Others"/><column name="sort_order" valueNumeric="11"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="13"/><column name="name" value="Cid"/><column name="sort_order" valueNumeric="12"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="15"/><column name="name" value="SSFW No."/><column name="sort_order" valueNumeric="13"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="16"/><column name="name" value="Immediate Previous Passport No."/><column name="sort_order" valueNumeric="14"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="17"/><column name="name" value="New Working Permit No."/><column name="sort_order" valueNumeric="15"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+        <insert tableName="ref_identification_type" schemaName="reference"><column name="id" valueNumeric="18"/><column name="name" value="Immediate Previous Working Permit No."/><column name="sort_order" valueNumeric="16"/><column name="director_form_eligible" valueBoolean="false"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

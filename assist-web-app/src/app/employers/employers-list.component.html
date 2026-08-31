@@ -1,0 +1,55 @@
+<section class="page">
+  <header>
+    <h1>Employers</h1>
+    <p>Search registered employers by name, code, or BRN.</p>
+  </header>
+
+  <form class="search-bar" [formGroup]="form" (ngSubmit)="search()">
+    <select formControlName="searchType">
+      @for (option of searchTypes; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+    <input type="search" formControlName="searchValue" placeholder="Search…" />
+    <button type="submit" [disabled]="loading()">Search</button>
+  </form>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="status">Loading…</p>
+  } @else {
+    <p class="status">{{ total() }} result(s)</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>BRN</th>
+            <th>Status</th>
+            <th>Contribution</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (employer of employers(); track employer.id) {
+            <tr>
+              <td>{{ employer.employerCode }}</td>
+              <td>{{ employer.employerName }}</td>
+              <td>{{ employer.registrationNo }}</td>
+              <td>{{ employer.operationalStatus ?? '—' }}</td>
+              <td>{{ employer.contributionActive ? 'Active' : 'Inactive' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">No employers found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

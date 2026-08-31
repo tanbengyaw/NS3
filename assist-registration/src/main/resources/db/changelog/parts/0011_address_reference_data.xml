@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0011-create-reference-schema" author="ns3">
+        <sql>CREATE SCHEMA IF NOT EXISTS reference;</sql>
+    </changeSet>
+
+    <changeSet id="0011-ref-state" author="ns3">
+        <createTable tableName="ref_state" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0011-ref-city" author="ns3">
+        <createTable tableName="ref_city" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="state_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ref_city_state"
+                             references="reference.ref_state(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_city_state" tableName="ref_city" schemaName="reference">
+            <column name="state_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0011-ref-postcode" author="ns3">
+        <createTable tableName="ref_postcode" schemaName="reference">
+            <column name="postcode" type="VARCHAR(10)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="state_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ref_postcode_state"
+                             references="reference.ref_state(id)"/>
+            </column>
+            <column name="city_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ref_postcode_city"
+                             references="reference.ref_city(id)"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_postcode_state" tableName="ref_postcode" schemaName="reference">
+            <column name="state_id"/>
+        </createIndex>
+        <createIndex indexName="idx_ref_postcode_city" tableName="ref_postcode" schemaName="reference">
+            <column name="city_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0011-seed-states" author="ns3">
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="1"/><column name="name" value="Johor"/><column name="sort_order" valueNumeric="1"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="2"/><column name="name" value="Kedah"/><column name="sort_order" valueNumeric="2"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="3"/><column name="name" value="Kelantan"/><column name="sort_order" valueNumeric="3"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="4"/><column name="name" value="Melaka"/><column name="sort_order" valueNumeric="4"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="5"/><column name="name" value="Negeri Sembilan"/><column name="sort_order" valueNumeric="5"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="6"/><column name="name" value="Pahang"/><column name="sort_order" valueNumeric="6"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="7"/><column name="name" value="Pulau Pinang"/><column name="sort_order" valueNumeric="7"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="8"/><column name="name" value="Perak"/><column name="sort_order" valueNumeric="8"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="9"/><column name="name" value="Perlis"/><column name="sort_order" valueNumeric="9"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="10"/><column name="name" value="Sabah"/><column name="sort_order" valueNumeric="10"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="11"/><column name="name" value="Sarawak"/><column name="sort_order" valueNumeric="11"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="12"/><column name="name" value="Selangor"/><column name="sort_order" valueNumeric="12"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="13"/><column name="name" value="Terengganu"/><column name="sort_order" valueNumeric="13"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="14"/><column name="name" value="Wilayah Persekutuan Kuala Lumpur"/><column name="sort_order" valueNumeric="14"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="15"/><column name="name" value="Wilayah Persekutuan Labuan"/><column name="sort_order" valueNumeric="15"/></insert>
+        <insert tableName="ref_state" schemaName="reference"><column name="id" valueNumeric="16"/><column name="name" value="Wilayah Persekutuan Putrajaya"/><column name="sort_order" valueNumeric="16"/></insert>
+    </changeSet>
+
+    <changeSet id="0011-seed-cities" author="ns3">
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="101"/><column name="state_id" valueNumeric="1"/><column name="name" value="Johor Bahru"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="102"/><column name="state_id" valueNumeric="1"/><column name="name" value="Batu Pahat"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="201"/><column name="state_id" valueNumeric="2"/><column name="name" value="Alor Setar"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="301"/><column name="state_id" valueNumeric="3"/><column name="name" value="Kota Bharu"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="401"/><column name="state_id" valueNumeric="4"/><column name="name" value="Melaka"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="501"/><column name="state_id" valueNumeric="5"/><column name="name" value="Seremban"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="601"/><column name="state_id" valueNumeric="6"/><column name="name" value="Kuantan"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="701"/><column name="state_id" valueNumeric="7"/><column name="name" value="George Town"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="801"/><column name="state_id" valueNumeric="8"/><column name="name" value="Ipoh"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="901"/><column name="state_id" valueNumeric="9"/><column name="name" value="Kangar"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1001"/><column name="state_id" valueNumeric="10"/><column name="name" value="Kota Kinabalu"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1101"/><column name="state_id" valueNumeric="11"/><column name="name" value="Kuching"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1201"/><column name="state_id" valueNumeric="12"/><column name="name" value="Shah Alam"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1202"/><column name="state_id" valueNumeric="12"/><column name="name" value="Petaling Jaya"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1203"/><column name="state_id" valueNumeric="12"/><column name="name" value="Klang"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1301"/><column name="state_id" valueNumeric="13"/><column name="name" value="Kuala Terengganu"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1401"/><column name="state_id" valueNumeric="14"/><column name="name" value="Kuala Lumpur"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1501"/><column name="state_id" valueNumeric="15"/><column name="name" value="Labuan"/></insert>
+        <insert tableName="ref_city" schemaName="reference"><column name="id" valueNumeric="1601"/><column name="state_id" valueNumeric="16"/><column name="name" value="Putrajaya"/></insert>
+    </changeSet>
+
+    <changeSet id="0011-seed-postcodes" author="ns3">
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="80000"/><column name="state_id" valueNumeric="1"/><column name="city_id" valueNumeric="101"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="83000"/><column name="state_id" valueNumeric="1"/><column name="city_id" valueNumeric="102"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="05000"/><column name="state_id" valueNumeric="2"/><column name="city_id" valueNumeric="201"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="15000"/><column name="state_id" valueNumeric="3"/><column name="city_id" valueNumeric="301"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="75000"/><column name="state_id" valueNumeric="4"/><column name="city_id" valueNumeric="401"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="70000"/><column name="state_id" valueNumeric="5"/><column name="city_id" valueNumeric="501"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="25000"/><column name="state_id" valueNumeric="6"/><column name="city_id" valueNumeric="601"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="10000"/><column name="state_id" valueNumeric="7"/><column name="city_id" valueNumeric="701"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="30000"/><column name="state_id" valueNumeric="8"/><column name="city_id" valueNumeric="801"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="01000"/><column name="state_id" valueNumeric="9"/><column name="city_id" valueNumeric="901"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="88000"/><column name="state_id" valueNumeric="10"/><column name="city_id" valueNumeric="1001"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="93000"/><column name="state_id" valueNumeric="11"/><column name="city_id" valueNumeric="1101"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="40000"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1201"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="40800"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1201"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="46000"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1201"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="47301"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1202"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="47810"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1202"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="41000"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1203"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="50812"/><column name="state_id" valueNumeric="12"/><column name="city_id" valueNumeric="1201"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="20000"/><column name="state_id" valueNumeric="13"/><column name="city_id" valueNumeric="1301"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="50000"/><column name="state_id" valueNumeric="14"/><column name="city_id" valueNumeric="1401"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="50450"/><column name="state_id" valueNumeric="14"/><column name="city_id" valueNumeric="1401"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="87000"/><column name="state_id" valueNumeric="15"/><column name="city_id" valueNumeric="1501"/></insert>
+        <insert tableName="ref_postcode" schemaName="reference"><column name="postcode" value="62000"/><column name="state_id" valueNumeric="16"/><column name="city_id" valueNumeric="1601"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

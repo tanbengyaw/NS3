@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0016-ref-tariff-code-sales-type" author="ns3">
+        <createTable tableName="ref_tariff_code_sales_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(13)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_tariff_code_sales_type_code" tableName="ref_tariff_code_sales_type" schemaName="reference">
+            <column name="code"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Sample SST sales tariff codes for dev / tests (legacy uses 13-char codes) -->
+    <changeSet id="0016-seed-tariff-code-sales-type" author="ns3">
+        <insert tableName="ref_tariff_code_sales_type" schemaName="reference"><column name="id" valueNumeric="101"/><column name="code" value="0101100000000"/><column name="description" value="Plastic products, n.e.c."/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_tariff_code_sales_type" schemaName="reference"><column name="id" valueNumeric="102"/><column name="code" value="0101200000000"/><column name="description" value="Rubber products, n.e.c."/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_tariff_code_sales_type" schemaName="reference"><column name="id" valueNumeric="103"/><column name="code" value="0101300000000"/><column name="description" value="Metal products, n.e.c."/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_tariff_code_sales_type" schemaName="reference"><column name="id" valueNumeric="104"/><column name="code" value="0101400000000"/><column name="description" value="Electrical and electronic products"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_tariff_code_sales_type" schemaName="reference"><column name="id" valueNumeric="105"/><column name="code" value="0101500000000"/><column name="description" value="Food and beverage products"/><column name="is_deleted" valueBoolean="false"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

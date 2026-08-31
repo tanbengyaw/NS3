@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0001-create-registration-schema" author="ns3">
+        <sql>CREATE SCHEMA IF NOT EXISTS registration;</sql>
+    </changeSet>
+
+    <changeSet id="0001-business-info" author="ns3">
+        <createTable tableName="business_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="registration_no" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_entity_type_id" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-temp-employer" author="ns3">
+        <createTable tableName="temp_employer" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_employer_business_info"
+                             references="registration.business_info(id)"/>
+            </column>
+            <column name="service_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pks_branch_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_branch" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="msic_id" type="BIGINT"/>
+            <column name="method_contribution_payment_id" type="BIGINT"/>
+            <column name="employer_register_status" type="INT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-reg-general-info" author="ns3">
+        <createTable tableName="reg_general_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="case_ref_no" type="VARCHAR(30)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="app_status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="app_status_reason" type="VARCHAR(500)"/>
+            <column name="reg_type" type="VARCHAR(50)"/>
+            <column name="temp_employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_reg_case_temp_employer"
+                             references="registration.temp_employer(id)"/>
+            </column>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="created_by_id" type="BIGINT"/>
+            <column name="created_date" type="TIMESTAMP"/>
+            <column name="updated_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-employer" author="ns3">
+        <createTable tableName="employer" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_code" type="VARCHAR(30)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="employer_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_employer_business_info"
+                             references="registration.business_info(id)"/>
+            </column>
+            <column name="service_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pks_branch_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_branch" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="msic_id" type="BIGINT"/>
+            <column name="method_contribution_payment_id" type="BIGINT"/>
+            <column name="is_contribution_active" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="employer_register_status" type="INT"/>
+            <column name="created_by_id" type="BIGINT"/>
+            <column name="created_date" type="TIMESTAMP"/>
+            <column name="updated_by_id" type="BIGINT"/>
+            <column name="updated_date" type="TIMESTAMP"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0001-employer-status-info" author="ns3">
+        <createTable tableName="employer_status_info" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_employer_status_employer"
+                             references="registration.employer(id)"/>
+            </column>
+            <column name="status" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status_reason_id" type="BIGINT"/>
+            <column name="start_date" type="DATE"/>
+            <column name="end_date" type="DATE"/>
+            <column name="is_current" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,19 @@
+export interface RefOption {
+  id: number;
+  label: string;
+}
+
+export interface PostcodeOption {
+  postcode: string;
+  label: string;
+  stateId: number;
+  stateName: string;
+  cityId: number;
+  cityName: string;
+}
+
+export interface TariffCodeSalesTypeOption {
+  id: number;
+  code: string;
+  description: string;
+}

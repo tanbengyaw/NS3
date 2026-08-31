@@ -1,0 +1,693 @@
+<section class="page">
+  <header>
+    <h1>Sales tax registration</h1>
+    @if (caseRefNo()) {
+      <p>
+        Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>1100</strong> · Status:
+        <strong>{{ appStatus() }}</strong>
+      </p>
+    } @else {
+      <p>New sales tax registration — mirrors ASSIST Form 1 (Part A) + Form 2 (Part B)</p>
+    }
+  </header>
+
+  <nav class="steps">
+    <button type="button" [class.active]="step() === 1" (click)="goToStep(1)">1. Form 1 (Part A)</button>
+    @if (caseId()) {
+      <button type="button" [class.active]="step() === 2" (click)="goToStep(2)">2. Part B &amp; tariff</button>
+      <button type="button" [class.active]="step() === 3" (click)="goToStep(3)">3. Submit</button>
+    }
+  </nav>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message">{{ message() }}</p>
+  }
+  @if (employerCode()) {
+    <p class="success">
+      Employer code: <strong>{{ employerCode() }}</strong>
+      @if (salesTaxSmkRegNo()) {
+        · Sales tax SMK: <strong>{{ salesTaxSmkRegNo() }}</strong>
+      }
+      — <a routerLink="/employers">View employers</a>
+    </p>
+  }
+
+  @if (step() === 1) {
+    <section class="form-section search-panel">
+      <h2 class="section-withbg">Search Existing Tax Payer</h2>
+      <div class="section-body search-body">
+      <form class="search-grid" [formGroup]="searchForm" (ngSubmit)="searchTaxPayer()">
+        <label>
+          Registration type
+          <select formControlName="searchRegType" (change)="onSearchRegTypeChange()" [disabled]="!!caseId()">
+            <option value="SST_REGISTRATION_NO">SST Registration No.</option>
+            <option value="BRN">BRN (business registration no)</option>
+          </select>
+        </label>
+        <label [class.field-invalid]="showFieldError(searchForm.controls.searchRegValue)">
+          {{ searchRegValueLabel }} <span class="req">*</span>
+          <span class="search-input-group">
+            @if (taxPayerSearchFound() === true) {
+              <span class="search-status ok" title="Record found">✓</span>
+            } @else if (taxPayerSearchFound() === false) {
+              <span class="search-status fail" title="Not found">✕</span>
+            }
+            <input formControlName="searchRegValue" style="text-transform: uppercase" [readonly]="!!caseId()" />
+            <button type="submit" class="search-btn" [disabled]="loading() || !!caseId()" aria-label="Search">
+              🔍
+            </button>
+          </span>
+        </label>
+      </form>
+      @if (searchedEmployerCode()) {
+        <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft.</p>
+      }
+      @if (caseId()) {
+        <p class="hint">Draft created — search is read-only. Use Save Form 1 below to update details.</p>
+      }
+      </div>
+    </section>
+
+    <div class="step1-content" [formGroup]="form1">
+      <section class="form-section">
+        <h2 class="section-withbg">Business registration</h2>
+        <div class="section-body form-grid">
+      <label class="checkbox full new-tax-payer-check">
+        <input type="checkbox" formControlName="newRegisterTax" (change)="onNewRegisterTaxChange()" />
+        <strong>New Tax Payer Registration</strong>
+      </label>
+      <label [class.field-invalid]="showFieldError(form1.controls.registrationNo)">
+        BRN (business registration no) <span class="req">*</span>
+        <input formControlName="registrationNo" [readonly]="!!caseId() || taxPayerSearchFound() === true" />
+        @if (showFieldError(form1.controls.registrationNo)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.registrationNo) }}</span>
+        }
+      </label>
+      <label [class.field-invalid]="showFieldError(form1.controls.businessEntityTypeId)">
+        Business entity type <span class="req">*</span>
+        <select formControlName="businessEntityTypeId">
+          @if (businessEntityTypes().length === 0) {
+            <option [ngValue]="form1.controls.businessEntityTypeId.value">
+              {{ businessEntityLabel(form1.controls.businessEntityTypeId.value) || 'Loading…' }}
+            </option>
+          }
+          @for (e of businessEntityTypes(); track e.id) {
+            <option [ngValue]="e.id">{{ e.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        MSIC / industry code ID
+        <input type="number" formControlName="msicId" />
+      </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Tax &amp; customs references <span class="optional">(optional)</span></h2>
+        <div class="section-body form-grid">
+      <p class="hint full">Please fill in relevant details (if any).</p>
+      <label>Tourism tax reg no<input formControlName="tourTaxRegNo" /></label>
+      <label>Income tax ref no<input formControlName="inTaxRefNo" /></label>
+      <label>Customs audit ref no<input formControlName="cusAudRefNo" /></label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Pre-registration / business succession</h2>
+        <div class="section-body form-grid">
+      <label class="checkbox full">
+        <input type="checkbox" [checked]="showPreRegBlock()" (change)="togglePreRegBlock($any($event.target).checked)" />
+        Application due to registered manufactured business being succeeded (Customs succession)
+      </label>
+      @if (showPreRegBlock()) {
+        <label>Replacement date<input type="date" formControlName="dateOfReplacement" /></label>
+        <label>Previous registration no<input formControlName="preRegNo" /></label>
+        <label>Previous registration name<input formControlName="preRegName" /></label>
+      }
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Name and registered address of business</h2>
+        <div class="section-body form-grid">
+      <label class="full" [class.field-invalid]="showFieldError(form1.controls.employerName)">
+        Name of registered business <span class="req">*</span>
+        <input formControlName="employerName" [readonly]="!isEditable && !!caseId()" />
+        @if (showFieldError(form1.controls.employerName)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.employerName) }}</span>
+        }
+      </label>
+      <label class="full" [class.field-invalid]="showFieldError(form1.controls.addressLine1)">
+        Business correspondence address — line 1 <span class="req">*</span>
+        <input formControlName="addressLine1" (input)="onBusinessAddressFieldChange()" />
+        @if (showFieldError(form1.controls.addressLine1)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.addressLine1) }}</span>
+        }
+      </label>
+      <label class="full">Address line 2<input formControlName="addressLine2" (input)="onBusinessAddressFieldChange()" /></label>
+      <label class="full">Address line 3<input formControlName="addressLine3" (input)="onBusinessAddressFieldChange()" /></label>
+      <label>
+        State
+        <select formControlName="stateId" (change)="onBusinessStateChange()">
+          <option [ngValue]="null">Select state</option>
+          @for (s of states(); track s.id) {
+            <option [ngValue]="s.id">{{ s.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        City
+        <select formControlName="cityId" (change)="onBusinessCityChange()">
+          <option [ngValue]="null">Select city</option>
+          @for (c of cities(); track c.id) {
+            <option [ngValue]="c.id">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+      <label [class.field-invalid]="showFieldError(form1.controls.postCode)">
+        Postcode <span class="req">*</span>
+        <select formControlName="postCode" (change)="onBusinessPostcodeChange()">
+          <option value="">Select postcode</option>
+          @for (p of postcodes(); track p.postcode) {
+            <option [value]="p.postcode">{{ p.label }}</option>
+          }
+        </select>
+        @if (showFieldError(form1.controls.postCode)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.postCode) }}</span>
+        }
+      </label>
+      <input type="hidden" formControlName="cityName" />
+      <label>Service type ID<input type="number" formControlName="serviceTypeId" /></label>
+      <label>
+        PKS branch / office location
+        <select formControlName="pksBranchId">
+          @if (officeLocations().length === 0) {
+            <option [ngValue]="form1.controls.pksBranchId.value">{{ officeLocationLabel(form1.controls.pksBranchId.value) || 'Select postcode first' }}</option>
+          }
+          @for (o of officeLocations(); track o.id) {
+            <option [ngValue]="o.id">{{ o.label }}</option>
+          }
+        </select>
+      </label>
+      <label>Method of contribution payment ID<input type="number" formControlName="methodContributionPaymentId" /></label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Trading name</h2>
+        <div class="section-body form-grid">
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="sameAsTradeName" (change)="toggleSameAsTradeName()" />
+        Trade name same as name of registered business
+      </label>
+      <label>Trade name<input formControlName="tradeName" [readonly]="form1.controls.sameAsTradeName.value" /></label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Premise address</h2>
+        <div class="section-body form-grid">
+      <div class="same-as-bar full">
+        <label class="checkbox">
+          <input type="checkbox" formControlName="sameAsBusinessAddr" (change)="toggleSameAsBusinessAddr()" />
+          Premise Address Same As Business Correspondence Address
+        </label>
+      </div>
+      @if (!form1.controls.sameAsBusinessAddr.value) {
+      <label class="full">Address line 1<input formControlName="corrAddressLine1" /></label>
+      <label class="full">Address line 2<input formControlName="corrAddressLine2" /></label>
+      <label class="full">Address line 3<input formControlName="corrAddressLine3" /></label>
+      <label>
+        State
+        <select formControlName="corrStateId" (change)="onCorrStateChange()">
+          <option [ngValue]="null">Select state</option>
+          @for (s of states(); track s.id) {
+            <option [ngValue]="s.id">{{ s.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        City
+        <select formControlName="corrCityId" (change)="onCorrCityChange()">
+          <option [ngValue]="null">Select city</option>
+          @for (c of corrCities(); track c.id) {
+            <option [ngValue]="c.id">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Postcode
+        <select formControlName="corrPostCode" (change)="onCorrPostcodeChange()">
+          <option value="">Select postcode</option>
+          @for (p of corrPostcodes(); track p.postcode) {
+            <option [value]="p.postcode">{{ p.label }}</option>
+          }
+        </select>
+      </label>
+      <input type="hidden" formControlName="corrCityName" />
+      }
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Contact</h2>
+        <div class="section-body">
+      <div class="form-grid">
+      <label class="full" [class.field-invalid]="showFieldError(form1.controls.email)">
+        Email address <span class="req">*</span>
+        <input type="email" formControlName="email" />
+        @if (showFieldError(form1.controls.email)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.email) }}</span>
+        }
+      </label>
+      </div>
+
+      <div class="contact-pair" [formGroup]="contactForm">
+        <fieldset class="contact-fieldset" formArrayName="phones">
+          <legend>Telephone No.</legend>
+          @for (line of phoneLines.controls; track $index) {
+            <div class="contact-line" [formGroupName]="$index">
+              <div class="split-phone">
+                <input class="phone-head" formControlName="head" maxlength="10" />
+                <input class="phone-back" formControlName="back" maxlength="14" inputmode="numeric" />
+              </div>
+              <div class="contact-actions">
+                <button type="button" class="icon-btn add" (click)="addPhoneLine()" title="Add telephone">+</button>
+                <button type="button" class="icon-btn remove" (click)="removePhoneLine($index)" title="Remove telephone" [disabled]="phoneLines.length <= 1">🗑</button>
+              </div>
+            </div>
+          }
+        </fieldset>
+
+        <fieldset class="contact-fieldset" formArrayName="faxes">
+          <legend>Fax No.</legend>
+          @for (line of faxLines.controls; track $index) {
+            <div class="contact-line" [formGroupName]="$index">
+              <div class="split-phone">
+                <input class="phone-head" formControlName="head" maxlength="10" />
+                <input class="phone-back" formControlName="back" maxlength="14" inputmode="numeric" />
+              </div>
+              <div class="contact-actions">
+                <button type="button" class="icon-btn add" (click)="addFaxLine()" title="Add fax">+</button>
+                <button type="button" class="icon-btn remove" (click)="removeFaxLine($index)" title="Remove fax" [disabled]="faxLines.length <= 1">🗑</button>
+              </div>
+            </div>
+          }
+        </fieldset>
+      </div>
+
+      <p class="hint">
+        Fields marked <span class="req">*</span> are required. Save Form 1 after creating a draft, then add directors below.
+      </p>
+        </div>
+      </section>
+    </div>
+
+    <section class="form-section">
+      <h2 class="section-withbg">Other place of manufacturing address <span class="optional">(optional)</span></h2>
+      <div class="section-body">
+    @if (!caseId()) {
+      <p class="hint">No draft yet — complete all Form 1 fields above, tick <strong>New Tax Payer Registration</strong> or search an existing tax payer, then click Add premises.</p>
+    }
+    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openPremisesModal()">
+      Add premises
+    </button>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Address</th><th>Postcode</th><th>City</th><th>State</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (p of premises(); track p.id) {
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ formatPremisesAddress(p) }}</td>
+              <td>{{ p.postCode }}</td>
+              <td>{{ p.cityName }}</td>
+              <td>{{ p.stateName }}</td>
+              <td>
+                @if (isEditable) {
+                  <span class="row-actions">
+                    <button type="button" class="link-btn edit" (click)="openPremisesModal(p)" title="Edit">Edit</button>
+                    <button type="button" class="link-btn remove" (click)="requestDeletePremises(p.id)" title="Remove">Remove</button>
+                  </span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">No premises yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="section-withbg">Details of director / owner <span class="req">*</span> <span class="hint">(≥1 required to submit)</span></h2>
+      <div class="section-body">
+    @if (!caseId()) {
+      <p class="hint">Create draft first to add directors — or fill Form 1 and use Add director (draft is created automatically).</p>
+    }
+    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openDirectorModal()">
+      Add director
+    </button>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>ID type</th><th>ID no</th><th>Email</th><th>Designation</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (d of directors(); track d.id) {
+            <tr>
+              <td>{{ d.name }}</td>
+              <td>{{ identificationTypeLabel(d.identificationTypeId) }}</td>
+              <td>{{ d.identificationNo }}</td>
+              <td>{{ d.email }}</td>
+              <td>{{ d.designation }}</td>
+              <td>
+                @if (isEditable) {
+                  <span class="row-actions">
+                    <button type="button" class="link-btn edit" (click)="openDirectorModal(d)" title="Edit">Edit</button>
+                    <button type="button" class="link-btn remove" (click)="requestDeleteDirector(d.id)" title="Remove">Remove</button>
+                  </span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">No directors yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      @if (!caseId()) {
+        <button type="button" class="primary" [disabled]="loading()" (click)="createDraft()">Create draft</button>
+      } @else {
+        <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="saveForm1()">Save Form 1</button>
+        <button type="button" [disabled]="loading()" (click)="goToStep(2)">Next: Part B →</button>
+      }
+    </div>
+  }
+
+  @if (step() === 2 && caseId()) {
+    <section class="form-section">
+      <h2 class="section-withbg">Part B — sales tax particulars</h2>
+      <div class="section-body">
+    <form class="form-grid" [formGroup]="form2">
+      <label [class.field-invalid]="showFieldError(form2.controls.manComDate)">
+        Manufacturing commencement date <span class="req">*</span>
+        <input type="date" formControlName="manComDate" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.dateSaleValTaxGoods)">
+        Date sale / value of taxable goods <span class="req">*</span>
+        <input type="date" formControlName="dateSaleValTaxGoods" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.businessComDate)">
+        Business commencement date <span class="req">*</span>
+        <input type="date" formControlName="businessComDate" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.finYrEndMon)">
+        Financial year end month (1–12) <span class="req">*</span>
+        <input type="number" formControlName="finYrEndMon" min="1" max="12" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.anTotalTaxSalesVal)">
+        Annual total taxable sales value (RM) <span class="req">*</span>
+        <input type="number" formControlName="anTotalTaxSalesVal" step="0.01" min="0.01" />
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="subContractWork" />
+        Sub-contract work (requires sub-contract tariff codes on save/submit)
+      </label>
+
+      <h3 class="subsection-title">Sales breakdown (RM) <span class="req">*</span></h3>
+      <label [class.field-invalid]="showFieldError(form2.controls.localSales)">
+        Local sales
+        <input type="number" formControlName="localSales" step="0.01" min="0" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.exportSales)">
+        Export
+        <input type="number" formControlName="exportSales" step="0.01" min="0" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.salesToDesignArea)">
+        Sales to designated area
+        <input type="number" formControlName="salesToDesignArea" step="0.01" min="0" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.othersSales)">
+        Others
+        <input type="number" formControlName="othersSales" step="0.01" min="0" />
+      </label>
+    </form>
+
+    <div class="actions inline-actions">
+      <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="saveForm2()">
+        Save Part B
+      </button>
+    </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="section-withbg">Tariff / finished-goods codes <span class="hint">(main contract ≥1 required)</span></h2>
+      <div class="section-body">
+    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openTariffModal()">
+      Add tariff code
+    </button>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tariff code</th><th>Description</th><th>Contract</th><th>Finished goods</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (t of tariffCodes(); track t.id) {
+            <tr>
+              <td>{{ tariffDisplayLabel(t) }}</td>
+              <td>{{ t.tariffDescription }}</td>
+              <td>{{ contractLabel(t.contractTypeId) }}</td>
+              <td>{{ t.finishedGoods }}</td>
+              <td>
+                @if (isEditable) {
+                  <span class="row-actions">
+                    <button type="button" class="link-btn edit" (click)="openTariffModal(t)" title="Edit">Edit</button>
+                    <button type="button" class="link-btn remove" (click)="requestDeleteTariff(t.id)" title="Remove">Remove</button>
+                  </span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="empty">No tariff codes yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="button" (click)="goToStep(1)">← Back</button>
+      <button type="button" [disabled]="loading()" (click)="goToStep(3)">Next: submit →</button>
+    </div>
+  }
+
+  @if (step() === 3 && caseId()) {
+    <section class="form-section">
+      <h2 class="section-withbg">Checklist before submit</h2>
+      <div class="section-body summary">
+      <ul>
+        <li>Form 1 Part A saved (business, premise address, directors, premises)</li>
+        <li>Directors: {{ directors().length }} (need ≥1)</li>
+        <li>Premises: {{ premises().length }} (optional)</li>
+        <li>Part B saved with annual sales value &amp; breakdown</li>
+        <li>Main-contract tariff codes: {{ mainTariffCount }} (need ≥1)</li>
+        @if (form2.controls.subContractWork.value) {
+          <li>Sub-contract tariff codes: {{ subTariffCount }} (required when flag set)</li>
+        }
+      </ul>
+      <p>RO users auto-approve on submit. Other users go to <strong>SUBMITTED</strong> for officer approval.</p>
+      </div>
+    </section>
+    <div class="actions">
+      <button type="button" (click)="goToStep(2)">← Back</button>
+      @if (isEditable) {
+        <button type="button" class="primary" [disabled]="loading()" (click)="submitCase()">Submit case</button>
+      }
+      @if (isOfficer && appStatus() === 'SUBMITTED') {
+        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve</button>
+      }
+    </div>
+  }
+</section>
+
+<assist-form-modal
+  [open]="directorModalOpen()"
+  [title]="editingDirectorId() ? 'Edit director / owner' : 'Add director / owner'"
+  (closed)="closeDirectorModal()"
+>
+  <form class="form-grid director-form" [formGroup]="directorForm">
+    <label [class.field-invalid]="showFieldError(directorForm.controls.name)">
+      Name <span class="req">*</span>
+      <input formControlName="name" />
+    </label>
+    <label [class.field-invalid]="showFieldError(directorForm.controls.identificationTypeId)">
+      ID type <span class="req">*</span>
+      <select formControlName="identificationTypeId">
+        @if (identificationTypes().length === 0) {
+          <option [ngValue]="directorForm.controls.identificationTypeId.value">
+            {{ identificationTypeLabel(directorForm.controls.identificationTypeId.value) || 'Loading…' }}
+          </option>
+        }
+        @for (t of identificationTypes(); track t.id) {
+          <option [ngValue]="t.id">{{ t.label }}</option>
+        }
+      </select>
+    </label>
+    <label [class.field-invalid]="showFieldError(directorForm.controls.identificationNo)">
+      ID no <span class="req">*</span>
+      <input formControlName="identificationNo" />
+    </label>
+    <label>Email<input type="email" formControlName="email" /></label>
+    <label>Designation<input formControlName="designation" /></label>
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeDirectorModal()">Close</button>
+    <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addDirector()">Save</button>
+  </div>
+</assist-form-modal>
+
+<assist-form-modal
+  [open]="premisesModalOpen()"
+  [title]="editingPremisesId() ? 'Edit premises' : 'Add premises'"
+  (closed)="closePremisesModal()"
+>
+  <form class="form-grid premises-form" [formGroup]="premisesForm">
+    <label [class.field-invalid]="showFieldError(premisesForm.controls.name)">
+      Premises name <span class="req">*</span>
+      <input formControlName="name" />
+    </label>
+    <label class="full" [class.field-invalid]="showFieldError(premisesForm.controls.addressLine)">
+      Address line 1 <span class="req">*</span>
+      <input formControlName="addressLine" />
+    </label>
+    <label class="full">Address line 2<input formControlName="addressLine2" /></label>
+    <label class="full">Address line 3<input formControlName="addressLine3" /></label>
+    <label>
+      State
+      <select formControlName="stateId" (change)="onPremisesStateChange()">
+        <option [ngValue]="null">Select state</option>
+        @for (s of states(); track s.id) {
+          <option [ngValue]="s.id">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      City
+      <select formControlName="cityId" (change)="onPremisesCityChange()">
+        <option [ngValue]="null">Select city</option>
+        @for (c of premisesCities(); track c.id) {
+          <option [ngValue]="c.id">{{ c.label }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Postcode
+      <select formControlName="postCode" (change)="onPremisesPostcodeChange()">
+        <option value="">Select postcode</option>
+        @for (p of premisesPostcodes(); track p.postcode) {
+          <option [value]="p.postcode">{{ p.label }}</option>
+        }
+      </select>
+    </label>
+    <input type="hidden" formControlName="cityName" />
+    <input type="hidden" formControlName="stateName" />
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closePremisesModal()">Close</button>
+    <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addPremises()">Save</button>
+  </div>
+</assist-form-modal>
+
+<assist-form-modal
+  [open]="tariffModalOpen()"
+  [title]="editingTariffId() ? 'Edit tariff code' : 'Add tariff code'"
+  (closed)="closeTariffModal()"
+>
+  <form class="form-grid tariff-form" [formGroup]="tariffForm">
+    <label class="full" [class.field-invalid]="showFieldError(tariffForm.controls.finishedGoods)">
+      Finished goods description <span class="req">*</span>
+      <input formControlName="finishedGoods" />
+    </label>
+    <label>Contract type
+      <select formControlName="contractTypeId">
+        <option [value]="mainContractType">Main contract</option>
+        <option [value]="subContractType">Sub contract</option>
+      </select>
+    </label>
+    <label class="full">
+      Tariff code <span class="req">*</span>
+      <span class="search-input-group">
+        <input
+          formControlName="tariffCodeSearch"
+          style="text-transform: uppercase"
+          placeholder="Enter code prefix (e.g. 01011)"
+          (keyup.enter)="searchTariffCodes()"
+        />
+        <button type="button" class="search-btn" [disabled]="tariffSearching()" (click)="searchTariffCodes()" aria-label="Search tariff codes">
+          🔍
+        </button>
+      </span>
+    </label>
+    <label class="full">Description
+      <input formControlName="tariffDescription" readonly />
+    </label>
+    @if (tariffModalNotice()) {
+      <p class="modal-notice full">{{ tariffModalNotice() }}</p>
+    }
+    @if (tariffSearchAttempted()) {
+      <div class="full tariff-search-results">
+        @if (tariffSearching()) {
+          <p class="empty">Searching…</p>
+        } @else if (tariffSearchResults().length === 0) {
+          <p class="empty">No records found.</p>
+        } @else {
+        <table>
+          <thead>
+            <tr><th>Tariff code</th><th>Description</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (row of tariffSearchResults(); track row.id) {
+              <tr>
+                <td>{{ row.code }}</td>
+                <td>{{ row.description }}</td>
+                <td>
+                  <button type="button" class="link-btn edit" (click)="selectTariffCode(row)">Select</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        }
+      </div>
+    }
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeTariffModal()">Close</button>
+    <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addTariffCode()">Save</button>
+  </div>
+</assist-form-modal>
+
+<assist-confirm-dialog
+  [open]="!!pendingDelete()"
+  title="Confirmation"
+  message="Proceed to delete?"
+  [busy]="loading()"
+  (confirmed)="confirmPendingDelete()"
+  (cancelled)="cancelPendingDelete()"
+/>

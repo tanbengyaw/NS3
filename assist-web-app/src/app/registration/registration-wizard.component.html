@@ -1,0 +1,104 @@
+<section class="page">
+  <header>
+    <h1>Registration wizard</h1>
+    @if (caseRefNo()) {
+      <p>Case: <strong>{{ caseRefNo() }}</strong> · Status: <strong>{{ appStatus() }}</strong></p>
+    } @else {
+      <p>New employer registration — Form 1 and Form 2</p>
+    }
+  </header>
+
+  <nav class="steps">
+    <button type="button" [class.active]="step() === 1" (click)="goToStep(1)">1. Business</button>
+    @if (caseId()) {
+      <button type="button" [class.active]="step() === 2" (click)="goToStep(2)">2. Employees</button>
+      <button type="button" [class.active]="step() === 3" (click)="goToStep(3)">3. Submit</button>
+    }
+  </nav>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message">{{ message() }}</p>
+  }
+  @if (employerCode()) {
+    <p class="success">
+      Employer code: <strong>{{ employerCode() }}</strong> —
+      <a routerLink="/employers">View employers</a>
+    </p>
+  }
+
+  @if (step() === 1) {
+    <form class="form-grid" [formGroup]="form1">
+      <label>Employer name<input formControlName="employerName" [readonly]="!isEditable && !!caseId()" /></label>
+      <label>BRN (registration no)<input formControlName="registrationNo" [readonly]="!!caseId()" /></label>
+      <label>Postcode<input formControlName="postCode" /></label>
+      <label>Service type ID<input type="number" formControlName="serviceTypeId" /></label>
+      <label>Branch ID<input type="number" formControlName="pksBranchId" /></label>
+      <label>Business entity type ID<input type="number" formControlName="businessEntityTypeId" /></label>
+      <label>Email<input type="email" formControlName="email" /></label>
+      <label>Phone<input formControlName="phone" /></label>
+      <label class="full">Address line 1<input formControlName="addressLine1" /></label>
+      <label class="full">Address line 2<input formControlName="addressLine2" /></label>
+    </form>
+
+    <div class="actions">
+      @if (!caseId()) {
+        <button type="button" class="primary" [disabled]="loading()" (click)="createDraft()">Create draft</button>
+      } @else {
+        <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="saveForm1()">Save</button>
+        <button type="button" [disabled]="loading()" (click)="goToStep(2)">Next: employees →</button>
+      }
+    </div>
+  }
+
+  @if (step() === 2 && caseId()) {
+    <form class="form-grid employee-form" [formGroup]="employeeForm">
+      <label>Name<input formControlName="employeeName" /></label>
+      <label>IC / ID no<input formControlName="identificationNo" /></label>
+      <label>Start date<input type="date" formControlName="employmentStartDate" /></label>
+      <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="addEmployee()">Add employee</button>
+    </form>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>ID</th><th>Start date</th></tr>
+        </thead>
+        <tbody>
+          @for (e of employees(); track e.id) {
+            <tr>
+              <td>{{ e.employeeName }}</td>
+              <td>{{ e.identificationNo }}</td>
+              <td>{{ e.employmentStartDate }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="empty">No employees yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button type="button" (click)="goToStep(1)">← Back</button>
+      <button type="button" [disabled]="loading()" (click)="goToStep(3)">Next: submit →</button>
+    </div>
+  }
+
+  @if (step() === 3 && caseId()) {
+    <div class="summary">
+      <p>Employees: {{ employees().length }}</p>
+      <p>When you submit, portal users go to <strong>SUBMITTED</strong>; RO auto-approves.</p>
+    </div>
+    <div class="actions">
+      <button type="button" (click)="goToStep(2)">← Back</button>
+      @if (isEditable) {
+        <button type="button" class="primary" [disabled]="loading()" (click)="submitCase()">Submit case</button>
+      }
+      @if (isOfficer && appStatus() === 'SUBMITTED') {
+        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve</button>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,26 @@
+<section class="login-page">
+  <div class="login-card">
+    <h1>NS3 ASSIST</h1>
+    <p class="subtitle">Employer registration portal (dev)</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Username
+        <input type="text" formControlName="username" autocomplete="username" />
+      </label>
+
+      <label>
+        Password
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+
+      @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
+      }
+
+      <button type="submit" [disabled]="form.invalid">Sign in</button>
+    </form>
+
+    <p class="hint">Dev users: admin, ro, employer — password: <code>password</code></p>
+  </div>
+</section>
