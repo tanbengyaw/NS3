@@ -46,6 +46,18 @@ export interface RegistrationCase {
   employerId: number | null;
 }
 
+export interface RegistrationCaseSummary {
+  id: number;
+  caseRefNo: string;
+  appStatus: string;
+  sectionId: number | null;
+  sectionCode: string | null;
+  employerName: string;
+  registrationNo: string;
+  submissionDate: string | null;
+  createdDate: string | null;
+}
+
 export interface TempEmployee {
   id: number;
   caseId: number;
@@ -86,6 +98,12 @@ export interface TempSstTariffCode {
   finishedGoods: string | null;
 }
 
+export interface TempSstContactPerson {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface TempSstInfo {
   id: number | null;
   caseId: number;
@@ -106,9 +124,28 @@ export interface TempSstInfo {
   salesToDesignArea: number | null;
   othersSales: number | null;
   subContractWork: boolean;
+  declareTrue: boolean;
+  declareDate: string | null;
+  applicantName: string | null;
+  identityCard: string | null;
+  designation: string | null;
+  applicantEmail: string | null;
+  applicantTelNo: string | null;
   directors: TempDirectorOwner[];
   premises: TempPremises[];
   tariffCodes: TempSstTariffCode[];
+  contactPersons: TempSstContactPerson[];
+  supportingDocuments: TempSstSupportingDocument[];
+}
+
+export interface TempSstSupportingDocument {
+  id: number;
+  documentTypeId: number;
+  documentTypeLabel: string | null;
+  fileName: string;
+  contentType: string | null;
+  fileSize: number | null;
+  uploadedDate: string | null;
 }
 
 export interface UpsertSstInfoRequest {
@@ -129,6 +166,18 @@ export interface UpsertSstInfoRequest {
   salesToDesignArea?: number;
   othersSales?: number;
   subContractWork?: boolean;
+  declareTrue?: boolean;
+  declareDate?: string | null;
+  applicantName?: string;
+  identityCard?: string;
+  designation?: string;
+  applicantEmail?: string;
+  applicantTelNo?: string;
+}
+
+export interface CreateContactPersonRequest {
+  name: string;
+  email: string;
 }
 
 export interface CreateDirectorRequest {

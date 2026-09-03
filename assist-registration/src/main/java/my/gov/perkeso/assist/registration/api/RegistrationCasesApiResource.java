@@ -11,12 +11,14 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.core.commands.domain.CommandWrapper;
 import my.gov.perkeso.assist.core.commands.service.CommandProcessingService;
 import my.gov.perkeso.assist.core.commands.service.CommandWrapperBuilder;
 import my.gov.perkeso.assist.core.infrastructure.data.CommandProcessingResult;
 import my.gov.perkeso.assist.registration.data.RegistrationCaseData;
+import my.gov.perkeso.assist.registration.data.RegistrationCaseSummaryData;
 import my.gov.perkeso.assist.registration.service.EmployerReadPlatformService;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +38,14 @@ public class RegistrationCasesApiResource {
     public CommandProcessingResult create(final String json) {
         final CommandWrapper wrapper = CommandWrapperBuilder.createRegistrationCase().withJson(json).build();
         return commandProcessingService.executeCommand(wrapper);
+    }
+
+    @GET
+    @Operation(summary = "List registration cases (officer inbox)")
+    public List<RegistrationCaseSummaryData> listCases(@QueryParam("appStatus") final String appStatus,
+            @QueryParam("sectionId") final Long sectionId,
+            @QueryParam("limit") final Integer limit) {
+        return readService.retrieveCaseSummaries(appStatus, sectionId, limit != null ? limit : 50);
     }
 
     @GET

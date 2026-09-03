@@ -15,6 +15,7 @@ import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.registration.data.TempDirectorOwnerData;
 import my.gov.perkeso.assist.registration.data.TempPremisesData;
+import my.gov.perkeso.assist.registration.data.TempSstContactPersonData;
 import my.gov.perkeso.assist.registration.data.TempSstInfoData;
 import my.gov.perkeso.assist.registration.data.TempSstTariffCodeData;
 import my.gov.perkeso.assist.registration.service.TempSstInfoWritePlatformService;
@@ -110,6 +111,30 @@ public class RegistrationCaseSstInfoApiResource {
     @Operation(summary = "Remove draft tariff code")
     public Response deleteTariffCode(@PathParam("caseId") final Long caseId, @PathParam("tariffId") final Long tariffId) {
         tempSstInfoService.deleteTariffCode(caseId, tariffId);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("contact-persons")
+    @Operation(summary = "Add draft SST contact person (Form 2)")
+    public TempSstContactPersonData createContactPerson(@PathParam("caseId") final Long caseId, final String json) {
+        return tempSstInfoService.createContactPerson(caseId, json);
+    }
+
+    @PUT
+    @Path("contact-persons/{contactPersonId}")
+    @Operation(summary = "Update draft SST contact person")
+    public TempSstContactPersonData updateContactPerson(@PathParam("caseId") final Long caseId,
+            @PathParam("contactPersonId") final Long contactPersonId, final String json) {
+        return tempSstInfoService.updateContactPerson(caseId, contactPersonId, json);
+    }
+
+    @DELETE
+    @Path("contact-persons/{contactPersonId}")
+    @Operation(summary = "Remove draft SST contact person")
+    public Response deleteContactPerson(@PathParam("caseId") final Long caseId,
+            @PathParam("contactPersonId") final Long contactPersonId) {
+        tempSstInfoService.deleteContactPerson(caseId, contactPersonId);
         return Response.noContent().build();
     }
 }

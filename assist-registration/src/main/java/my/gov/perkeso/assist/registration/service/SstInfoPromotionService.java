@@ -1,5 +1,6 @@
 package my.gov.perkeso.assist.registration.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +19,14 @@ import my.gov.perkeso.assist.registration.domain.SstInfo;
 import my.gov.perkeso.assist.registration.domain.SstInfoRepository;
 import my.gov.perkeso.assist.registration.domain.SstStatusInfo;
 import my.gov.perkeso.assist.registration.domain.SstStatusInfoRepository;
+import my.gov.perkeso.assist.registration.domain.SstSupportingDocument;
+import my.gov.perkeso.assist.registration.domain.SstSupportingDocumentRepository;
 import my.gov.perkeso.assist.registration.domain.SstTariffCode;
 import my.gov.perkeso.assist.registration.domain.SstTariffCodeRepository;
 import my.gov.perkeso.assist.registration.domain.TempDirectorOwner;
 import my.gov.perkeso.assist.registration.domain.TempPremises;
 import my.gov.perkeso.assist.registration.domain.TempSstInfo;
+import my.gov.perkeso.assist.registration.domain.TempSstSupportingDocument;
 import my.gov.perkeso.assist.registration.domain.TempSstTariffCode;
 import my.gov.perkeso.assist.registration.employercode.EmployerCodeContext;
 import my.gov.perkeso.assist.registration.employercode.EmployerCodeGeneratorFactory;
@@ -37,9 +41,11 @@ public class SstInfoPromotionService {
     private final SstInfoRepository sstInfoRepository;
     private final SstStatusInfoRepository sstStatusInfoRepository;
     private final SstTariffCodeRepository sstTariffCodeRepository;
+    private final SstSupportingDocumentRepository sstSupportingDocumentRepository;
     private final DirectorOwnerRepository directorOwnerRepository;
     private final PremisesRepository premisesRepository;
     private final EmployerCodeGeneratorFactory employerCodeGeneratorFactory;
+    private final RegistrationDocumentStorageService registrationDocumentStorageService;
 
     @Transactional
     public SstInfo promoteSalesTaxOnApprove(final RegGeneralInfo regCase, final Employer employer) {
@@ -53,6 +59,8 @@ public class SstInfoPromotionService {
         final List<TempPremises> premises = tempSstInfoWritePlatformService.listPremisesForCase(regCase.getId());
         final List<TempSstTariffCode> tariffCodes = tempSstInfoWritePlatformService
                 .listTariffCodesForCase(tempSstInfo);
+        final List<TempSstSupportingDocument> supportingDocuments = tempSstInfoWritePlatformService
+                .listSupportingDocumentEntitiesForCase(tempSstInfo);
 
         final EmployerCodeContext context = EmployerCodeContext.builder()
                 .branchId(regCase.getTempEmployer().getPksBranchId())
@@ -67,6 +75,7 @@ public class SstInfoPromotionService {
         promoteDirectors(employer.getId(), directors);
         promotePremises(employer.getId(), premises);
         promoteTariffCodes(employer.getId(), savedSstInfo.getId(), tariffCodes);
+        promoteSupportingDocuments(regCase.getId(), employer.getId(), savedSstInfo.getId(), supportingDocuments);
         createActiveStatus(savedSstInfo.getId());
 
         return savedSstInfo;
@@ -96,6 +105,13 @@ public class SstInfoPromotionService {
         sstInfo.setSalesToDesignArea(temp.getSalesToDesignArea());
         sstInfo.setOthersSales(temp.getOthersSales());
         sstInfo.setSubContractWork(temp.isSubContractWork());
+        sstInfo.setDeclareTrue(temp.isDeclareTrue());
+        sstInfo.setDeclareDate(temp.getDeclareDate());
+        sstInfo.setApplicantName(temp.getApplicantName());
+        sstInfo.setIdentityCard(temp.getIdentityCard());
+        sstInfo.setDesignation(temp.getDesignation());
+        sstInfo.setApplicantEmail(temp.getApplicantEmail());
+        sstInfo.setApplicantTelNo(temp.getApplicantTelNo());
         sstInfo.setAutoRegistration(false);
         sstInfo.setDeleted(false);
         sstInfo.setCreatedDate(LocalDateTime.now());
@@ -146,6 +162,31 @@ public class SstInfoPromotionService {
             tariff.setDeleted(false);
             tariff.setCreatedDate(LocalDateTime.now());
             sstTariffCodeRepository.save(tariff);
+        }
+    }
+
+    private void promoteSupportingDocuments(final Long caseId, final Long employerId, final Long sstInfoId,
+            final List<TempSstSupportingDocument> supportingDocuments) {
+        for (final TempSstSupportingDocument temp : supportingDocuments) {
+            try {
+                final RegistrationDocumentStorageService.StoredRegistrationDocument stored =
+                        registrationDocumentStorageService.promoteDraftDocument(caseId, employerId,
+                                temp.getStoredFileName(), temp.getFileName(), temp.getContentType(),
+                                temp.getFileSize() != null ? temp.getFileSize() : 0L);
+                final SstSupportingDocument document = new SstSupportingDocument();
+                document.setSstInfoId(sstInfoId);
+                document.setEmployerId(employerId);
+                document.setDocumentTypeId(temp.getDocumentTypeId());
+                document.setFileName(temp.getFileName());
+                document.setStoredFileName(stored.storedFileName());
+                document.setContentType(stored.contentType());
+                document.setFileSize(stored.fileSize());
+                document.setDeleted(false);
+                document.setCreatedDate(LocalDateTime.now());
+                sstSupportingDocumentRepository.save(document);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Failed to promote supporting document " + temp.getFileName(), ex);
+            }
         }
     }
 

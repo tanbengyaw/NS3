@@ -15,6 +15,10 @@ export class ShellComponent {
 
   readonly session = this.auth.currentSession;
 
+  get isOfficer(): boolean {
+    return this.auth.hasRole('OFFICER') || this.auth.hasRole('ADMIN');
+  }
+
   logout(): void {
     this.auth.logout();
     void this.router.navigate(['/login']);

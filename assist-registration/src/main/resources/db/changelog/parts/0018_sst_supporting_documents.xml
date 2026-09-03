@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0018-ref-supporting-document-type" author="ns3">
+        <createTable tableName="ref_supporting_document_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="required_for_sales_tax" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0018-seed-supporting-document-type" author="ns3">
+        <insert tableName="ref_supporting_document_type" schemaName="reference">
+            <column name="id" valueNumeric="1"/>
+            <column name="code" value="SSM_CERT"/>
+            <column name="label" value="SSM / business registration certificate"/>
+            <column name="required_for_sales_tax" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="1"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_supporting_document_type" schemaName="reference">
+            <column name="id" valueNumeric="2"/>
+            <column name="code" value="APPLICANT_ID"/>
+            <column name="label" value="NRIC / passport (applicant)"/>
+            <column name="required_for_sales_tax" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="2"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_supporting_document_type" schemaName="reference">
+            <column name="id" valueNumeric="3"/>
+            <column name="code" value="MANUFACTURING_LIC"/>
+            <column name="label" value="Manufacturing / business licence"/>
+            <column name="required_for_sales_tax" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="3"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_supporting_document_type" schemaName="reference">
+            <column name="id" valueNumeric="4"/>
+            <column name="code" value="OTHER"/>
+            <column name="label" value="Other supporting document"/>
+            <column name="required_for_sales_tax" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="99"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0018-temp-sst-supporting-document" author="ns3">
+        <createTable tableName="temp_sst_supporting_document" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_sst_info_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="document_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stored_file_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_type" type="VARCHAR(100)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex indexName="idx_temp_sst_supporting_doc_info" tableName="temp_sst_supporting_document" schemaName="registration">
+            <column name="temp_sst_info_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0018-sst-supporting-document" author="ns3">
+        <createTable tableName="sst_supporting_document" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="document_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stored_file_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_type" type="VARCHAR(100)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex indexName="idx_sst_supporting_doc_info" tableName="sst_supporting_document" schemaName="registration">
+            <column name="sst_info_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -33,4 +33,19 @@ public class AreaCodeLookupService {
                         + "WHERE branch_id = ? AND postcode = ? AND is_active = TRUE LIMIT 1",
                 rs -> rs.next() ? rs.getString(1) : null, branchId, postCode);
     }
+
+    /**
+     * Customs control-station label for SST letters (legacy {@code RegAreaPostcodeImpl#findAreaNameByPostcode}).
+     */
+    public String findCustomsAreaNameByPostcode(final String postCode) {
+        if (postCode == null || postCode.isBlank()) {
+            return null;
+        }
+        return jdbcTemplate.query("""
+                SELECT area_name FROM registration.reg_area_code
+                WHERE postcode = ? AND is_active = TRUE AND area_name IS NOT NULL
+                ORDER BY id
+                LIMIT 1
+                """, rs -> rs.next() ? rs.getString(1) : null, postCode.trim());
+    }
 }

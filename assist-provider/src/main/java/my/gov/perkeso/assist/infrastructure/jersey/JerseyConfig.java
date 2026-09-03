@@ -13,6 +13,7 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Set;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,7 @@ public class JerseyConfig extends ResourceConfig {
 
     @PostConstruct
     public void setup() {
+        register(MultiPartFeature.class);
         applicationContext.getBeansWithAnnotation(Path.class).values().forEach(this::register);
         applicationContext.getBeansWithAnnotation(Provider.class).values().forEach(this::register);
         registerOpenApi();

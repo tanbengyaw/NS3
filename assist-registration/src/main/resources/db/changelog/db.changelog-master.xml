@@ -21,5 +21,9 @@
     <include file="db/changelog/parts/0014_identification_type_reference.xml"/>
     <include file="db/changelog/parts/0015_contact_lines.xml"/>
     <include file="db/changelog/parts/0016_tariff_code_sales_type_reference.xml"/>
+    <include file="db/changelog/parts/0017_sst_part_c_and_contact_person.xml"/>
+    <include file="db/changelog/parts/0018_sst_supporting_documents.xml"/>
+    <include file="db/changelog/parts/0019_supporting_documents_optional.xml"/>
+    <include file="db/changelog/parts/0020_letter_reference_data.xml"/>
 
 </databaseChangeLog>

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PostcodeOption, RefOption, TariffCodeSalesTypeOption } from '../models/reference.model';
+import { PostcodeOption, RefOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../models/reference.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceDataService {
@@ -54,6 +54,12 @@ export class ReferenceDataService {
     return this.http.get<TariffCodeSalesTypeOption[]>(
       `${environment.apiBaseUrl}/reference/tariff-code-sales-types`,
       { params },
+    );
+  }
+
+  listSupportingDocumentTypes(): Observable<SupportingDocumentTypeOption[]> {
+    return this.http.get<SupportingDocumentTypeOption[]>(
+      `${environment.apiBaseUrl}/reference/supporting-document-types`,
     );
   }
 }

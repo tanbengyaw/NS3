@@ -10,6 +10,7 @@ import my.gov.perkeso.assist.core.infrastructure.service.Page;
 import my.gov.perkeso.assist.core.infrastructure.service.SearchParameters;
 import my.gov.perkeso.assist.registration.data.EmployerData;
 import my.gov.perkeso.assist.registration.data.RegistrationCaseData;
+import my.gov.perkeso.assist.registration.data.RegistrationCaseSummaryData;
 import my.gov.perkeso.assist.registration.constant.DataSource;
 import my.gov.perkeso.assist.registration.constant.RegistrationSection;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfo;
@@ -91,6 +92,56 @@ public class EmployerReadPlatformService {
         final RegGeneralInfo regCase = regGeneralInfoRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration case not found: " + caseId));
         return toCaseData(regCase);
+    }
+
+    public List<RegistrationCaseSummaryData> retrieveCaseSummaries(final String appStatus, final Long sectionId,
+            final int limit) {
+        final StringBuilder sql = new StringBuilder("""
+                SELECT r.id, r.case_ref_no, r.app_status, r.section_id, r.submission_date, r.created_date,
+                       t.employer_name, bi.registration_no
+                FROM registration.reg_general_info r
+                JOIN registration.temp_employer t ON t.id = r.temp_employer_id
+                JOIN registration.business_info bi ON bi.id = t.business_info_id
+                WHERE 1 = 1
+                """);
+        final List<Object> args = new ArrayList<>();
+        if (appStatus != null && !appStatus.isBlank()) {
+            sql.append(" AND r.app_status = ?");
+            args.add(appStatus.trim().toUpperCase());
+        }
+        if (sectionId != null) {
+            sql.append(" AND r.section_id = ?");
+            args.add(sectionId);
+        }
+        sql.append(" ORDER BY COALESCE(r.submission_date, r.created_date) DESC LIMIT ?");
+        args.add(Math.min(Math.max(limit, 1), 200));
+
+        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
+            final Long assistSectionId = rs.getObject("section_id") != null ? rs.getLong("section_id") : null;
+            String sectionCode = null;
+            if (assistSectionId != null) {
+                try {
+                    sectionCode = RegistrationSection.fromAssistSectionId(assistSectionId).name();
+                } catch (IllegalArgumentException ignored) {
+                    sectionCode = "SECTION_" + assistSectionId;
+                }
+            }
+            return RegistrationCaseSummaryData.builder()
+                    .id(rs.getLong("id"))
+                    .caseRefNo(rs.getString("case_ref_no"))
+                    .appStatus(rs.getString("app_status"))
+                    .sectionId(assistSectionId)
+                    .sectionCode(sectionCode)
+                    .employerName(rs.getString("employer_name"))
+                    .registrationNo(rs.getString("registration_no"))
+                    .submissionDate(rs.getTimestamp("submission_date") != null
+                            ? rs.getTimestamp("submission_date").toLocalDateTime()
+                            : null)
+                    .createdDate(rs.getTimestamp("created_date") != null
+                            ? rs.getTimestamp("created_date").toLocalDateTime()
+                            : null)
+                    .build();
+        }, args.toArray());
     }
 
     private int countEmployers(final SearchParameters params) {

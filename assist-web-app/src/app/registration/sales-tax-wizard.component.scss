@@ -37,10 +37,26 @@
   gap: 0.75rem;
 
   label {
-    display: grid;
-    gap: 0.35rem;
+    display: block;
     font-size: 0.875rem;
     font-weight: 600;
+
+    > input:not([type='checkbox']):not([type='radio']),
+    > select,
+    > .field-error {
+      display: block;
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    > .search-input-group {
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    > .field-error {
+      margin-top: 0.25rem;
+    }
   }
 
   label.full {
@@ -53,6 +69,12 @@
     border: 1px solid #dadce0;
     border-radius: 4px;
     font: inherit;
+
+    &:disabled {
+      background: #f1f3f4;
+      color: #5f6368;
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -107,8 +129,16 @@
   align-items: center;
   gap: 0.5rem;
 
-  input[type='checkbox'] {
+  input[type='checkbox'],
+  input[type='radio'] {
     width: auto;
+    margin-top: 0;
+    flex-shrink: 0;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
   }
 }
 
@@ -123,6 +153,7 @@
   .checkbox {
     font-weight: normal;
     margin: 0;
+    justify-content: flex-start;
   }
 }
 
@@ -132,6 +163,13 @@
 
 .search-body {
   padding: 0;
+
+  .search-lock-hint {
+    margin: 0 1rem 0.75rem;
+    padding: 0.5rem 0.65rem;
+    background: #e8f0fe;
+    border-radius: 4px;
+  }
 }
 
 .search-grid {
@@ -141,10 +179,26 @@
   padding: 1rem;
 
   label {
-    display: grid;
-    gap: 0.35rem;
+    display: block;
     font-size: 0.875rem;
     font-weight: 600;
+
+    > input:not([type='checkbox']):not([type='radio']),
+    > select,
+    > .field-error {
+      display: block;
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    > .search-input-group {
+      width: 100%;
+      margin-top: 0.35rem;
+    }
+
+    > .field-error {
+      margin-top: 0.25rem;
+    }
   }
 
   input,
@@ -153,6 +207,12 @@
     border: 1px solid #dadce0;
     border-radius: 4px;
     font: inherit;
+
+    &:disabled {
+      background: #f1f3f4;
+      color: #5f6368;
+      cursor: not-allowed;
+    }
   }
 }
 
@@ -215,6 +275,19 @@
 .new-tax-payer-check {
   font-weight: normal;
   color: #3c4043;
+}
+
+.form-entry-hint {
+  margin: 0 0 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: #fce8e6;
+  border-radius: 4px;
+  color: #5f6368;
+
+  &.enabled {
+    background: #e6f4ea;
+    color: #137333;
+  }
 }
 
 .contact-pair {
@@ -371,6 +444,12 @@
       border-color: #137333;
       background: #137333;
       color: #fff;
+    }
+
+    &.letter-btn {
+      border-color: #5f6368;
+      background: #fff;
+      color: #202124;
     }
 
     &:disabled {
@@ -535,6 +614,7 @@ table {
 
 .req {
   color: #c5221f;
+  margin-left: 0.15em;
 }
 
 .field-error {
@@ -547,6 +627,20 @@ table {
 .field-invalid select {
   border-color: #c5221f;
   background: #fff8f7;
+}
+
+.field-readonly-when-locked:read-only {
+  background: #f1f3f4;
+  color: #3c4043;
+  cursor: not-allowed;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5f6368;
 }
 
 .hint {
@@ -574,4 +668,90 @@ table {
 .summary {
   margin-bottom: 1rem;
   color: #5f6368;
+}
+
+.preview-panel .preview-intro {
+  margin-top: 0;
+}
+
+.preview-ready {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #e6f4ea;
+  border: 1px solid #34a853;
+  border-radius: 4px;
+  color: #137333;
+}
+
+.letter-actions {
+  margin-top: 0.75rem;
+
+  .letter-btn {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid #137333;
+    border-radius: 4px;
+    background: #fff;
+    color: #137333;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.preview-routed {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #e8f0fe;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  color: #174ea6;
+}
+
+.preview-issues {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef7e0;
+  border: 1px solid #f9ab00;
+  border-radius: 4px;
+
+  ul {
+    margin: 0.35rem 0 0;
+    padding-left: 1.25rem;
+  }
+}
+
+.preview-block {
+  margin-bottom: 1.25rem;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: #202124;
+  }
+}
+
+.upload-grid {
+  margin-bottom: 1rem;
+}
+
+.preview-dl {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+
+  dt {
+    margin: 0;
+    font-weight: 600;
+    color: #5f6368;
+    font-size: 0.875rem;
+  }
+
+  dd {
+    margin: 0;
+    word-break: break-word;
+  }
 }

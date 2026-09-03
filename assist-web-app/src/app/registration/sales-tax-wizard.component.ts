@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
-import { PostcodeOption, RefOption, TariffCodeSalesTypeOption } from '../core/models/reference.model';
-import { ContactLine, TempDirectorOwner, TempPremises, TempSstTariffCode, TaxPayerRegistrationProfile } from '../core/models/registration.model';
+import { PostcodeOption, RefOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../core/models/reference.model';
+import { ContactLine, TempDirectorOwner, TempPremises, TempSstContactPerson, TempSstSupportingDocument, TempSstTariffCode, TaxPayerRegistrationProfile } from '../core/models/registration.model';
 import { ReferenceDataService } from '../core/services/reference-data.service';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { FormModalComponent } from '../shared/form-modal.component';
@@ -17,7 +17,7 @@ const MAIN_CONTRACT = 1;
 /** SstContractType.SUB_CONTRACT */
 const SUB_CONTRACT = 2;
 
-type PendingDelete = { kind: 'director' | 'premises' | 'tariff'; id: number };
+type PendingDelete = { kind: 'director' | 'premises' | 'tariff' | 'contactPerson' | 'supportingDocument'; id: number };
 
 @Component({
   selector: 'assist-sales-tax-wizard',
@@ -43,6 +43,10 @@ export class SalesTaxWizardComponent {
   readonly directors = signal<TempDirectorOwner[]>([]);
   readonly premises = signal<TempPremises[]>([]);
   readonly tariffCodes = signal<TempSstTariffCode[]>([]);
+  readonly contactPersons = signal<TempSstContactPerson[]>([]);
+  readonly supportingDocuments = signal<TempSstSupportingDocument[]>([]);
+  readonly supportingDocumentTypes = signal<SupportingDocumentTypeOption[]>([]);
+  readonly selectedDocumentTypeId = signal<number | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -51,8 +55,10 @@ export class SalesTaxWizardComponent {
   readonly directorModalOpen = signal(false);
   readonly premisesModalOpen = signal(false);
   readonly tariffModalOpen = signal(false);
+  readonly contactPersonModalOpen = signal(false);
   readonly pendingDelete = signal<PendingDelete | null>(null);
   readonly editingTariffId = signal<number | null>(null);
+  readonly editingContactPersonId = signal<number | null>(null);
   readonly tariffSearchResults = signal<TariffCodeSalesTypeOption[]>([]);
   readonly tariffSearchAttempted = signal(false);
   readonly tariffSearching = signal(false);
@@ -129,6 +135,18 @@ export class SalesTaxWizardComponent {
     salesToDesignArea: [0, [Validators.required, Validators.min(0)]],
     othersSales: [0, [Validators.required, Validators.min(0)]],
     subContractWork: [false],
+    declareTrue: [false],
+    declareDate: [''],
+    applicantName: [''],
+    identityCard: [''],
+    designation: [''],
+    applicantEmail: [''],
+    applicantTelNo: [''],
+  });
+
+  readonly contactPersonForm = this.fb.nonNullable.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
   });
 
   readonly contactForm = this.fb.group({
@@ -167,12 +185,35 @@ export class SalesTaxWizardComponent {
 
   constructor() {
     this.loadReferenceData();
+    this.form1.controls.newRegisterTax.valueChanges.subscribe((checked) => {
+      if (checked) {
+        this.taxPayerSearchFound.set(null);
+        this.searchedEmployerCode.set(null);
+        this.pendingImportDirectors = [];
+        this.pendingImportPremises = [];
+        this.searchForm.reset({ searchRegType: 'SST_REGISTRATION_NO', searchRegValue: '' });
+      }
+      this.syncForm1EntryState();
+    });
+    this.form2.controls.declareTrue.valueChanges.subscribe((checked) => {
+      const nameCtrl = this.form2.controls.applicantName;
+      if (checked) {
+        nameCtrl.setValidators(Validators.required);
+        if (!this.form2.controls.declareDate.value) {
+          this.form2.patchValue({ declareDate: new Date().toISOString().slice(0, 10) }, { emitEvent: false });
+        }
+      } else {
+        nameCtrl.clearValidators();
+      }
+      nameCtrl.updateValueAndValidity({ emitEvent: false });
+    });
     const idParam = this.route.snapshot.paramMap.get('caseId');
     if (idParam) {
       this.loadCase(Number(idParam));
     } else {
       this.form1.patchValue({ registrationNo: this.newBrn() });
       this.refreshBusinessAddressOptions();
+      this.syncForm1EntryState();
     }
   }
 
@@ -197,6 +238,23 @@ export class SalesTaxWizardComponent {
     return this.searchForm.controls.searchRegType.value === 'BRN'
       ? 'BRN (business registration no)'
       : 'SST Registration No.';
+  }
+
+  /** Search locks after draft is created or when registering a new tax payer. */
+  get searchLocked(): boolean {
+    return !!this.caseId() || this.form1.controls.newRegisterTax.value;
+  }
+
+  get brnReadonly(): boolean {
+    return !!this.caseId() || (this.taxPayerSearchFound() === true && !this.form1.controls.newRegisterTax.value);
+  }
+
+  /** Form 1 fields unlock after a successful search, New Tax Payer tick, or when editing a draft. */
+  get form1EntryAllowed(): boolean {
+    if (this.caseId()) {
+      return this.isEditable;
+    }
+    return this.form1.controls.newRegisterTax.value || this.taxPayerSearchFound() === true;
   }
 
   get phoneLines(): FormArray<FormGroup> {
@@ -224,16 +282,14 @@ export class SalesTaxWizardComponent {
 
     this.syncTradeNameFromBusiness();
     if (!this.form1.controls.newRegisterTax.value && this.taxPayerSearchFound() !== true) {
-      this.error.set('Please search for an existing tax payer or tick New Tax Payer Registration.');
-      this.message.set(null);
+      this.showFormError('Please search for an existing tax payer or tick New Tax Payer Registration.');
       return;
     }
     if (this.form1.invalid) {
       this.form1.markAllAsTouched();
-      this.error.set(
+      this.showFormError(
         `${this.validationSummary(this.form1, 'Create draft')} Complete all Form 1 sections (including Contact and Premise address below) first.`,
       );
-      this.message.set(null);
       return;
     }
 
@@ -283,7 +339,7 @@ export class SalesTaxWizardComponent {
   }
 
   searchTaxPayer(): void {
-    if (this.caseId()) {
+    if (this.searchLocked) {
       return;
     }
     if (this.searchForm.invalid) {
@@ -302,6 +358,7 @@ export class SalesTaxWizardComponent {
         this.taxPayerSearchFound.set(true);
         this.searchedEmployerCode.set(profile.employerCode);
         this.applyTaxPayerProfile(profile);
+        this.syncForm1EntryState();
         this.message.set(`Found tax payer: ${profile.employerName} (${profile.employerCode})`);
       },
       error: (err) => {
@@ -310,6 +367,7 @@ export class SalesTaxWizardComponent {
         this.searchedEmployerCode.set(null);
         this.pendingImportDirectors = [];
         this.pendingImportPremises = [];
+        this.syncForm1EntryState();
         this.onError(err);
       },
     });
@@ -317,18 +375,13 @@ export class SalesTaxWizardComponent {
 
   onSearchRegTypeChange(): void {
     this.taxPayerSearchFound.set(null);
-  }
-
-  onNewRegisterTaxChange(): void {
-    if (this.form1.controls.newRegisterTax.value) {
-      this.taxPayerSearchFound.set(null);
-      this.searchedEmployerCode.set(null);
-      this.pendingImportDirectors = [];
-      this.pendingImportPremises = [];
-    }
+    this.syncForm1EntryState();
   }
 
   addPhoneLine(): void {
+    if (!this.form1EntryAllowed) {
+      return;
+    }
     this.phoneLines.push(this.newContactLine());
   }
 
@@ -339,6 +392,9 @@ export class SalesTaxWizardComponent {
   }
 
   addFaxLine(): void {
+    if (!this.form1EntryAllowed) {
+      return;
+    }
     this.faxLines.push(this.newContactLine());
   }
 
@@ -466,6 +522,9 @@ export class SalesTaxWizardComponent {
   }
 
   togglePreRegBlock(checked: boolean): void {
+    if (!this.form1EntryAllowed) {
+      return;
+    }
     this.showPreRegBlock.set(checked);
     if (!checked) {
       this.form1.patchValue({ preRegNo: '', preRegName: '', dateOfReplacement: '' });
@@ -480,15 +539,53 @@ export class SalesTaxWizardComponent {
       this.message.set(null);
       return;
     }
+    this.persistForm2(id, 'Sales tax Part B saved.');
+  }
+
+  savePartC(): void {
+    const id = this.caseId();
+    if (!id) {
+      return;
+    }
+    const partCControls = [
+      this.form2.controls.declareTrue,
+      this.form2.controls.declareDate,
+      this.form2.controls.applicantName,
+      this.form2.controls.identityCard,
+      this.form2.controls.designation,
+      this.form2.controls.applicantEmail,
+      this.form2.controls.applicantTelNo,
+    ];
+    partCControls.forEach((c) => c.markAsTouched());
+    if (!this.form2.controls.declareTrue.value) {
+      this.error.set('Part C: accept the declaration before saving.');
+      this.message.set(null);
+      return;
+    }
+    if (this.form2.controls.applicantName.invalid) {
+      this.error.set(this.validationSummary(this.form2, 'Save Part C'));
+      this.message.set(null);
+      return;
+    }
+    this.persistForm2(id, 'Part C declaration saved.');
+  }
+
+  private persistForm2(caseId: number, successMessage: string): void {
     this.loading.set(true);
     this.error.set(null);
-    this.registration.upsertSstInfo(id, this.form2.getRawValue()).subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.message.set('Sales tax Part B saved.');
-      },
-      error: (err) => this.onError(err),
-    });
+    const raw = this.form2.getRawValue();
+    this.registration
+      .upsertSstInfo(caseId, {
+        ...raw,
+        declareDate: raw.declareDate || null,
+      })
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.message.set(successMessage);
+        },
+        error: (err) => this.onError(err),
+      });
   }
 
   addDirector(): void {
@@ -568,6 +665,10 @@ export class SalesTaxWizardComponent {
     this.pendingDelete.set({ kind: 'premises', id: premisesId });
   }
 
+  requestDeleteContactPerson(contactPersonId: number): void {
+    this.pendingDelete.set({ kind: 'contactPerson', id: contactPersonId });
+  }
+
   cancelPendingDelete(): void {
     this.pendingDelete.set(null);
   }
@@ -581,6 +682,10 @@ export class SalesTaxWizardComponent {
       this.executeRemoveDirector(pending.id);
     } else if (pending.kind === 'premises') {
       this.executeRemovePremises(pending.id);
+    } else if (pending.kind === 'contactPerson') {
+      this.executeRemoveContactPerson(pending.id);
+    } else if (pending.kind === 'supportingDocument') {
+      this.executeRemoveSupportingDocument(pending.id);
     } else {
       this.executeRemoveTariff(pending.id);
     }
@@ -841,6 +946,104 @@ export class SalesTaxWizardComponent {
     this.tariffModalNotice.set(null);
   }
 
+  openContactPersonModal(contact?: TempSstContactPerson): void {
+    if (contact) {
+      this.editingContactPersonId.set(contact.id);
+      this.contactPersonForm.patchValue({ name: contact.name, email: contact.email });
+    } else {
+      this.editingContactPersonId.set(null);
+      this.contactPersonForm.reset({ name: '', email: '' });
+    }
+    this.contactPersonModalOpen.set(true);
+  }
+
+  closeContactPersonModal(): void {
+    this.contactPersonModalOpen.set(false);
+    this.editingContactPersonId.set(null);
+    this.contactPersonForm.reset({ name: '', email: '' });
+  }
+
+  addContactPerson(): void {
+    if (this.contactPersonForm.invalid) {
+      this.contactPersonForm.markAllAsTouched();
+      this.error.set(
+        this.validationSummary(
+          this.contactPersonForm,
+          this.editingContactPersonId() ? 'Update contact person' : 'Add contact person',
+        ),
+      );
+      this.message.set(null);
+      return;
+    }
+    const editingId = this.editingContactPersonId();
+    const body = this.contactPersonForm.getRawValue();
+    const persistContact = (id: number, refNo: string | null): void => {
+      this.loading.set(true);
+      this.error.set(null);
+      const request$ = editingId
+        ? this.registration.updateContactPerson(id, editingId, body)
+        : this.registration.addContactPerson(id, body);
+      request$.subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.closeContactPersonModal();
+          this.loadSstInfo(id);
+          const action = editingId ? 'updated' : 'added';
+          this.message.set(
+            refNo && !editingId ? `Draft ${refNo} saved. Contact person ${action}.` : `Contact person ${action}.`,
+          );
+        },
+        error: (err) => this.onError(err),
+      });
+    };
+    const caseId = this.caseId();
+    if (editingId && caseId) {
+      persistContact(caseId, this.caseRefNo());
+      return;
+    }
+    this.ensureDraft((id, refNo) => {
+      this.syncRouteAfterDraft(id);
+      persistContact(id, refNo);
+    });
+  }
+
+  private executeRemoveSupportingDocument(documentId: number): void {
+    const id = this.caseId();
+    if (!id) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.registration.deleteSupportingDocument(id, documentId).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.loadSstInfo(id);
+        this.message.set('Supporting document removed.');
+      },
+      error: (err) => this.onError(err),
+    });
+  }
+
+  private executeRemoveContactPerson(contactPersonId: number): void {
+    const id = this.caseId();
+    if (!id) {
+      return;
+    }
+    if (this.editingContactPersonId() === contactPersonId) {
+      this.closeContactPersonModal();
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.registration.deleteContactPerson(id, contactPersonId).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.loadSstInfo(id);
+        this.message.set('Contact person removed.');
+      },
+      error: (err) => this.onError(err),
+    });
+  }
+
   requestDeleteTariff(tariffId: number): void {
     this.pendingDelete.set({ kind: 'tariff', id: tariffId });
   }
@@ -893,6 +1096,11 @@ export class SalesTaxWizardComponent {
     if (!id) {
       return;
     }
+    const issues = this.previewIssues();
+    if (issues.length) {
+      this.showFormError(`Cannot submit yet: ${issues[0]}`);
+      return;
+    }
     this.loading.set(true);
     this.error.set(null);
     this.registration.submitCase(id).subscribe({
@@ -906,11 +1114,14 @@ export class SalesTaxWizardComponent {
           if (typeof smk === 'string') {
             this.salesTaxSmkRegNo.set(smk);
           }
-          this.message.set(`Approved. Employer code: ${result.resourceIdentifier}`);
+          this.message.set(`Case approved. Employer code: ${result.resourceIdentifier}`);
+        } else if (status === 'SUBMITTED' || status === 'IN_PROGRESS') {
+          this.message.set(`Case routed. Status: ${status} — awaiting officer approval.`);
         } else {
           this.message.set(`Submitted. Status: ${status}`);
         }
         this.loadCase(id);
+        this.scrollToWizardTop();
       },
       error: (err) => this.onError(err),
     });
@@ -940,8 +1151,235 @@ export class SalesTaxWizardComponent {
   }
 
   goToStep(next: number): void {
+    if (next === 3) {
+      this.enterPreview();
+      return;
+    }
     this.step.set(next);
     this.message.set(null);
+  }
+
+  enterPreview(): void {
+    const id = this.caseId();
+    if (!id) {
+      this.showFormError('Create a draft before opening preview.');
+      return;
+    }
+    this.error.set(null);
+    this.loadCase(id, () => {
+      this.step.set(3);
+      this.message.set(null);
+      this.scrollToWizardTop();
+    });
+  }
+
+  previewIssues(): string[] {
+    const issues: string[] = [];
+    const f1 = this.form1.getRawValue();
+    const f2 = this.form2.getRawValue();
+
+    if (!f1.employerName?.trim()) {
+      issues.push('Business name is required — save Form 1');
+    }
+    if (!f1.registrationNo?.trim()) {
+      issues.push('BRN is required — save Form 1');
+    }
+    if (this.directors().length === 0) {
+      issues.push('At least one director is required');
+    }
+    if (!f2.manComDate || !f2.dateSaleValTaxGoods || !f2.businessComDate) {
+      issues.push('Part B dates are incomplete — save Part B');
+    }
+    if (f2.anTotalTaxSalesVal == null || f2.anTotalTaxSalesVal <= 0) {
+      issues.push('Annual taxable sales value must be greater than zero — save Part B');
+    }
+    if (this.mainTariffCount === 0) {
+      issues.push('At least one main-contract tariff code is required');
+    }
+    if (f2.subContractWork && this.subTariffCount === 0) {
+      issues.push('Sub-contract tariff codes are required when sub-contract work is flagged');
+    }
+    if (!f2.declareTrue) {
+      issues.push('Part C declaration must be accepted — save Part C');
+    }
+    if (f2.declareTrue && !f2.applicantName?.trim()) {
+      issues.push('Applicant name is required on Part C');
+    }
+    return issues;
+  }
+
+  get canSubmitFromPreview(): boolean {
+    return this.isEditable && this.previewIssues().length === 0;
+  }
+
+  previewText(value: string | number | null | undefined): string {
+    if (value == null || value === '') {
+      return '—';
+    }
+    return String(value);
+  }
+
+  previewDate(value: string | null | undefined): string {
+    return value?.trim() ? value : '—';
+  }
+
+  previewMoney(value: number | null | undefined): string {
+    if (value == null) {
+      return '—';
+    }
+    return `RM ${value.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  previewYesNo(value: boolean | null | undefined): string {
+    return value ? 'Yes' : 'No';
+  }
+
+  stateLabel(stateId: number | null | undefined): string {
+    if (stateId == null) {
+      return '—';
+    }
+    return this.states().find((s) => s.id === stateId)?.label ?? String(stateId);
+  }
+
+  cityLabel(cityId: number | null | undefined, options: RefOption[]): string {
+    if (cityId == null) {
+      return '—';
+    }
+    return options.find((c) => c.id === cityId)?.label ?? String(cityId);
+  }
+
+  formatBusinessAddressPreview(): string {
+    const v = this.form1.getRawValue();
+    const parts = [
+      v.addressLine1,
+      v.addressLine2,
+      v.addressLine3,
+      v.cityName,
+      v.postCode,
+      this.stateLabel(v.stateId),
+    ].filter((part) => !!part?.toString().trim());
+    return parts.length ? parts.join(', ') : '—';
+  }
+
+  formatPremiseAddressPreview(): string {
+    if (this.form1.controls.sameAsBusinessAddr.value) {
+      return 'Same as business correspondence address';
+    }
+    const v = this.form1.getRawValue();
+    const parts = [
+      v.corrAddressLine1,
+      v.corrAddressLine2,
+      v.corrAddressLine3,
+      v.corrCityName,
+      v.corrPostCode,
+      this.stateLabel(v.corrStateId),
+    ].filter((part) => !!part?.toString().trim());
+    return parts.length ? parts.join(', ') : '—';
+  }
+
+  formatPhoneLinesPreview(kind: 'phones' | 'faxes'): string {
+    const lines = kind === 'phones' ? this.phoneLines.controls : this.faxLines.controls;
+    const formatted = lines
+      .map((group) => {
+        const head = String(group.get('head')?.value ?? '').trim();
+        const back = String(group.get('back')?.value ?? '').trim();
+        if (!head && !back) {
+          return null;
+        }
+        return back ? `${head}-${back}` : head;
+      })
+      .filter((line): line is string => !!line);
+    return formatted.length ? formatted.join('; ') : '—';
+  }
+
+  formatFileSize(bytes: number | null | undefined): string {
+    if (bytes == null || bytes <= 0) {
+      return '—';
+    }
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  onSupportingDocumentFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    const typeId = this.selectedDocumentTypeId();
+    const caseId = this.caseId();
+    if (!caseId || typeId == null) {
+      this.showFormError('Select a document type before uploading.');
+      input.value = '';
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.registration.uploadSupportingDocument(caseId, typeId, file).subscribe({
+      next: () => {
+        this.loading.set(false);
+        input.value = '';
+        this.loadSstInfo(caseId);
+        this.message.set(`Uploaded ${file.name}.`);
+      },
+      error: (err) => {
+        input.value = '';
+        this.onError(err);
+      },
+    });
+  }
+
+  requestDeleteSupportingDocument(documentId: number): void {
+    this.pendingDelete.set({ kind: 'supportingDocument', id: documentId });
+  }
+
+  downloadSupportingDocument(doc: TempSstSupportingDocument): void {
+    const caseId = this.caseId();
+    if (!caseId) {
+      return;
+    }
+    this.registration.downloadSupportingDocument(caseId, doc.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = doc.fileName;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => this.onError(err),
+    });
+  }
+
+  downloadAcknowledgementLetter(): void {
+    const caseId = this.caseId();
+    if (!caseId) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.registration.downloadSalesTaxAcknowledgementLetter(caseId).subscribe({
+      next: (blob) => {
+        this.loading.set(false);
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        const ref = this.caseRefNo()?.replace(/\//g, '-') ?? String(caseId);
+        anchor.download = `sales-tax-acknowledgement-${ref}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        this.message.set('Acknowledgement letter downloaded.');
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.onError(err);
+      },
+    });
   }
 
   contractLabel(contractTypeId: number): string {
@@ -1039,7 +1477,7 @@ export class SalesTaxWizardComponent {
     return labels[name] ?? name;
   }
 
-  private loadCase(caseId: number): void {
+  private loadCase(caseId: number, onReady?: () => void): void {
     this.loading.set(true);
     this.error.set(null);
     this.registration.getCase(caseId).subscribe({
@@ -1072,22 +1510,29 @@ export class SalesTaxWizardComponent {
           corrCityName: c.corrCityName ?? '',
           sameAsBusinessAddr: this.isCorrespondenceSameAsBusiness(c),
         });
+        this.searchForm.patchValue({
+          searchRegType: 'BRN',
+          searchRegValue: c.registrationNo ?? '',
+        });
         this.setContactLines(c.contactPhones, c.contactFaxes, c.phone);
         this.refreshBusinessAddressOptions();
         this.refreshCorrespondenceAddressOptions();
-        this.loadSstInfo(caseId);
+        this.syncForm1EntryState();
+        this.loadSstInfo(caseId, onReady);
       },
       error: (err) => this.onError(err),
     });
   }
 
-  private loadSstInfo(caseId: number): void {
+  private loadSstInfo(caseId: number, onReady?: () => void): void {
     this.registration.getSstInfo(caseId).subscribe({
       next: (sst) => {
         this.loading.set(false);
         this.directors.set(sst.directors ?? []);
         this.premises.set(sst.premises ?? []);
         this.tariffCodes.set(sst.tariffCodes ?? []);
+        this.contactPersons.set(sst.contactPersons ?? []);
+        this.supportingDocuments.set(sst.supportingDocuments ?? []);
         this.form1.patchValue({
           tradeName: sst.tradeName ?? '',
           tourTaxRegNo: sst.tourTaxRegNo ?? '',
@@ -1114,6 +1559,24 @@ export class SalesTaxWizardComponent {
             subContractWork: sst.subContractWork ?? false,
           });
         }
+        this.form2.patchValue({
+          declareTrue: sst.declareTrue ?? false,
+          declareDate: sst.declareDate ?? '',
+          applicantName: sst.applicantName ?? '',
+          identityCard: sst.identityCard ?? '',
+          designation: sst.designation ?? '',
+          applicantEmail: sst.applicantEmail ?? '',
+          applicantTelNo: sst.applicantTelNo ?? '',
+        });
+        if (sst.declareTrue) {
+          this.form2.controls.applicantName.setValidators(Validators.required);
+          this.form2.controls.applicantName.updateValueAndValidity({ emitEvent: false });
+        }
+        const status = this.appStatus();
+        if (status && status !== 'NEW' && this.caseId()) {
+          this.step.set(3);
+        }
+        onReady?.();
       },
       error: (err) => this.onError(err),
     });
@@ -1130,6 +1593,15 @@ export class SalesTaxWizardComponent {
     });
     this.referenceData.listIdentificationTypes(true).subscribe({
       next: (items) => this.identificationTypes.set(items),
+      error: (err) => this.onError(err),
+    });
+    this.referenceData.listSupportingDocumentTypes().subscribe({
+      next: (items) => {
+        this.supportingDocumentTypes.set(items);
+        if (items.length > 0 && this.selectedDocumentTypeId() == null) {
+          this.selectedDocumentTypeId.set(items[0].id);
+        }
+      },
       error: (err) => this.onError(err),
     });
   }
@@ -1186,6 +1658,39 @@ export class SalesTaxWizardComponent {
   private syncTradeNameFromBusiness(): void {
     if (this.form1.controls.sameAsTradeName.value) {
       this.form1.patchValue({ tradeName: this.form1.controls.employerName.value }, { emitEvent: false });
+    }
+  }
+
+  private showFormError(message: string): void {
+    this.error.set(message);
+    this.message.set(null);
+    this.scrollToWizardTop();
+  }
+
+  private scrollToWizardTop(): void {
+    queueMicrotask(() => {
+      document.getElementById('sales-tax-wizard-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const banner = document.querySelector('#sales-tax-wizard-top .error.banner') as HTMLElement | null;
+      banner?.focus({ preventScroll: true });
+    });
+  }
+
+  private syncForm1EntryState(): void {
+    const allowed = this.form1EntryAllowed;
+    for (const [name, control] of Object.entries(this.form1.controls)) {
+      if (name === 'newRegisterTax') {
+        continue;
+      }
+      if (allowed && control.disabled) {
+        control.enable({ emitEvent: false });
+      } else if (!allowed && control.enabled) {
+        control.disable({ emitEvent: false });
+      }
+    }
+    if (allowed && this.contactForm.disabled) {
+      this.contactForm.enable({ emitEvent: false });
+    } else if (!allowed && this.contactForm.enabled) {
+      this.contactForm.disable({ emitEvent: false });
     }
   }
 

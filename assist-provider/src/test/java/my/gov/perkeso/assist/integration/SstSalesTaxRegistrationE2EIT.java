@@ -87,7 +87,10 @@ class SstSalesTaxRegistrationE2EIT {
                   "exportSales": 300000.00,
                   "salesToDesignArea": 100000.00,
                   "othersSales": 100000.00,
-                  "subContractWork": false
+                  "subContractWork": false,
+                  "declareTrue": true,
+                  "declareDate": "2024-06-15",
+                  "applicantName": "Tan Ah Kow"
                 }
                 """);
 
@@ -109,6 +112,10 @@ class SstSalesTaxRegistrationE2EIT {
                 }
                 """.formatted(SstContractType.MAIN_CONTRACT.getAssistId()));
 
+        final byte[] pdfSample = "%PDF-1.4 test".getBytes();
+        ro.uploadSupportingDocument(caseId, 1L, pdfSample, "ssm-cert.pdf", "application/pdf");
+        ro.uploadSupportingDocument(caseId, 2L, pdfSample, "applicant-id.pdf", "application/pdf");
+
         final JsonNode approved = ro.submitCase(caseId, "{}");
         assertThat(approved.get("changes").get("appStatus").asText()).isEqualTo("APPROVED");
 
@@ -121,6 +128,18 @@ class SstSalesTaxRegistrationE2EIT {
         assertThat(sstInfoRows.get(0).getSalesTaxSmkRegNo()).contains("-CJ-");
         assertThat(sstInfoRows.get(0).getSmkRegNo()).isEqualTo(sstInfoRows.get(0).getSalesTaxSmkRegNo());
         assertThat(sstInfoRows.get(0).getAnTotalTaxSalesVal()).isEqualByComparingTo("1500000.00");
+
+        final String salesTaxSmkRegNo = approved.get("changes").get("salesTaxSmkRegNo").asText();
+        final var letterResponse = ro.downloadSalesTaxAcknowledgementLetter(caseId);
+        assertThat(letterResponse.getHeaders().getContentType()).isNotNull();
+        assertThat(new String(letterResponse.getBody(), 0, 4)).isEqualTo("%PDF");
+        final var htmlLetterResponse = ro.downloadSalesTaxAcknowledgementLetter(caseId, "html");
+        final String letterHtml = new String(htmlLetterResponse.getBody());
+        assertThat(letterHtml).contains("KELULUSAN PENDAFTARAN DI BAWAH SEKSYEN 13 AKTA CUKAI JUALAN 2018");
+        assertThat(letterHtml).contains("JABATAN KASTAM DIRAJA MALAYSIA");
+        assertThat(letterHtml).contains(employerCode);
+        assertThat(letterHtml).contains(salesTaxSmkRegNo);
+        assertThat(letterHtml).contains("Tan Ah Kow");
     }
 
     private RegistrationApiClient client(final String username, final String password) {

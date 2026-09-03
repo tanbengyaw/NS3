@@ -1,20 +1,24 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   CommandProcessingResult,
   CreateDirectorRequest,
+  CreateContactPersonRequest,
   CreateEmployeeRequest,
   CreatePremisesRequest,
   CreateRegistrationCaseRequest,
   CreateTariffCodeRequest,
   RegistrationCase,
+  RegistrationCaseSummary,
   TaxPayerRegistrationProfile,
   TempDirectorOwner,
   TempEmployee,
   TempPremises,
+  TempSstContactPerson,
   TempSstInfo,
+  TempSstSupportingDocument,
   TempSstTariffCode,
   UpdateRegistrationCaseRequest,
   UpsertSstInfoRequest,
@@ -27,6 +31,20 @@ export class RegistrationService {
 
   getCase(caseId: number): Observable<RegistrationCase> {
     return this.http.get<RegistrationCase>(`${this.base}/id/${caseId}`);
+  }
+
+  listCases(params?: { appStatus?: string; sectionId?: number; limit?: number }): Observable<RegistrationCaseSummary[]> {
+    let httpParams = new HttpParams();
+    if (params?.appStatus) {
+      httpParams = httpParams.set('appStatus', params.appStatus);
+    }
+    if (params?.sectionId != null) {
+      httpParams = httpParams.set('sectionId', String(params.sectionId));
+    }
+    if (params?.limit != null) {
+      httpParams = httpParams.set('limit', String(params.limit));
+    }
+    return this.http.get<RegistrationCaseSummary[]>(this.base, { params: httpParams });
   }
 
   createCase(body: CreateRegistrationCaseRequest): Observable<CommandProcessingResult> {
@@ -101,5 +119,55 @@ export class RegistrationService {
 
   deleteTariffCode(caseId: number, tariffId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${caseId}/sst-info/tariff-codes/${tariffId}`);
+  }
+
+  addContactPerson(caseId: number, body: CreateContactPersonRequest): Observable<TempSstContactPerson> {
+    return this.http.post<TempSstContactPerson>(`${this.base}/${caseId}/sst-info/contact-persons`, body);
+  }
+
+  updateContactPerson(
+    caseId: number,
+    contactPersonId: number,
+    body: CreateContactPersonRequest,
+  ): Observable<TempSstContactPerson> {
+    return this.http.put<TempSstContactPerson>(
+      `${this.base}/${caseId}/sst-info/contact-persons/${contactPersonId}`,
+      body,
+    );
+  }
+
+  deleteContactPerson(caseId: number, contactPersonId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${caseId}/sst-info/contact-persons/${contactPersonId}`);
+  }
+
+  uploadSupportingDocument(
+    caseId: number,
+    documentTypeId: number,
+    file: File,
+  ): Observable<TempSstSupportingDocument> {
+    const form = new FormData();
+    form.append('documentTypeId', String(documentTypeId));
+    form.append('file', file, file.name);
+    return this.http.post<TempSstSupportingDocument>(
+      `${this.base}/${caseId}/sst-info/supporting-documents`,
+      form,
+    );
+  }
+
+  deleteSupportingDocument(caseId: number, documentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${caseId}/sst-info/supporting-documents/${documentId}`);
+  }
+
+  downloadSupportingDocument(caseId: number, documentId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${caseId}/sst-info/supporting-documents/${documentId}/content`, {
+      responseType: 'blob',
+    });
+  }
+
+  downloadSalesTaxAcknowledgementLetter(caseId: number, format: 'pdf' | 'html' = 'pdf'): Observable<Blob> {
+    return this.http.get(`${this.base}/${caseId}/sst-info/acknowledgement-letter`, {
+      params: { format },
+      responseType: 'blob',
+    });
   }
 }

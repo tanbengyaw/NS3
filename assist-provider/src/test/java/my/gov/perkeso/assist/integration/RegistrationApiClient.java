@@ -4,11 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 public class RegistrationApiClient {
 
@@ -67,6 +70,34 @@ public class RegistrationApiClient {
         return exchangeJson(HttpMethod.POST, "/registration-cases/" + caseId + "/sst-info/tariff-codes", json);
     }
 
+    public JsonNode uploadSupportingDocument(final long caseId, final long documentTypeId, final byte[] content,
+            final String fileName, final String contentType) {
+        final MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("documentTypeId", documentTypeId);
+        body.add("file", new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return fileName;
+            }
+        });
+
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(username, password);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        final ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/registration-cases/" + caseId + "/sst-info/supporting-documents",
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+        assert2xx(response);
+        try {
+            return objectMapper.readTree(response.getBody());
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to parse supporting document upload response", ex);
+        }
+    }
+
     public List<JsonNode> searchTariffCodeSalesTypes(final String search) {
         final ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl + "/reference/tariff-code-sales-types?search=" + search,
@@ -96,6 +127,22 @@ public class RegistrationApiClient {
 
     public JsonNode getEmployerByCode(final String employerCode) {
         return exchangeJson(HttpMethod.GET, "/employers/code/" + employerCode, null);
+    }
+
+    public ResponseEntity<byte[]> downloadSalesTaxAcknowledgementLetter(final long caseId) {
+        return downloadSalesTaxAcknowledgementLetter(caseId, "pdf");
+    }
+
+    public ResponseEntity<byte[]> downloadSalesTaxAcknowledgementLetter(final long caseId, final String format) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(username, password);
+        final ResponseEntity<byte[]> response = restTemplate.exchange(
+                baseUrl + "/registration-cases/" + caseId + "/sst-info/acknowledgement-letter?format=" + format,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                byte[].class);
+        assert2xx(response);
+        return response;
     }
 
     public JsonNode enrollPortalUser(final String json) {

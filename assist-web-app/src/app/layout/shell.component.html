@@ -5,6 +5,9 @@
       <a routerLink="/employers" routerLinkActive="active">Employers</a>
       <a routerLink="/registration" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">SOCSO new reg</a>
       <a routerLink="/registration/sales-tax" routerLinkActive="active">Sales tax</a>
+      @if (isOfficer) {
+        <a routerLink="/registration/inbox" routerLinkActive="active">Officer inbox</a>
+      }
     </nav>
     <div class="sidebar-footer">
       @if (session(); as user) {

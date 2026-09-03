@@ -4,7 +4,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-jersey'
+    implementation 'org.glassfish.jersey.media:jersey-media-multipart'
     implementation 'org.liquibase:liquibase-core'
     implementation 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.28'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-core:1.1.23'
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.23'
     runtimeOnly 'org.postgresql:postgresql'
 }

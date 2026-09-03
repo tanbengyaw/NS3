@@ -17,3 +17,10 @@ export interface TariffCodeSalesTypeOption {
   code: string;
   description: string;
 }
+
+export interface SupportingDocumentTypeOption {
+  id: number;
+  code: string;
+  label: string;
+  requiredForSalesTax: boolean;
+}

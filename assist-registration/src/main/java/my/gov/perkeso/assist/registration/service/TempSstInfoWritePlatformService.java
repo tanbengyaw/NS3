@@ -9,9 +9,12 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.registration.constant.RegistrationSection;
+import my.gov.perkeso.assist.registration.data.SupportingDocumentTypeData;
 import my.gov.perkeso.assist.registration.data.TariffCodeSalesTypeData;
 import my.gov.perkeso.assist.registration.data.TempDirectorOwnerData;
 import my.gov.perkeso.assist.registration.data.TempPremisesData;
+import my.gov.perkeso.assist.registration.data.TempSstContactPersonData;
+import my.gov.perkeso.assist.registration.data.TempSstSupportingDocumentData;
 import my.gov.perkeso.assist.registration.data.TempSstInfoData;
 import my.gov.perkeso.assist.registration.data.TempSstTariffCodeData;
 import my.gov.perkeso.assist.registration.domain.AppStatus;
@@ -21,8 +24,12 @@ import my.gov.perkeso.assist.registration.domain.TempDirectorOwner;
 import my.gov.perkeso.assist.registration.domain.TempDirectorOwnerRepository;
 import my.gov.perkeso.assist.registration.domain.TempPremises;
 import my.gov.perkeso.assist.registration.domain.TempPremisesRepository;
+import my.gov.perkeso.assist.registration.domain.TempSstContactPerson;
+import my.gov.perkeso.assist.registration.domain.TempSstContactPersonRepository;
 import my.gov.perkeso.assist.registration.domain.TempSstInfo;
 import my.gov.perkeso.assist.registration.domain.TempSstInfoRepository;
+import my.gov.perkeso.assist.registration.domain.TempSstSupportingDocument;
+import my.gov.perkeso.assist.registration.domain.TempSstSupportingDocumentRepository;
 import my.gov.perkeso.assist.registration.domain.TempSstTariffCode;
 import my.gov.perkeso.assist.registration.domain.TempSstTariffCodeRepository;
 import my.gov.perkeso.assist.registration.exception.RegistrationCaseInvalidStatusException;
@@ -38,6 +45,8 @@ public class TempSstInfoWritePlatformService {
     private final TempDirectorOwnerRepository tempDirectorOwnerRepository;
     private final TempPremisesRepository tempPremisesRepository;
     private final TempSstTariffCodeRepository tempSstTariffCodeRepository;
+    private final TempSstContactPersonRepository tempSstContactPersonRepository;
+    private final TempSstSupportingDocumentRepository tempSstSupportingDocumentRepository;
     private final RegistrationReferenceReadPlatformService registrationReferenceReadPlatformService;
     private final ObjectMapper objectMapper;
 
@@ -46,7 +55,28 @@ public class TempSstInfoWritePlatformService {
         final RegGeneralInfo regCase = loadCase(caseId);
         assertSstSalesSection(regCase);
         final TempSstInfo tempSstInfo = findOrEmpty(regCase.getTempEmployer().getId());
-        return toData(caseId, tempSstInfo, listDirectors(caseId), listPremises(caseId), listTariffCodes(tempSstInfo));
+        return toData(caseId, tempSstInfo, listDirectors(caseId), listPremises(caseId), listTariffCodes(tempSstInfo),
+                listContactPersons(tempSstInfo), listSupportingDocuments(tempSstInfo));
+    }
+
+    @Transactional(readOnly = true)
+    public RegGeneralInfo loadCaseForDocuments(final Long caseId) {
+        return loadCase(caseId);
+    }
+
+    @Transactional(readOnly = true)
+    public RegGeneralInfo loadEditableCaseForDocuments(final Long caseId) {
+        return loadEditableCase(caseId);
+    }
+
+    @Transactional
+    public TempSstInfo requireOrCreateTempSstInfo(final RegGeneralInfo regCase) {
+        return tempSstInfoRepository.findByTempEmployerId(regCase.getTempEmployer().getId()).orElseGet(() -> {
+            final TempSstInfo created = new TempSstInfo();
+            created.setTempEmployerId(regCase.getTempEmployer().getId());
+            created.setCreatedDate(LocalDateTime.now());
+            return tempSstInfoRepository.save(created);
+        });
     }
 
     @Transactional
@@ -67,7 +97,8 @@ public class TempSstInfoWritePlatformService {
         tempSstInfo.setUpdatedDate(LocalDateTime.now());
         tempSstInfo = tempSstInfoRepository.save(tempSstInfo);
 
-        return toData(caseId, tempSstInfo, listDirectors(caseId), listPremises(caseId), listTariffCodes(tempSstInfo));
+        return toData(caseId, tempSstInfo, listDirectors(caseId), listPremises(caseId), listTariffCodes(tempSstInfo),
+                listContactPersons(tempSstInfo), listSupportingDocuments(tempSstInfo));
     }
 
     @Transactional
@@ -221,6 +252,59 @@ public class TempSstInfoWritePlatformService {
         tempSstTariffCodeRepository.save(tariff);
     }
 
+    @Transactional
+    public TempSstContactPersonData createContactPerson(final Long caseId, final String json) {
+        final RegGeneralInfo regCase = loadEditableCase(caseId);
+        assertSstSalesSection(regCase);
+        final TempSstInfo tempSstInfo = requireTempSstInfo(regCase);
+        final JsonNode node = parseJson(json);
+
+        final TempSstContactPerson contact = new TempSstContactPerson();
+        contact.setTempSstInfoId(tempSstInfo.getId());
+        contact.setName(requireText(node, "name"));
+        contact.setEmail(requireText(node, "email"));
+        contact.setDeleted(false);
+        contact.setCreatedDate(LocalDateTime.now());
+
+        return toContactPersonData(tempSstContactPersonRepository.save(contact));
+    }
+
+    @Transactional
+    public TempSstContactPersonData updateContactPerson(final Long caseId, final Long contactPersonId,
+            final String json) {
+        final RegGeneralInfo regCase = loadEditableCase(caseId);
+        assertSstSalesSection(regCase);
+        final TempSstInfo tempSstInfo = requireTempSstInfo(regCase);
+        final TempSstContactPerson contact = loadContactPerson(contactPersonId);
+        if (!contact.getTempSstInfoId().equals(tempSstInfo.getId())) {
+            throw new IllegalArgumentException("Contact person does not belong to this registration case");
+        }
+        final JsonNode node = parseJson(json);
+        contact.setName(requireText(node, "name"));
+        contact.setEmail(requireText(node, "email"));
+        return toContactPersonData(tempSstContactPersonRepository.save(contact));
+    }
+
+    @Transactional
+    public void deleteContactPerson(final Long caseId, final Long contactPersonId) {
+        final RegGeneralInfo regCase = loadEditableCase(caseId);
+        assertSstSalesSection(regCase);
+        final TempSstInfo tempSstInfo = requireTempSstInfo(regCase);
+        final TempSstContactPerson contact = loadContactPerson(contactPersonId);
+        if (!contact.getTempSstInfoId().equals(tempSstInfo.getId())) {
+            throw new IllegalArgumentException("Contact person does not belong to this registration case");
+        }
+        contact.setDeleted(true);
+        tempSstContactPersonRepository.save(contact);
+    }
+
+    List<TempSstSupportingDocument> listSupportingDocumentEntitiesForCase(final TempSstInfo tempSstInfo) {
+        if (tempSstInfo.getId() == null) {
+            return List.of();
+        }
+        return tempSstSupportingDocumentRepository.findByTempSstInfoIdAndDeletedFalseOrderByIdAsc(tempSstInfo.getId());
+    }
+
     TempSstInfo requireTempSstInfoForCase(final RegGeneralInfo regCase) {
         return tempSstInfoRepository.findByTempEmployerId(regCase.getTempEmployer().getId())
                 .orElseThrow(() -> new IllegalArgumentException("SST draft data is required before submit"));
@@ -328,6 +412,29 @@ public class TempSstInfoWritePlatformService {
         if (node.has("subContractWork")) {
             tempSstInfo.setSubContractWork(node.get("subContractWork").asBoolean());
         }
+        if (node.has("declareTrue")) {
+            tempSstInfo.setDeclareTrue(node.get("declareTrue").asBoolean());
+        }
+        if (node.hasNonNull("declareDate")) {
+            tempSstInfo.setDeclareDate(LocalDate.parse(node.get("declareDate").asText()));
+        } else if (node.has("declareDate") && node.get("declareDate").isNull()) {
+            tempSstInfo.setDeclareDate(null);
+        }
+        if (node.has("applicantName")) {
+            tempSstInfo.setApplicantName(text(node, "applicantName"));
+        }
+        if (node.has("identityCard")) {
+            tempSstInfo.setIdentityCard(text(node, "identityCard"));
+        }
+        if (node.has("designation")) {
+            tempSstInfo.setDesignation(text(node, "designation"));
+        }
+        if (node.has("applicantEmail")) {
+            tempSstInfo.setApplicantEmail(text(node, "applicantEmail"));
+        }
+        if (node.has("applicantTelNo")) {
+            tempSstInfo.setApplicantTelNo(text(node, "applicantTelNo"));
+        }
     }
 
     private RegGeneralInfo loadCase(final Long caseId) {
@@ -407,9 +514,56 @@ public class TempSstInfoWritePlatformService {
         return node.get(field).decimalValue();
     }
 
+    private TempSstContactPerson loadContactPerson(final Long contactPersonId) {
+        return tempSstContactPersonRepository.findById(contactPersonId)
+                .orElseThrow(() -> new my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException(
+                        "Temp contact person not found: " + contactPersonId));
+    }
+
+    private List<TempSstContactPersonData> listContactPersons(final TempSstInfo tempSstInfo) {
+        if (tempSstInfo.getId() == null) {
+            return List.of();
+        }
+        return tempSstContactPersonRepository.findByTempSstInfoIdAndDeletedFalseOrderByIdAsc(tempSstInfo.getId())
+                .stream()
+                .map(TempSstInfoWritePlatformService::toContactPersonData)
+                .toList();
+    }
+
+    private static TempSstContactPersonData toContactPersonData(final TempSstContactPerson contact) {
+        return TempSstContactPersonData.builder().id(contact.getId()).name(contact.getName()).email(contact.getEmail())
+                .build();
+    }
+
+    private List<TempSstSupportingDocumentData> listSupportingDocuments(final TempSstInfo tempSstInfo) {
+        if (tempSstInfo.getId() == null) {
+            return List.of();
+        }
+        final Map<Long, SupportingDocumentTypeData> typeMap = registrationReferenceReadPlatformService
+                .retrieveSupportingDocumentTypeMap();
+        return tempSstSupportingDocumentRepository.findByTempSstInfoIdAndDeletedFalseOrderByIdAsc(tempSstInfo.getId())
+                .stream()
+                .map(doc -> toSupportingDocumentData(doc, typeMap.get(doc.getDocumentTypeId())))
+                .toList();
+    }
+
+    private static TempSstSupportingDocumentData toSupportingDocumentData(final TempSstSupportingDocument document,
+            final SupportingDocumentTypeData documentType) {
+        return TempSstSupportingDocumentData.builder()
+                .id(document.getId())
+                .documentTypeId(document.getDocumentTypeId())
+                .documentTypeLabel(documentType != null ? documentType.getLabel() : null)
+                .fileName(document.getFileName())
+                .contentType(document.getContentType())
+                .fileSize(document.getFileSize())
+                .uploadedDate(document.getCreatedDate())
+                .build();
+    }
+
     private static TempSstInfoData toData(final Long caseId, final TempSstInfo tempSstInfo,
             final List<TempDirectorOwnerData> directors, final List<TempPremisesData> premises,
-            final List<TempSstTariffCodeData> tariffCodes) {
+            final List<TempSstTariffCodeData> tariffCodes, final List<TempSstContactPersonData> contactPersons,
+            final List<TempSstSupportingDocumentData> supportingDocuments) {
         return TempSstInfoData.builder().id(tempSstInfo.getId()).caseId(caseId).tradeName(tempSstInfo.getTradeName())
                 .tourTaxRegNo(tempSstInfo.getTourTaxRegNo()).inTaxRefNo(tempSstInfo.getInTaxRefNo())
                 .cusAudRefNo(tempSstInfo.getCusAudRefNo()).preRegNo(tempSstInfo.getPreRegNo())
@@ -419,7 +573,12 @@ public class TempSstInfoWritePlatformService {
                 .businessComDate(tempSstInfo.getBusinessComDate()).localSales(tempSstInfo.getLocalSales())
                 .exportSales(tempSstInfo.getExportSales()).salesToDesignArea(tempSstInfo.getSalesToDesignArea())
                 .othersSales(tempSstInfo.getOthersSales()).subContractWork(tempSstInfo.isSubContractWork())
-                .directors(directors).premises(premises).tariffCodes(tariffCodes).build();
+                .declareTrue(tempSstInfo.isDeclareTrue()).declareDate(tempSstInfo.getDeclareDate())
+                .applicantName(tempSstInfo.getApplicantName()).identityCard(tempSstInfo.getIdentityCard())
+                .designation(tempSstInfo.getDesignation()).applicantEmail(tempSstInfo.getApplicantEmail())
+                .applicantTelNo(tempSstInfo.getApplicantTelNo()).directors(directors).premises(premises)
+                .tariffCodes(tariffCodes).contactPersons(contactPersons).supportingDocuments(supportingDocuments)
+                .build();
     }
 
     private static TempPremisesData toPremisesData(final Long caseId, final TempPremises premises) {

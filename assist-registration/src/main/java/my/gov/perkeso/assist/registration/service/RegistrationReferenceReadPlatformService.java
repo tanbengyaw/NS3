@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.registration.data.RefOptionData;
+import my.gov.perkeso.assist.registration.data.SupportingDocumentTypeData;
 import my.gov.perkeso.assist.registration.data.TariffCodeSalesTypeData;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -83,5 +84,37 @@ public class RegistrationReferenceReadPlatformService {
                 .description(rs.getString("description"))
                 .build(), args).stream()
                 .collect(Collectors.toMap(TariffCodeSalesTypeData::getId, row -> row));
+    }
+
+    public List<SupportingDocumentTypeData> retrieveSupportingDocumentTypesForSalesTax() {
+        return jdbcTemplate.query("""
+                SELECT id, code, label, required_for_sales_tax
+                FROM reference.ref_supporting_document_type
+                WHERE is_deleted = FALSE
+                ORDER BY sort_order, label
+                """, (rs, rowNum) -> SupportingDocumentTypeData.builder()
+                .id(rs.getLong("id"))
+                .code(rs.getString("code"))
+                .label(rs.getString("label"))
+                .requiredForSalesTax(rs.getBoolean("required_for_sales_tax"))
+                .build());
+    }
+
+    public Map<Long, SupportingDocumentTypeData> retrieveSupportingDocumentTypeMap() {
+        return retrieveSupportingDocumentTypesForSalesTax().stream()
+                .collect(Collectors.toMap(SupportingDocumentTypeData::getId, row -> row));
+    }
+
+    public SupportingDocumentTypeData requireSupportingDocumentType(final Long documentTypeId) {
+        return retrieveSupportingDocumentTypeMap().values().stream()
+                .filter(type -> type.getId().equals(documentTypeId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown supporting document type: " + documentTypeId));
+    }
+
+    public List<SupportingDocumentTypeData> retrieveRequiredSupportingDocumentTypesForSalesTax() {
+        return retrieveSupportingDocumentTypesForSalesTax().stream()
+                .filter(SupportingDocumentTypeData::isRequiredForSalesTax)
+                .toList();
     }
 }

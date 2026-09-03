@@ -71,6 +71,12 @@ public class RegistrationCaseSubmitValidator {
             throw new RegistrationCaseSubmitValidationException(
                     "At least one director is required before submit");
         }
+
+        if (!tempSstInfo.isDeclareTrue()) {
+            throw new RegistrationCaseSubmitValidationException(
+                    "Part C declaration must be accepted before submit");
+        }
+        requireNonBlank(tempSstInfo.getApplicantName(), "applicantName");
     }
 
     private static void requireNonBlank(final String value, final String field) {

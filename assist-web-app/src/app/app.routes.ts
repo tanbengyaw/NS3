@@ -10,6 +10,7 @@ import { EmployersListComponent } from './employers/employers-list.component';
 
 import { RegistrationWizardComponent } from './registration/registration-wizard.component';
 import { SalesTaxWizardComponent } from './registration/sales-tax-wizard.component';
+import { RegistrationInboxComponent } from './registration/registration-inbox.component';
 
 
 
@@ -32,6 +33,8 @@ export const routes: Routes = [
       { path: 'employers', component: EmployersListComponent },
 
       { path: 'registration', component: RegistrationWizardComponent },
+
+      { path: 'registration/inbox', component: RegistrationInboxComponent },
 
       { path: 'registration/sales-tax', component: SalesTaxWizardComponent },
 

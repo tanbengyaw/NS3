@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0017-sst-part-c-columns" author="ns3">
+        <addColumn tableName="temp_sst_info" schemaName="registration">
+            <column name="declare_true" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="declare_date" type="DATE"/>
+            <column name="applicant_name" type="VARCHAR(100)"/>
+            <column name="identity_card" type="VARCHAR(30)"/>
+            <column name="designation" type="VARCHAR(100)"/>
+            <column name="applicant_email" type="VARCHAR(100)"/>
+            <column name="applicant_tel_no" type="VARCHAR(30)"/>
+        </addColumn>
+        <addColumn tableName="sst_info" schemaName="registration">
+            <column name="declare_true" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="declare_date" type="DATE"/>
+            <column name="applicant_name" type="VARCHAR(100)"/>
+            <column name="identity_card" type="VARCHAR(30)"/>
+            <column name="designation" type="VARCHAR(100)"/>
+            <column name="applicant_email" type="VARCHAR(100)"/>
+            <column name="applicant_tel_no" type="VARCHAR(30)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0017-temp-sst-contact-person" author="ns3">
+        <createTable tableName="temp_sst_contact_person" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_sst_info_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_temp_sst_contact_temp_sst_info"
+                             references="registration.temp_sst_info(id)"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

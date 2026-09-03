@@ -1,0 +1,790 @@
+@CHARSET "ISO-8859-1";
+
+.headerdetails span{
+    text-align: left;
+    font-size: 9px;
+    height:2px;
+    font-weight: 570;
+}
+.headerdetails p{  
+    font-size: 12px;
+    font-weight: 570;
+}
+
+
+.perkesoHeader1{
+	font-family: Arial;
+	font-size: 13px; 
+	font-weight: bold;
+}
+.perkesoHeader2{
+	font-family: Arial;
+	font-size: 12px; 
+	color: black;
+    font-style: italic;
+    font-weight: 550;	
+}
+.perkesoHeader3{
+	font-family: Arial;
+	font-size: 12px; 
+    font-weight: 550;
+}
+
+.tablebottomSolid{  
+    border-bottom: 1px solid black;
+}
+
+.tableTopSolid{  
+    border-top: 1px solid black;
+}
+
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px; /*color: #000;*/
+}
+
+
+.title{
+	text-align: left;
+	font-weight: bold;
+	font-size: 11px;
+}
+
+.titleFontCalibri11{
+	font-weight: bold;
+    font-family: Calibri, sans-serif;
+    font-size: 11px;
+}
+
+
+.headerStyle{
+	background-color:#2957ac;
+	text-align: left;	
+    	color: white;
+    
+}
+.headerStyle td{   
+    font-weight: bold;
+}
+
+.headerSrc{
+    padding-bottom:5px;
+}
+
+.sectionHeader {
+    text-align: left;
+    font-weight: bold;
+    font-size: 10px;
+    height: 30px;
+    color: white;
+    background-color: #2957ac;
+}
+
+
+.tableFont{
+	font-family: Arial;
+	font-size: 14px;
+    font-weight: bold;
+}
+
+.tableFontNormal{
+	font-family: Arial;
+	font-size: 14px;
+    valign:top;
+    
+}
+.tableFont1{
+	font-family: Arial;
+	font-size: 13px;
+    font-weight: bold;
+}
+
+.tableFontNormal1{
+	font-family: Arial;
+	font-size: 14px;
+   
+
+}
+.tableFontCenter{
+	font-family: Arial;
+	font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+}
+.tableFont1 tr span{
+	font-family: Arial;
+	font-size: 14px;
+    font-weight: bold;
+}
+.tableFont1 tr p{
+	font-family: Arial;
+	font-size: 14px;
+   	 font-weight: bold;
+}
+
+.tableFont1 td, .tableFont1 td * {
+    vertical-align: top;
+}
+table{
+    	border-collapse: collapse;
+}
+
+.tableData, .tableData th, .tableData td{
+	   text-align: center;
+    	border: 0.2px solid black;
+	font-size:12px;
+	padding:5px;
+}
+
+.tablePadding, .tablePadding th, .tablePadding td{
+	font-size:12px;
+	padding:5px;
+}
+
+.tableFont7 td{
+	font-size:7px;
+}
+
+.tableFont10 td{
+	font-size:10px;
+}
+
+.tableFont11 td{
+	font-size:11px;
+}
+
+.tableFont12 td{
+	font-size:12px;
+}
+
+.tableFontPadding4 td{
+	padding: 4px;
+}
+
+ul.a {
+	list-style-type: numaric;
+}
+
+.underline{
+	text-decoration: underline;
+}
+
+.underlinebold{
+	text-decoration: underline;
+    font-weight: bold;
+}
+
+.overline{
+	text-decoration: overline;
+}
+
+
+
+
+.currency{
+	text-align: right;
+}
+
+.topRightCorner{
+	font-family	: Gill Sans, Calibri, sans-serif;
+	 
+}
+.paragraphTitle{
+	font-weight	: bold;
+}
+.slogan{
+	font-family: Arial, Helvetica, sans-serif; 
+	
+	font-weight	: bold; 
+}
+.bigSlogan{
+	font-family	: Tahoma, Segoe, sans-serif;
+	font-size	: 12px; 
+	font-weight	: bold; 
+}
+
+.textVAlign{
+	valign:top;
+    
+}
+
+
+.textJustify{
+	text-align : justify;
+	align : left;
+}
+
+.paragraphTobold{
+	font-weight	: bold;
+}
+.lineSpacing{  
+    line-height: 170%;
+}
+.smallSpacing {
+    line-height: 10%;
+}
+
+.textTobottom{
+    text-align:bottom;
+}
+
+
+
+.footer1{
+	text-align: center;
+	font-style: italic;
+}
+
+.footer{
+	font-family	: 'Century Gothic', CenturyGothic, sans-serif;
+	
+}
+
+/* Contribution ACR CSS */
+
+.borderBlack{
+	background-color: black;
+    color: white;
+    height: 30px;
+    font-weight: bold;
+    font-family: Calibri, sans-serif;
+    font-size: 18px;
+}
+
+.borderBlack2{
+	background-color: black;
+    color: white;
+    height: 15px;
+}
+
+.borderBlue{
+	background-color: blue;
+    color: white;
+    height: 15px;
+}
+
+.borderBlueH30{
+	background-color: blue;
+    color: white;
+    height: 25px;
+}
+
+.addressFont{
+	font-weight: bold;
+    font-family: Calibri, sans-serif;
+    font-size: 12px;
+}
+
+.titleFont{
+	font-weight: bold;
+    font-family: Calibri, sans-serif;
+    font-size: 20px;
+}
+
+.titleFontCourierNew{
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9px;
+}
+
+.titleFontCourierNewBold9{
+	font-weight: bold;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9px;
+}
+
+.titleFontCourierNewBold10{
+	font-weight: bold;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10px;
+}
+
+.titleFontCourierNewBold11{
+	font-weight: bold;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+}
+
+.titleFontArial6{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6px;
+}
+
+.titleFontArial6NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6px;
+}
+
+.titleFontArial7{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7px;
+}
+
+.titleFontArial7NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7px;
+}
+
+.titleFontArial8{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+}
+
+.titleFontArial8NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+}
+
+.titleFontArial8NoBoldItalic{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+    font-style: italic;
+}
+
+.titleFontArial9{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+}
+
+.titleFontArial9NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+}
+
+.titleFontArial9_5NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9.5px;
+}
+
+.titleFontArial10{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+	font-weight: bold;
+}
+
+.titleFontArial10NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+}
+
+.titleFontArial11{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+}
+
+.titleFontArial11NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+}
+
+.titleFontArial12{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
+
+.titleFontArial12NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
+
+.titleFontArial13{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+}
+
+.titleFontArial13_5{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13.5px;
+}
+
+.titleFontArial13NoBold{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+}
+
+.titleFontArial14{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+.titleFontArial16{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 17px;
+}
+
+.titleFontGillSans10{
+	font-weight: bold;
+    font-family: Gill Sans, Helvetica, sans-serif;
+    font-size: 10px;
+}
+
+.mainTitleFontArial{
+	font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+.noSignatureFont{
+	font-family: Calibri, sans-serif;
+	font-size: 12px;
+    font-weight: bold;
+}
+
+.tableFont2{
+	font-family: Calibri, sans-serif;
+	font-size: 14px;
+    font-weight: bold;
+}
+
+.tableFont2 tr span{
+	font-family: Calibri, sans-serif;
+	font-size: 14px;
+    font-weight: bold;
+}
+.tableFont2 tr p{
+	font-family: Calibri, sans-serif;
+	font-size: 14px;
+   	 font-weight: bold;
+}
+
+.tableFont2 td, .tableFont2 td * {
+    vertical-align: top;
+}
+
+.tableDataFont{
+	font-family: Calibri, sans-serif;
+	font-size: 14px;
+}
+
+.tableHeader{
+	background-color: #EBE9E9;
+}
+
+.tableOuterBorderBlue {
+	border:1px solid blue;
+	padding: 5px;
+	}
+	
+.tableBorderLRBNavy{
+	border-left:0.1px solid navy;
+	border-right:0.1px solid navy;
+	border-bottom:0.1px solid navy;
+}	
+	
+.tableBorderLRBNavy td{
+
+	border-left:0.1px solid navy;
+	border-right:0.1px solid navy;
+	border-bottom:0.1px solid navy;
+	padding-top:10px;
+	
+}
+
+.tableBorderNavy td{
+	border:0.1px solid navy;
+	padding:7px;
+	/*vertical-align: text-top;*/
+}
+
+.tableBorderNavyLRT td{
+
+	border-top:0.1px solid navy;
+	border-left:0.1px solid navy;
+	border-right:0.1px solid navy;
+	padding:7px;
+	/*vertical-align: text-top;*/
+}
+/*
+.tableOuterBorderBlue td,th {
+	border:none;
+	
+}
+*/
+tr.noBorder td {
+  border: 0;
+}
+
+tr.noBorder td td {
+    border-width: 0.1px;
+}
+
+.border1{
+    border-style: solid;
+    border-width: 1px;
+}
+
+.paddingLeft12{
+	padding-left: 12px;
+}
+
+.paddingLeft15{
+	padding-left: 15px;
+}
+
+.verticalAlignMiddle{
+	display:inline-block;
+	line-height:0.5em;
+	height:40px;
+	vertical-align:middle;
+}
+
+.verticalAlignMiddle3{
+	display:inline-block;
+	line-height:3em;
+	height:22px;
+	vertical-align:middle;
+}
+
+.displayInlineBlock{
+	display: inline-block;
+}
+
+.floatLeftPadding2{
+	float: left;
+	padding: 2px;
+}
+
+.floatRightPadding2{
+	float: right;
+	padding: 2px;
+}
+
+.marginPadding0{
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.height100{
+	height: 100px;
+}
+
+.verticalAlignTop{
+	vertical-align: top;
+}
+
+.verticalAlignBottom{
+	vertical-align: bottom;
+}
+
+.borderBottom0{
+	border-bottom: 0 !important;
+}
+
+.borderTop0{
+	border-top: 0;
+}
+
+.borderRight0{
+	border-right: 0;
+}
+
+.borderRight1{
+	border-right: solid 1px;
+}
+
+.borderLeft0{
+	border-left: 0;
+}
+
+.borderLeft1{
+	border-left: solid 1px;
+}
+
+.lineHeight16{
+	line-height: 16px;
+}
+
+.verticalText{
+	transform: rotate(90deg);
+	transform-origin: left top 0;
+}
+
+.padding2{
+	padding: 2px;
+}
+
+.padding4{
+	padding: 4px;
+}
+
+.padding6{
+	padding: 6px;
+}
+
+.padding7{
+	padding: 7px;
+}
+
+.padding9{
+	padding: 9px;
+}
+
+.padding1_4{
+	padding: 0.5px 4px;
+}
+
+.borderBottom1{
+	border-bottom: 1px solid black;
+}
+
+.borderBottom2{
+	border-bottom: 2px solid black;
+}
+
+.borderBottomDotted1{
+	border-bottom: 1px dotted black;
+}
+
+.width10{
+	width: 10px;
+}
+
+.width65{
+	width: 65px;
+}
+
+.width150{
+	width: 150px;
+}
+
+.paddingTop10{
+	padding-top: 10px;
+}
+
+.pageBreak{
+	page-break-after: always;
+}
+
+.italic{
+	font-style: italic;
+}
+
+.minheight800{
+	min-height:800px
+}
+
+.textRight{
+	text-align: right;
+}
+
+.textLeft{
+	text-align: left;
+}
+
+.tdWhiteSpace{
+	white-space: nowrap !important;
+}
+
+.pullRight{
+	float: right;
+}
+
+.paddingLeft0{
+	padding-left: 0;
+}
+
+.paddingRight0{
+	padding-right: 0;
+}
+
+.top-left {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+}
+
+.position-relative {
+	position: relative;
+}
+
+.test {
+    width:250px;
+    height:180px;
+    background-image: url('../registration/SIP/img/kotak-nama_perusahaan.png');
+    background-repeat:no-repeat;background-size:250px 180px;
+    border: 1px solid black;
+}
+
+
+.rightPanel {
+    width: 8%;
+}
+
+.leftPanel { 
+    width: 8%;
+}
+
+.midPanel {
+    width: 84%;
+}
+
+.rightTopReferenceSection {
+    margin: 1px;padding: 1px;
+}
+
+.thisLetterCompPrintedWithoutSignature {
+    padding-top: 0px ;margin-top: 0px;
+}
+
+.rightTopReferenceSectionLeftPanel {
+    width: 24%;
+}
+
+.rightTopReferenceSectionMidPanel {
+    width: 34%;
+}
+
+.rightTopReferenceSectionRightPanel {
+    width: 42%;
+}
+
+.rightTopReferenceSectionTable1stTd {
+    width: 35%;
+    text-align: right;
+    
+
+}
+
+.rightTopReferenceSectionTable2ndTd {
+    width: 65%;
+    text-align: left;
+}
+
+.times-new-roman {
+    font-family: "Times New Roman", Times, serif;
+}
+
+.sst-letter-emblem {
+    width: 70px;
+    height: 80px;
+    max-width: 70px;
+    max-height: 80px;
+}
+
+.sst-letter-customs-logo {
+    width: 65px;
+    height: 65px;
+    max-width: 65px;
+    max-height: 65px;
+}
+
+.sst-letter-header table,
+.sst-letter-contact-section table {
+    border-collapse: collapse;
+}
+
+.sst-letter-contact {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+}

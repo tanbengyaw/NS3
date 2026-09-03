@@ -1,0 +1,68 @@
+<section class="page">
+  <header>
+    <h1>Officer inbox</h1>
+    <p>Cases routed for review after submit (legacy ASSIST workflow queue).</p>
+  </header>
+
+  @if (!isOfficer) {
+    <p class="error banner">Officer or admin role required to view the inbox.</p>
+  } @else {
+    <div class="filters">
+      <button type="button" [class.active]="statusFilter() === 'SUBMITTED'" (click)="setStatusFilter('SUBMITTED')">
+        Submitted
+      </button>
+      <button type="button" [class.active]="statusFilter() === 'IN_PROGRESS'" (click)="setStatusFilter('IN_PROGRESS')">
+        In progress
+      </button>
+      <button type="button" [class.active]="statusFilter() === 'IN_QUERY'" (click)="setStatusFilter('IN_QUERY')">
+        In query
+      </button>
+      <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
+    </div>
+
+    @if (error()) {
+      <p class="error banner">{{ error() }}</p>
+    }
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Case ref</th>
+            <th>Status</th>
+            <th>Section</th>
+            <th>Business</th>
+            <th>BRN</th>
+            <th>Submitted</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of cases(); track item.id) {
+            <tr>
+              <td>{{ item.caseRefNo }}</td>
+              <td>{{ item.appStatus }}</td>
+              <td>{{ item.sectionId }} {{ item.sectionCode }}</td>
+              <td>{{ item.employerName }}</td>
+              <td>{{ item.registrationNo }}</td>
+              <td>{{ formatWhen(item.submissionDate) }}</td>
+              <td>
+                <a [routerLink]="caseLink(item)">Open →</a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">
+                @if (loading()) {
+                  Loading…
+                } @else {
+                  No cases with status {{ statusFilter() }}.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

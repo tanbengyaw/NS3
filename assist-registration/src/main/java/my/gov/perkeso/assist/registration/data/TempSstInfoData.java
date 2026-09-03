@@ -29,7 +29,16 @@ public class TempSstInfoData {
     BigDecimal salesToDesignArea;
     BigDecimal othersSales;
     boolean subContractWork;
+    boolean declareTrue;
+    LocalDate declareDate;
+    String applicantName;
+    String identityCard;
+    String designation;
+    String applicantEmail;
+    String applicantTelNo;
     List<TempDirectorOwnerData> directors;
     List<TempPremisesData> premises;
     List<TempSstTariffCodeData> tariffCodes;
+    List<TempSstContactPersonData> contactPersons;
+    List<TempSstSupportingDocumentData> supportingDocuments;
 }

@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page" id="sales-tax-wizard-top">
   <header>
     <h1>Sales tax registration</h1>
     @if (caseRefNo()) {
@@ -7,20 +7,20 @@
         <strong>{{ appStatus() }}</strong>
       </p>
     } @else {
-      <p>New sales tax registration — mirrors ASSIST Form 1 (Part A) + Form 2 (Part B)</p>
+      <p>New sales tax registration — mirrors ASSIST Form 1 → Form 2 → Preview</p>
     }
   </header>
 
   <nav class="steps">
     <button type="button" [class.active]="step() === 1" (click)="goToStep(1)">1. Form 1 (Part A)</button>
     @if (caseId()) {
-      <button type="button" [class.active]="step() === 2" (click)="goToStep(2)">2. Part B &amp; tariff</button>
-      <button type="button" [class.active]="step() === 3" (click)="goToStep(3)">3. Submit</button>
+      <button type="button" [class.active]="step() === 2" (click)="goToStep(2)">2. Form 2 &amp; documents</button>
+      <button type="button" [class.active]="step() === 3" (click)="goToStep(3)">3. Preview &amp; route</button>
     }
   </nav>
 
   @if (error()) {
-    <p class="error banner">{{ error() }}</p>
+    <p class="error banner" tabindex="-1">{{ error() }}</p>
   }
   @if (message()) {
     <p class="message">{{ message() }}</p>
@@ -42,7 +42,7 @@
       <form class="search-grid" [formGroup]="searchForm" (ngSubmit)="searchTaxPayer()">
         <label>
           Registration type
-          <select formControlName="searchRegType" (change)="onSearchRegTypeChange()" [disabled]="!!caseId()">
+          <select formControlName="searchRegType" (change)="onSearchRegTypeChange()" [disabled]="searchLocked">
             <option value="SST_REGISTRATION_NO">SST Registration No.</option>
             <option value="BRN">BRN (business registration no)</option>
           </select>
@@ -55,13 +55,21 @@
             } @else if (taxPayerSearchFound() === false) {
               <span class="search-status fail" title="Not found">✕</span>
             }
-            <input formControlName="searchRegValue" style="text-transform: uppercase" [readonly]="!!caseId()" />
-            <button type="submit" class="search-btn" [disabled]="loading() || !!caseId()" aria-label="Search">
+            <input
+              formControlName="searchRegValue"
+              class="field-readonly-when-locked"
+              style="text-transform: uppercase"
+              [readonly]="searchLocked"
+            />
+            <button type="submit" class="search-btn" [disabled]="loading() || searchLocked" aria-label="Search">
               🔍
             </button>
           </span>
         </label>
       </form>
+      @if (form1.controls.newRegisterTax.value && !caseId()) {
+        <p class="hint search-lock-hint">Search is disabled — <strong>New Tax Payer Registration</strong> is selected. Fill in the form below instead.</p>
+      }
       @if (searchedEmployerCode()) {
         <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft.</p>
       }
@@ -76,12 +84,24 @@
         <h2 class="section-withbg">Business registration</h2>
         <div class="section-body form-grid">
       <label class="checkbox full new-tax-payer-check">
-        <input type="checkbox" formControlName="newRegisterTax" (change)="onNewRegisterTaxChange()" />
+        <input type="checkbox" formControlName="newRegisterTax" />
         <strong>New Tax Payer Registration</strong>
       </label>
+      @if (!form1EntryAllowed && !caseId()) {
+        <p class="hint full form-entry-hint">
+          Form fields are locked until you <strong>search</strong> for an existing tax payer above, or tick
+          <strong>New Tax Payer Registration</strong>.
+        </p>
+      }
+      @if (form1EntryAllowed && form1.controls.newRegisterTax.value && !caseId()) {
+        <p class="hint full form-entry-hint enabled">New tax payer — fill in all details below.</p>
+      }
       <label [class.field-invalid]="showFieldError(form1.controls.registrationNo)">
         BRN (business registration no) <span class="req">*</span>
-        <input formControlName="registrationNo" [readonly]="!!caseId() || taxPayerSearchFound() === true" />
+        <input formControlName="registrationNo" class="field-readonly-when-locked" [readonly]="brnReadonly" />
+        @if (brnReadonly && !caseId()) {
+          <span class="field-hint">Locked after a successful search — uncheck New Tax Payer to search again.</span>
+        }
         @if (showFieldError(form1.controls.registrationNo)) {
           <span class="field-error">{{ fieldErrorText(form1.controls.registrationNo) }}</span>
         }
@@ -120,7 +140,7 @@
         <h2 class="section-withbg">Pre-registration / business succession</h2>
         <div class="section-body form-grid">
       <label class="checkbox full">
-        <input type="checkbox" [checked]="showPreRegBlock()" (change)="togglePreRegBlock($any($event.target).checked)" />
+        <input type="checkbox" [checked]="showPreRegBlock()" [disabled]="!form1EntryAllowed" (change)="togglePreRegBlock($any($event.target).checked)" />
         Application due to registered manufactured business being succeeded (Customs succession)
       </label>
       @if (showPreRegBlock()) {
@@ -204,7 +224,7 @@
         <input type="checkbox" formControlName="sameAsTradeName" (change)="toggleSameAsTradeName()" />
         Trade name same as name of registered business
       </label>
-      <label>Trade name<input formControlName="tradeName" [readonly]="form1.controls.sameAsTradeName.value" /></label>
+      <label>Trade name<input formControlName="tradeName" class="field-readonly-when-locked" [readonly]="form1.controls.sameAsTradeName.value" /></label>
         </div>
       </section>
 
@@ -276,7 +296,7 @@
                 <input class="phone-back" formControlName="back" maxlength="14" inputmode="numeric" />
               </div>
               <div class="contact-actions">
-                <button type="button" class="icon-btn add" (click)="addPhoneLine()" title="Add telephone">+</button>
+                <button type="button" class="icon-btn add" (click)="addPhoneLine()" title="Add telephone" [disabled]="!form1EntryAllowed">+</button>
                 <button type="button" class="icon-btn remove" (click)="removePhoneLine($index)" title="Remove telephone" [disabled]="phoneLines.length <= 1">🗑</button>
               </div>
             </div>
@@ -292,7 +312,7 @@
                 <input class="phone-back" formControlName="back" maxlength="14" inputmode="numeric" />
               </div>
               <div class="contact-actions">
-                <button type="button" class="icon-btn add" (click)="addFaxLine()" title="Add fax">+</button>
+                <button type="button" class="icon-btn add" (click)="addFaxLine()" title="Add fax" [disabled]="!form1EntryAllowed">+</button>
                 <button type="button" class="icon-btn remove" (click)="removeFaxLine($index)" title="Remove fax" [disabled]="faxLines.length <= 1">🗑</button>
               </div>
             </div>
@@ -313,7 +333,7 @@
     @if (!caseId()) {
       <p class="hint">No draft yet — complete all Form 1 fields above, tick <strong>New Tax Payer Registration</strong> or search an existing tax payer, then click Add premises.</p>
     }
-    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openPremisesModal()">
+    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable || !form1EntryAllowed" (click)="openPremisesModal()">
       Add premises
     </button>
     <div class="table-wrap">
@@ -353,7 +373,7 @@
     @if (!caseId()) {
       <p class="hint">Create draft first to add directors — or fill Form 1 and use Add director (draft is created automatically).</p>
     }
-    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openDirectorModal()">
+    <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable || !form1EntryAllowed" (click)="openDirectorModal()">
       Add director
     </button>
     <div class="table-wrap">
@@ -389,7 +409,7 @@
 
     <div class="actions">
       @if (!caseId()) {
-        <button type="button" class="primary" [disabled]="loading()" (click)="createDraft()">Create draft</button>
+        <button type="button" class="primary" [disabled]="loading() || !form1EntryAllowed" (click)="createDraft()">Create draft</button>
       } @else {
         <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="saveForm1()">Save Form 1</button>
         <button type="button" [disabled]="loading()" (click)="goToStep(2)">Next: Part B →</button>
@@ -491,36 +511,400 @@
       </div>
     </section>
 
+    <section class="form-section">
+      <h2 class="section-withbg">Part C — declarations</h2>
+      <div class="section-body">
+        <form class="form-grid" [formGroup]="form2">
+          <label class="checkbox full">
+            <input type="checkbox" formControlName="declareTrue" />
+            I declare that the information given in this application is true and correct.
+          </label>
+          @if (form2.controls.declareTrue.value) {
+            <label [class.field-invalid]="showFieldError(form2.controls.declareDate)">
+              Declaration date
+              <input type="date" formControlName="declareDate" />
+            </label>
+            <label [class.field-invalid]="showFieldError(form2.controls.applicantName)">
+              Applicant name <span class="req">*</span>
+              <input formControlName="applicantName" />
+            </label>
+            <label>
+              Identity card / passport no
+              <input formControlName="identityCard" />
+            </label>
+            <label>
+              Designation
+              <input formControlName="designation" />
+            </label>
+            <label>
+              Applicant email
+              <input type="email" formControlName="applicantEmail" />
+            </label>
+            <label>
+              Applicant telephone
+              <input formControlName="applicantTelNo" />
+            </label>
+          }
+        </form>
+        <div class="actions inline-actions">
+          <button type="button" class="primary" [disabled]="loading() || !isEditable" (click)="savePartC()">
+            Save Part C
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="section-withbg">Contact persons</h2>
+      <div class="section-body">
+        <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openContactPersonModal()">
+          Add contact person
+        </button>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Email</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (cp of contactPersons(); track cp.id) {
+                <tr>
+                  <td>{{ cp.name }}</td>
+                  <td>{{ cp.email }}</td>
+                  <td>
+                    @if (isEditable) {
+                      <span class="row-actions">
+                        <button type="button" class="link-btn edit" (click)="openContactPersonModal(cp)" title="Edit">Edit</button>
+                        <button type="button" class="link-btn remove" (click)="requestDeleteContactPerson(cp.id)" title="Remove">Remove</button>
+                      </span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="empty">No contact persons yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="section-withbg">Supporting documents</h2>
+      <div class="section-body">
+        <p class="hint">
+          Upload PDF, JPG, JPEG, or PNG files (max 10 MB). Supporting documents are optional for sales tax registration.
+        </p>
+        @if (isEditable) {
+          <div class="form-grid upload-grid">
+            <label>
+              Document type
+              <select
+                [value]="selectedDocumentTypeId() ?? ''"
+                (change)="selectedDocumentTypeId.set(+$any($event.target).value)"
+              >
+                @for (type of supportingDocumentTypes(); track type.id) {
+                  <option [value]="type.id">{{ type.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="full">
+              File
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                [disabled]="loading() || !form1EntryAllowed"
+                (change)="onSupportingDocumentFileSelected($event)"
+              />
+            </label>
+          </div>
+        }
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Document type</th><th>File name</th><th>Size</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (doc of supportingDocuments(); track doc.id) {
+                <tr>
+                  <td>{{ doc.documentTypeLabel }}</td>
+                  <td>
+                    <button type="button" class="link-btn" (click)="downloadSupportingDocument(doc)">
+                      {{ doc.fileName }}
+                    </button>
+                  </td>
+                  <td>{{ formatFileSize(doc.fileSize) }}</td>
+                  <td>
+                    @if (isEditable) {
+                      <button type="button" class="link-btn remove" (click)="requestDeleteSupportingDocument(doc.id)" title="Remove">
+                        Remove
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">No supporting documents uploaded yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <div class="actions">
       <button type="button" (click)="goToStep(1)">← Back</button>
-      <button type="button" [disabled]="loading()" (click)="goToStep(3)">Next: submit →</button>
+      <button type="button" [disabled]="loading()" (click)="enterPreview()">Next: preview →</button>
     </div>
   }
 
   @if (step() === 3 && caseId()) {
-    <section class="form-section">
-      <h2 class="section-withbg">Checklist before submit</h2>
-      <div class="section-body summary">
-      <ul>
-        <li>Form 1 Part A saved (business, premise address, directors, premises)</li>
-        <li>Directors: {{ directors().length }} (need ≥1)</li>
-        <li>Premises: {{ premises().length }} (optional)</li>
-        <li>Part B saved with annual sales value &amp; breakdown</li>
-        <li>Main-contract tariff codes: {{ mainTariffCount }} (need ≥1)</li>
-        @if (form2.controls.subContractWork.value) {
-          <li>Sub-contract tariff codes: {{ subTariffCount }} (required when flag set)</li>
+    <section class="form-section preview-panel">
+      <h2 class="section-withbg">Preview — review before submit</h2>
+      <div class="section-body">
+        <p class="hint preview-intro">
+          Read-only summary of saved registration data (legacy ASSIST <code>preview.jsp</code>).
+          Go back to earlier steps to make changes, then return here to submit.
+        </p>
+
+        @if (previewIssues().length) {
+          <div class="preview-issues" role="alert">
+            <strong>Complete the following before submit:</strong>
+            <ul>
+              @for (issue of previewIssues(); track issue) {
+                <li>{{ issue }}</li>
+              }
+            </ul>
+          </div>
+        } @else if (appStatus() === 'SUBMITTED' || appStatus() === 'IN_PROGRESS') {
+          <div class="preview-routed">
+            <strong>Case routed for officer review.</strong>
+            Status: <strong>{{ appStatus() }}</strong>.
+            An officer can open this case from the
+            <a routerLink="/registration/inbox">Officer inbox</a> and click <strong>Approve</strong> below.
+          </div>
+        } @else if (appStatus() === 'APPROVED') {
+          <div class="preview-ready">
+            Case approved and registration completed.
+            @if (employerCode()) {
+              Employer code: <strong>{{ employerCode() }}</strong>
+              @if (salesTaxSmkRegNo()) {
+                · Sales tax SMK: <strong>{{ salesTaxSmkRegNo() }}</strong>
+              }
+            }
+            <div class="letter-actions">
+              <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadAcknowledgementLetter()">
+                Download acknowledgement letter
+              </button>
+            </div>
+          </div>
+        } @else {
+          <p class="preview-ready">All required checks passed — you may submit and route this case.</p>
         }
-      </ul>
-      <p>RO users auto-approve on submit. Other users go to <strong>SUBMITTED</strong> for officer approval.</p>
+
+        <section class="preview-block">
+          <h3>Form 1 — business &amp; address</h3>
+          <dl class="preview-dl">
+            <dt>Case ref</dt><dd>{{ previewText(caseRefNo()) }}</dd>
+            <dt>BRN</dt><dd>{{ previewText(form1.controls.registrationNo.value) }}</dd>
+            <dt>Business name</dt><dd>{{ previewText(form1.controls.employerName.value) }}</dd>
+            <dt>Trade name</dt><dd>{{ previewText(form1.controls.tradeName.value || form1.controls.employerName.value) }}</dd>
+            <dt>Entity type</dt><dd>{{ businessEntityLabel(form1.controls.businessEntityTypeId.value) }}</dd>
+            <dt>MSIC</dt><dd>{{ previewText(form1.controls.msicId.value) }}</dd>
+            <dt>PKS branch</dt><dd>{{ officeLocationLabel(form1.controls.pksBranchId.value) }}</dd>
+            <dt>Business address</dt><dd>{{ formatBusinessAddressPreview() }}</dd>
+            <dt>Premise address</dt><dd>{{ formatPremiseAddressPreview() }}</dd>
+            <dt>Email</dt><dd>{{ previewText(form1.controls.email.value) }}</dd>
+            <dt>Telephone</dt><dd>{{ formatPhoneLinesPreview('phones') }}</dd>
+            <dt>Fax</dt><dd>{{ formatPhoneLinesPreview('faxes') }}</dd>
+          </dl>
+        </section>
+
+        @if (form1.controls.tourTaxRegNo.value || form1.controls.inTaxRefNo.value || form1.controls.cusAudRefNo.value) {
+          <section class="preview-block">
+            <h3>Tax &amp; customs references</h3>
+            <dl class="preview-dl">
+              <dt>Tourism tax reg no</dt><dd>{{ previewText(form1.controls.tourTaxRegNo.value) }}</dd>
+              <dt>Income tax ref no</dt><dd>{{ previewText(form1.controls.inTaxRefNo.value) }}</dd>
+              <dt>Customs audit ref no</dt><dd>{{ previewText(form1.controls.cusAudRefNo.value) }}</dd>
+            </dl>
+          </section>
+        }
+
+        @if (showPreRegBlock()) {
+          <section class="preview-block">
+            <h3>Pre-registration / succession</h3>
+            <dl class="preview-dl">
+              <dt>Replacement date</dt><dd>{{ previewDate(form1.controls.dateOfReplacement.value) }}</dd>
+              <dt>Previous reg no</dt><dd>{{ previewText(form1.controls.preRegNo.value) }}</dd>
+              <dt>Previous reg name</dt><dd>{{ previewText(form1.controls.preRegName.value) }}</dd>
+            </dl>
+          </section>
+        }
+
+        <section class="preview-block">
+          <h3>Directors / owners ({{ directors().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>ID type</th><th>ID no</th><th>Email</th><th>Designation</th></tr>
+              </thead>
+              <tbody>
+                @for (d of directors(); track d.id) {
+                  <tr>
+                    <td>{{ d.name }}</td>
+                    <td>{{ identificationTypeLabel(d.identificationTypeId) }}</td>
+                    <td>{{ d.identificationNo }}</td>
+                    <td>{{ previewText(d.email) }}</td>
+                    <td>{{ previewText(d.designation) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="preview-block">
+          <h3>Other manufacturing premises ({{ premises().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Address</th><th>Postcode</th><th>City</th><th>State</th></tr>
+              </thead>
+              <tbody>
+                @for (p of premises(); track p.id) {
+                  <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ formatPremisesAddress(p) }}</td>
+                    <td>{{ previewText(p.postCode) }}</td>
+                    <td>{{ previewText(p.cityName) }}</td>
+                    <td>{{ previewText(p.stateName) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="preview-block">
+          <h3>Part B — sales tax particulars</h3>
+          <dl class="preview-dl">
+            <dt>Manufacturing commencement</dt><dd>{{ previewDate(form2.controls.manComDate.value) }}</dd>
+            <dt>Date sale / value taxable goods</dt><dd>{{ previewDate(form2.controls.dateSaleValTaxGoods.value) }}</dd>
+            <dt>Business commencement</dt><dd>{{ previewDate(form2.controls.businessComDate.value) }}</dd>
+            <dt>Financial year end month</dt><dd>{{ previewText(form2.controls.finYrEndMon.value) }}</dd>
+            <dt>Annual taxable sales</dt><dd>{{ previewMoney(form2.controls.anTotalTaxSalesVal.value) }}</dd>
+            <dt>Sub-contract work</dt><dd>{{ previewYesNo(form2.controls.subContractWork.value) }}</dd>
+            <dt>Local sales</dt><dd>{{ previewMoney(form2.controls.localSales.value) }}</dd>
+            <dt>Export sales</dt><dd>{{ previewMoney(form2.controls.exportSales.value) }}</dd>
+            <dt>Sales to designated area</dt><dd>{{ previewMoney(form2.controls.salesToDesignArea.value) }}</dd>
+            <dt>Other sales</dt><dd>{{ previewMoney(form2.controls.othersSales.value) }}</dd>
+          </dl>
+        </section>
+
+        <section class="preview-block">
+          <h3>Tariff / finished-goods codes ({{ tariffCodes().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tariff code</th><th>Description</th><th>Contract</th><th>Finished goods</th></tr>
+              </thead>
+              <tbody>
+                @for (t of tariffCodes(); track t.id) {
+                  <tr>
+                    <td>{{ tariffDisplayLabel(t) }}</td>
+                    <td>{{ previewText(t.tariffDescription) }}</td>
+                    <td>{{ contractLabel(t.contractTypeId) }}</td>
+                    <td>{{ previewText(t.finishedGoods) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="preview-block">
+          <h3>Part C — declaration</h3>
+          <dl class="preview-dl">
+            <dt>Declaration accepted</dt><dd>{{ previewYesNo(form2.controls.declareTrue.value) }}</dd>
+            @if (form2.controls.declareTrue.value) {
+              <dt>Declaration date</dt><dd>{{ previewDate(form2.controls.declareDate.value) }}</dd>
+              <dt>Applicant name</dt><dd>{{ previewText(form2.controls.applicantName.value) }}</dd>
+              <dt>Identity card / passport</dt><dd>{{ previewText(form2.controls.identityCard.value) }}</dd>
+              <dt>Designation</dt><dd>{{ previewText(form2.controls.designation.value) }}</dd>
+              <dt>Applicant email</dt><dd>{{ previewText(form2.controls.applicantEmail.value) }}</dd>
+              <dt>Applicant telephone</dt><dd>{{ previewText(form2.controls.applicantTelNo.value) }}</dd>
+            }
+          </dl>
+        </section>
+
+        <section class="preview-block">
+          <h3>Contact persons ({{ contactPersons().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Email</th></tr>
+              </thead>
+              <tbody>
+                @for (cp of contactPersons(); track cp.id) {
+                  <tr>
+                    <td>{{ cp.name }}</td>
+                    <td>{{ cp.email }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="2" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="preview-block">
+          <h3>Supporting documents ({{ supportingDocuments().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Document type</th><th>File name</th><th>Size</th></tr>
+              </thead>
+              <tbody>
+                @for (doc of supportingDocuments(); track doc.id) {
+                  <tr>
+                    <td>{{ doc.documentTypeLabel }}</td>
+                    <td>{{ doc.fileName }}</td>
+                    <td>{{ formatFileSize(doc.fileSize) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <p class="hint summary">
+          Click <strong>Submit &amp; route case</strong> to send this registration into the workflow.
+          RO users auto-approve; others route to <strong>SUBMITTED</strong> for officer approval.
+        </p>
       </div>
     </section>
     <div class="actions">
-      <button type="button" (click)="goToStep(2)">← Back</button>
+      <button type="button" (click)="goToStep(2)">← Back to Form 2</button>
       @if (isEditable) {
-        <button type="button" class="primary" [disabled]="loading()" (click)="submitCase()">Submit case</button>
+        <button type="button" class="primary" [disabled]="loading() || !canSubmitFromPreview" (click)="submitCase()">
+          Submit &amp; route case
+        </button>
       }
-      @if (isOfficer && appStatus() === 'SUBMITTED') {
-        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve</button>
+      @if (isOfficer && (appStatus() === 'SUBMITTED' || appStatus() === 'IN_PROGRESS')) {
+        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve case</button>
+      }
+      @if (appStatus() === 'APPROVED') {
+        <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadAcknowledgementLetter()">
+          Download acknowledgement letter
+        </button>
       }
     </div>
   }
@@ -680,6 +1064,27 @@
   <div modal-footer>
     <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeTariffModal()">Close</button>
     <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addTariffCode()">Save</button>
+  </div>
+</assist-form-modal>
+
+<assist-form-modal
+  [open]="contactPersonModalOpen()"
+  [title]="editingContactPersonId() ? 'Edit contact person' : 'Add contact person'"
+  (closed)="closeContactPersonModal()"
+>
+  <form class="form-grid" [formGroup]="contactPersonForm">
+    <label [class.field-invalid]="showFieldError(contactPersonForm.controls.name)">
+      Name <span class="req">*</span>
+      <input formControlName="name" />
+    </label>
+    <label [class.field-invalid]="showFieldError(contactPersonForm.controls.email)">
+      Email <span class="req">*</span>
+      <input type="email" formControlName="email" />
+    </label>
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeContactPersonModal()">Close</button>
+    <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addContactPerson()">Save</button>
   </div>
 </assist-form-modal>
 

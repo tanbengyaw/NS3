@@ -97,6 +97,27 @@ public class SstInfo {
     @Column(name = "sub_contract_work", nullable = false)
     private boolean subContractWork;
 
+    @Column(name = "declare_true", nullable = false)
+    private boolean declareTrue;
+
+    @Column(name = "declare_date")
+    private LocalDate declareDate;
+
+    @Column(name = "applicant_name", length = 100)
+    private String applicantName;
+
+    @Column(name = "identity_card", length = 30)
+    private String identityCard;
+
+    @Column(name = "designation", length = 100)
+    private String designation;
+
+    @Column(name = "applicant_email", length = 100)
+    private String applicantEmail;
+
+    @Column(name = "applicant_tel_no", length = 30)
+    private String applicantTelNo;
+
     @Column(name = "is_auto_registration", nullable = false)
     private boolean autoRegistration;
 
