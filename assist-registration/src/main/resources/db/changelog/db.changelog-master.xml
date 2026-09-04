@@ -26,5 +26,8 @@
     <include file="db/changelog/parts/0019_supporting_documents_optional.xml"/>
     <include file="db/changelog/parts/0020_letter_reference_data.xml"/>
     <include file="db/changelog/parts/0021_sales_tax_letter_reference_data.xml"/>
+    <include file="db/changelog/parts/0022_letter_reference_data_expansion.xml"/>
+    <include file="db/changelog/parts/0023_kl_postcode_area_codes.xml"/>
+    <include file="db/changelog/parts/0024_reference_data_expansion.xml"/>
 
 </databaseChangeLog>

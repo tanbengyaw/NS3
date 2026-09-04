@@ -8,11 +8,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AreaCodeLookupService {
 
-    private static final String AREA_CODE_F75 = "F75";
-    private static final Long TAPAH_BRANCH_ID = 10L;
-    private static final String POSTCODE_39100 = "39100";
-    private static final String POSTCODE_39200 = "39200";
-
     private final JdbcTemplate jdbcTemplate;
 
     public String findAreaCodeByPostCodeAndBranchId(final String postCode, final Long branchId) {
@@ -23,15 +18,29 @@ public class AreaCodeLookupService {
             throw new IllegalArgumentException("branchId cannot be null");
         }
 
-        if ((POSTCODE_39100.equals(postCode) || POSTCODE_39200.equals(postCode))
-                && TAPAH_BRANCH_ID.equals(branchId)) {
-            return AREA_CODE_F75;
-        }
-
-        return jdbcTemplate.query(
+        final String areaCode = jdbcTemplate.query(
                 "SELECT area_code FROM registration.reg_area_code "
                         + "WHERE branch_id = ? AND postcode = ? AND is_active = TRUE LIMIT 1",
-                rs -> rs.next() ? rs.getString(1) : null, branchId, postCode);
+                rs -> rs.next() ? rs.getString(1) : null, branchId, postCode.trim());
+        if (areaCode != null) {
+            return areaCode;
+        }
+        return jdbcTemplate.query(
+                "SELECT area_code FROM registration.reg_area_code "
+                        + "WHERE postcode = ? AND is_active = TRUE ORDER BY id LIMIT 1",
+                rs -> rs.next() ? rs.getString(1) : null, postCode.trim());
+    }
+
+    /**
+     * Strict lookup used when a missing mapping must fail fast (e.g. SOCSO employer code).
+     */
+    public String requireAreaCodeByPostCodeAndBranchId(final String postCode, final Long branchId) {
+        final String areaCode = findAreaCodeByPostCodeAndBranchId(postCode, branchId);
+        if (areaCode == null || areaCode.isBlank()) {
+            throw new IllegalArgumentException(
+                    "No area code for postcode " + postCode + " and branch " + branchId);
+        }
+        return areaCode;
     }
 
     /**

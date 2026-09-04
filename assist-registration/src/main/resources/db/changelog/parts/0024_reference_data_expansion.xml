@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- State-capital PERKESO offices so every seeded ref_postcode has an office + area code mapping. -->
+    <changeSet id="0024-ref-branch-state-offices" author="ns3">
+        <sql>
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 11, 'Pejabat PERKESO Alor Setar', 11, 2, '04-730 5000', '04-730 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 11);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 12, 'Pejabat PERKESO Kota Bharu', 12, 3, '09-744 5000', '09-744 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 12);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 13, 'Pejabat PERKESO Melaka', 13, 4, '06-281 5000', '06-281 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 13);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 14, 'Pejabat PERKESO Seremban', 14, 5, '06-762 5000', '06-762 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 14);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 15, 'Pejabat PERKESO Kuantan', 15, 6, '09-517 5000', '09-517 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 15);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 16, 'Pejabat PERKESO Ipoh', 16, 8, '05-254 5000', '05-254 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 16);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 17, 'Pejabat PERKESO Kangar', 17, 9, '04-976 5000', '04-976 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 17);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 18, 'Pejabat PERKESO Kota Kinabalu', 18, 10, '088-232 5000', '088-232 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 18);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 19, 'Pejabat PERKESO Kuching', 19, 11, '082-240 5000', '082-240 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 19);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 20, 'Pejabat PERKESO Kuala Terengganu', 20, 13, '09-622 5000', '09-622 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 20);
+
+            INSERT INTO reference.ref_branch (id, name, sort_order, state_id, phone, fax)
+            SELECT 21, 'Pejabat PERKESO Labuan', 21, 15, '087-410 5000', '087-410 5100'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_branch WHERE id = 21);
+        </sql>
+    </changeSet>
+
+    <changeSet id="0024-ref-city-tapah" author="ns3">
+        <sql>
+            INSERT INTO reference.ref_city (id, state_id, name)
+            SELECT 802, 8, 'Tapah'
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_city WHERE id = 802);
+        </sql>
+    </changeSet>
+
+    <changeSet id="0024-ref-postcode-extension" author="ns3">
+        <sql>
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '50013', 14, 1401
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '50013');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '53300', 7, 701
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '53300');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '61200', 16, 1601
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '61200');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '80300', 1, 101
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '80300');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '10400', 7, 701
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '10400');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '39100', 8, 802
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '39100');
+
+            INSERT INTO reference.ref_postcode (postcode, state_id, city_id)
+            SELECT '39200', 8, 802
+            WHERE NOT EXISTS (SELECT 1 FROM reference.ref_postcode WHERE postcode = '39200');
+        </sql>
+    </changeSet>
+
+    <changeSet id="0024-ref-postcode-office-backfill" author="ns3">
+        <sql>
+            INSERT INTO reference.ref_postcode_office (postcode, branch_id, sort_order)
+            SELECT v.postcode, v.branch_id, 10
+            FROM (
+                SELECT '83000' AS postcode, 4 AS branch_id UNION ALL
+                SELECT '05000', 11 UNION ALL
+                SELECT '15000', 12 UNION ALL
+                SELECT '75000', 13 UNION ALL
+                SELECT '70000', 14 UNION ALL
+                SELECT '25000', 15 UNION ALL
+                SELECT '30000', 16 UNION ALL
+                SELECT '01000', 17 UNION ALL
+                SELECT '88000', 18 UNION ALL
+                SELECT '93000', 19 UNION ALL
+                SELECT '20000', 20 UNION ALL
+                SELECT '87000', 21 UNION ALL
+                SELECT '62000', 1 UNION ALL
+                SELECT '53300', 5 UNION ALL
+                SELECT '61200', 1 UNION ALL
+                SELECT '80300', 4 UNION ALL
+                SELECT '10400', 5
+            ) v
+            WHERE NOT EXISTS (
+                SELECT 1 FROM reference.ref_postcode_office po
+                WHERE po.postcode = v.postcode AND po.branch_id = v.branch_id
+            );
+        </sql>
+    </changeSet>
+
+    <!-- Ensure every postcode-office pair has an active area code (employer/SMK generation). -->
+    <changeSet id="0024-reg-area-code-backfill" author="ns3">
+        <sql>
+            INSERT INTO registration.reg_area_code (branch_id, postcode, area_code, area_name, is_active)
+            SELECT po.branch_id,
+                   po.postcode,
+                   CASE po.branch_id
+                       WHEN 1 THEN 'W11'
+                       WHEN 2 THEN 'A37'
+                       WHEN 3 THEN 'A43'
+                       WHEN 4 THEN 'J02'
+                       WHEN 5 THEN 'P02'
+                       WHEN 10 THEN 'F75'
+                       WHEN 11 THEN 'K01'
+                       WHEN 12 THEN 'D01'
+                       WHEN 13 THEN 'M01'
+                       WHEN 14 THEN 'N01'
+                       WHEN 15 THEN 'C01'
+                       WHEN 16 THEN 'F01'
+                       WHEN 17 THEN 'R01'
+                       WHEN 18 THEN 'S01'
+                       WHEN 19 THEN 'Q01'
+                       WHEN 20 THEN 'T01'
+                       WHEN 21 THEN 'L01'
+                       ELSE 'A31'
+                   END,
+                   CASE po.branch_id
+                       WHEN 1 THEN 'Kuala Lumpur (OPA)'
+                       WHEN 2 THEN 'Shah Alam (OPA)'
+                       WHEN 3 THEN 'Petaling Jaya (OPA)'
+                       WHEN 4 THEN 'Johor Bahru (OPA)'
+                       WHEN 5 THEN 'Seberang Perai (OPA)'
+                       WHEN 10 THEN 'Tapah (OPA)'
+                       WHEN 11 THEN 'Kedah (OPA)'
+                       WHEN 12 THEN 'Kelantan (OPA)'
+                       WHEN 13 THEN 'Melaka (OPA)'
+                       WHEN 14 THEN 'Negeri Sembilan (OPA)'
+                       WHEN 15 THEN 'Pahang (OPA)'
+                       WHEN 16 THEN 'Perak (OPA)'
+                       WHEN 17 THEN 'Perlis (OPA)'
+                       WHEN 18 THEN 'Sabah (OPA)'
+                       WHEN 19 THEN 'Sarawak (OPA)'
+                       WHEN 20 THEN 'Terengganu (OPA)'
+                       WHEN 21 THEN 'Labuan (OPA)'
+                       ELSE 'Malaysia (OPA)'
+                   END,
+                   TRUE
+            FROM reference.ref_postcode_office po
+            WHERE NOT EXISTS (
+                SELECT 1 FROM registration.reg_area_code ac
+                WHERE ac.branch_id = po.branch_id
+                  AND ac.postcode = po.postcode
+                  AND ac.is_active = TRUE
+            );
+        </sql>
+    </changeSet>
+
+    <changeSet id="0024-reg-area-code-unique-index" author="ns3">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="registration" tableName="reg_area_code"
+                             indexName="uk_reg_area_code_branch_postcode"/>
+            </not>
+        </preConditions>
+        <createIndex indexName="uk_reg_area_code_branch_postcode" schemaName="registration"
+                     tableName="reg_area_code" unique="true">
+            <column name="branch_id"/>
+            <column name="postcode"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

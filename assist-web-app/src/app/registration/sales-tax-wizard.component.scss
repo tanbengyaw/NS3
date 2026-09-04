@@ -795,3 +795,17 @@ table {
     word-break: break-word;
   }
 }
+
+tr.pending-import {
+  background: #f8f9fa;
+}
+
+.pending-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1a73e8;
+  background: #e8f0fe;
+}

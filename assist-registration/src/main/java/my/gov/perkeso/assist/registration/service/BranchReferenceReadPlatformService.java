@@ -19,9 +19,11 @@ public class BranchReferenceReadPlatformService {
             return null;
         }
         return jdbcTemplate.query("""
-                SELECT id, name, address_line1, address_line2, address_line3, postcode, city_name
-                FROM reference.ref_branch
-                WHERE id = ?
+                SELECT b.id, b.name, b.address_line1, b.address_line2, b.address_line3,
+                       b.postcode, b.city_name, b.phone, b.fax, s.name AS state_name
+                FROM reference.ref_branch b
+                LEFT JOIN reference.ref_state s ON s.id = b.state_id
+                WHERE b.id = ?
                 """, rs -> {
             if (!rs.next()) {
                 return null;
@@ -34,6 +36,9 @@ public class BranchReferenceReadPlatformService {
                     .addressLine3(rs.getString("address_line3"))
                     .postCode(rs.getString("postcode"))
                     .cityName(rs.getString("city_name"))
+                    .phone(rs.getString("phone"))
+                    .fax(rs.getString("fax"))
+                    .stateName(rs.getString("state_name"))
                     .build();
         }, branchId);
     }
@@ -48,5 +53,8 @@ public class BranchReferenceReadPlatformService {
         private final String addressLine3;
         private final String postCode;
         private final String cityName;
+        private final String phone;
+        private final String fax;
+        private final String stateName;
     }
 }

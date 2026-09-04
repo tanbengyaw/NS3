@@ -79,6 +79,6 @@ public class EmployerCodeBasedOnAreaCodeGenerator {
         if (context.getAreaCode() != null && !context.getAreaCode().isBlank()) {
             return context.getAreaCode();
         }
-        return areaCodeLookupService.findAreaCodeByPostCodeAndBranchId(context.getPostCode(), context.getBranchId());
+        return areaCodeLookupService.requireAreaCodeByPostCodeAndBranchId(context.getPostCode(), context.getBranchId());
     }
 }

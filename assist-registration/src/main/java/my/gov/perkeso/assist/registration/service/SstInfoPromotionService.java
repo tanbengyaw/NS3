@@ -53,6 +53,11 @@ public class SstInfoPromotionService {
             return null;
         }
 
+        final List<SstInfo> existingForCase = sstInfoRepository.findByRegGeneralInfoIdAndDeletedFalse(regCase.getId());
+        if (!existingForCase.isEmpty()) {
+            return existingForCase.get(existingForCase.size() - 1);
+        }
+
         final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
         final List<TempDirectorOwner> directors = tempSstInfoWritePlatformService
                 .listDirectorsForCase(regCase.getId());

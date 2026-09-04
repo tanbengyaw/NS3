@@ -98,10 +98,16 @@ public class EmployerReadPlatformService {
             final int limit) {
         final StringBuilder sql = new StringBuilder("""
                 SELECT r.id, r.case_ref_no, r.app_status, r.section_id, r.submission_date, r.created_date,
-                       t.employer_name, bi.registration_no
+                       r.query_remark, r.app_status_reason,
+                       t.employer_name, bi.registration_no,
+                       e.employer_code,
+                       (SELECT s.sales_tax_smk_reg_no FROM registration.sst_info s
+                        WHERE s.reg_general_info_id = r.id AND s.is_deleted = FALSE
+                        ORDER BY s.id DESC LIMIT 1) AS sales_tax_smk_reg_no
                 FROM registration.reg_general_info r
                 JOIN registration.temp_employer t ON t.id = r.temp_employer_id
                 JOIN registration.business_info bi ON bi.id = t.business_info_id
+                LEFT JOIN registration.employer e ON e.id = r.employer_id AND e.is_deleted = FALSE
                 WHERE 1 = 1
                 """);
         final List<Object> args = new ArrayList<>();
@@ -134,6 +140,10 @@ public class EmployerReadPlatformService {
                     .sectionCode(sectionCode)
                     .employerName(rs.getString("employer_name"))
                     .registrationNo(rs.getString("registration_no"))
+                    .employerCode(rs.getString("employer_code"))
+                    .salesTaxSmkRegNo(rs.getString("sales_tax_smk_reg_no"))
+                    .queryRemark(rs.getString("query_remark"))
+                    .appStatusReason(rs.getString("app_status_reason"))
                     .submissionDate(rs.getTimestamp("submission_date") != null
                             ? rs.getTimestamp("submission_date").toLocalDateTime()
                             : null)
@@ -205,12 +215,37 @@ public class EmployerReadPlatformService {
                 .corrCityName(temp.getCorrCityName()).serviceTypeId(temp.getServiceTypeId())
                 .pksBranchId(temp.getPksBranchId()).branch(temp.isBranch()).msicId(temp.getMsicId())
                 .methodContributionPaymentId(temp.getMethodContributionPaymentId())
-                .employerId(regCase.getEmployerId()).createdByUsername(regCase.getCreatedByUsername())
+                .employerId(regCase.getEmployerId())
+                .employerCode(lookupEmployerCode(regCase.getEmployerId()))
+                .salesTaxSmkRegNo(lookupSalesTaxSmkRegNo(regCase.getId()))
+                .createdByUsername(regCase.getCreatedByUsername())
                 .submittedByUsername(regCase.getSubmittedByUsername())
                 .documentReceivedDate(regCase.getDocumentReceivedDate())
                 .submissionDate(regCase.getSubmissionDate()).createdDate(regCase.getCreatedDate())
                 .inqueryByUsername(regCase.getInqueryByUsername()).inqueryDate(regCase.getInqueryDate())
                 .queryRemark(regCase.getQueryRemark()).build();
+    }
+
+    private String lookupEmployerCode(final Long employerId) {
+        if (employerId == null) {
+            return null;
+        }
+        return jdbcTemplate.query("""
+                SELECT employer_code FROM registration.employer
+                WHERE id = ? AND is_deleted = FALSE
+                """, rs -> rs.next() ? rs.getString(1) : null, employerId);
+    }
+
+    private String lookupSalesTaxSmkRegNo(final Long caseId) {
+        if (caseId == null) {
+            return null;
+        }
+        return jdbcTemplate.query("""
+                SELECT sales_tax_smk_reg_no FROM registration.sst_info
+                WHERE reg_general_info_id = ? AND is_deleted = FALSE
+                ORDER BY id DESC
+                LIMIT 1
+                """, rs -> rs.next() ? rs.getString(1) : null, caseId);
     }
 
     private static final class EmployerRowMapper implements RowMapper<EmployerData> {

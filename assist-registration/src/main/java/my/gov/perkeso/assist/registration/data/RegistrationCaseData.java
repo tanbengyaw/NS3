@@ -46,6 +46,8 @@ public class RegistrationCaseData {
     private final Long msicId;
     private final Long methodContributionPaymentId;
     private final Long employerId;
+    private final String employerCode;
+    private final String salesTaxSmkRegNo;
     private final String createdByUsername;
     private final String submittedByUsername;
     private final LocalDateTime documentReceivedDate;

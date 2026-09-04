@@ -15,6 +15,10 @@ public class RegistrationCaseSummaryData {
     private final String sectionCode;
     private final String employerName;
     private final String registrationNo;
+    private final String employerCode;
+    private final String salesTaxSmkRegNo;
+    private final String queryRemark;
+    private final String appStatusReason;
     private final LocalDateTime submissionDate;
     private final LocalDateTime createdDate;
 }

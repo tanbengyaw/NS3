@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -89,8 +89,30 @@ export class SalesTaxWizardComponent {
     searchRegValue: ['', Validators.required],
   });
 
-  private pendingImportDirectors: TaxPayerRegistrationProfile['directors'] = [];
-  private pendingImportPremises: TaxPayerRegistrationProfile['premises'] = [];
+  readonly pendingImportDirectors = signal<TaxPayerRegistrationProfile['directors']>([]);
+  readonly pendingImportPremises = signal<TaxPayerRegistrationProfile['premises']>([]);
+
+  readonly directorTableRows = computed(() => {
+    if (this.caseId()) {
+      return this.directors().map((d) => ({ ...d, pending: false as const, rowKey: String(d.id) }));
+    }
+    return this.pendingImportDirectors().map((d, index) => ({
+      ...d,
+      pending: true as const,
+      rowKey: `pending-${index}-${d.identificationNo}`,
+    }));
+  });
+
+  readonly premisesTableRows = computed(() => {
+    if (this.caseId()) {
+      return this.premises().map((p) => ({ ...p, pending: false as const, rowKey: String(p.id) }));
+    }
+    return this.pendingImportPremises().map((p, index) => ({
+      ...p,
+      pending: true as const,
+      rowKey: `pending-${index}-${p.name}`,
+    }));
+  });
 
   readonly form1 = this.fb.nonNullable.group({
     employerName: ['', Validators.required],
@@ -192,8 +214,8 @@ export class SalesTaxWizardComponent {
       if (checked) {
         this.taxPayerSearchFound.set(null);
         this.searchedEmployerCode.set(null);
-        this.pendingImportDirectors = [];
-        this.pendingImportPremises = [];
+        this.pendingImportDirectors.set([]);
+        this.pendingImportPremises.set([]);
         this.searchForm.reset({ searchRegType: 'SST_REGISTRATION_NO', searchRegValue: '' });
       }
       this.syncForm1EntryState();
@@ -358,14 +380,20 @@ export class SalesTaxWizardComponent {
         this.searchedEmployerCode.set(profile.employerCode);
         this.applyTaxPayerProfile(profile);
         this.syncForm1EntryState();
-        this.message.set(`Found tax payer: ${profile.employerName} (${profile.employerCode})`);
+        const directorCount = profile.directors?.length ?? 0;
+        const premisesCount = profile.premises?.length ?? 0;
+        const importNote =
+          directorCount || premisesCount
+            ? ` · ${directorCount} director(s) and ${premisesCount} premises will copy when you create draft`
+            : ' · No directors or premises on file — add at least one director before submit';
+        this.message.set(`Found tax payer: ${profile.employerName} (${profile.employerCode})${importNote}`);
       },
       error: (err) => {
         this.loading.set(false);
         this.taxPayerSearchFound.set(false);
         this.searchedEmployerCode.set(null);
-        this.pendingImportDirectors = [];
-        this.pendingImportPremises = [];
+        this.pendingImportDirectors.set([]);
+        this.pendingImportPremises.set([]);
         this.syncForm1EntryState();
         this.onError(err);
       },
@@ -1436,7 +1464,7 @@ export class SalesTaxWizardComponent {
     );
   }
 
-  formatPremisesAddress(p: TempPremises): string {
+  formatPremisesAddress(p: Pick<TempPremises, 'addressLine' | 'addressLine2' | 'addressLine3'>): string {
     return [p.addressLine, p.addressLine2, p.addressLine3].filter((line) => !!line?.trim()).join(', ');
   }
 
@@ -1513,6 +1541,8 @@ export class SalesTaxWizardComponent {
         this.appStatus.set(c.appStatus);
         this.queryRemark.set(c.queryRemark ?? null);
         this.appStatusReason.set(c.appStatusReason ?? null);
+        this.employerCode.set(c.employerCode ?? null);
+        this.salesTaxSmkRegNo.set(c.salesTaxSmkRegNo ?? null);
         this.form1.patchValue({
           employerName: c.employerName ?? '',
           registrationNo: c.registrationNo ?? '',
@@ -1865,8 +1895,24 @@ export class SalesTaxWizardComponent {
   }
 
   private applyTaxPayerProfile(profile: TaxPayerRegistrationProfile): void {
-    this.pendingImportDirectors = profile.directors ?? [];
-    this.pendingImportPremises = profile.premises ?? [];
+    this.pendingImportDirectors.set(profile.directors ?? []);
+    this.pendingImportPremises.set(profile.premises ?? []);
+    const addressFields = {
+      addressLine1: profile.addressLine1 ?? '',
+      addressLine2: profile.addressLine2 ?? '',
+      addressLine3: profile.addressLine3 ?? '',
+      stateId: profile.stateId ?? null,
+      cityId: profile.cityId ?? null,
+      cityName: profile.cityName ?? '',
+      postCode: profile.postCode ?? '',
+      corrAddressLine1: profile.corrAddressLine1 ?? '',
+      corrAddressLine2: profile.corrAddressLine2 ?? '',
+      corrAddressLine3: profile.corrAddressLine3 ?? '',
+      corrPostCode: profile.corrPostCode ?? '',
+      corrStateId: profile.corrStateId ?? null,
+      corrCityId: profile.corrCityId ?? null,
+      corrCityName: profile.corrCityName ?? '',
+    };
     this.form1.patchValue({
       employerName: profile.employerName ?? '',
       registrationNo: profile.registrationNo ?? '',
@@ -1874,21 +1920,33 @@ export class SalesTaxWizardComponent {
       msicId: profile.msicId,
       serviceTypeId: profile.serviceTypeId ?? 1,
       pksBranchId: profile.pksBranchId ?? 2,
+      methodContributionPaymentId: profile.methodContributionPaymentId ?? null,
       email: profile.email ?? '',
+      tradeName: profile.tradeName ?? '',
+      tourTaxRegNo: profile.tourTaxRegNo ?? '',
+      inTaxRefNo: profile.inTaxRefNo ?? '',
+      cusAudRefNo: profile.cusAudRefNo ?? '',
+      ...addressFields,
+      sameAsBusinessAddr: this.isCorrespondenceSameAsBusiness({
+        ...addressFields,
+        postCode: profile.postCode ?? '',
+      }),
     });
-    if (profile.phone?.trim()) {
-      this.setContactLines(null, null, profile.phone);
+    if (profile.contactPhones?.trim() || profile.contactFaxes?.trim() || profile.phone?.trim()) {
+      this.setContactLines(profile.contactPhones ?? null, profile.contactFaxes ?? null, profile.phone ?? null);
     }
+    this.refreshBusinessAddressOptions();
+    this.refreshCorrespondenceAddressOptions();
     if (profile.pksBranchId) {
-      this.refreshOfficeLocations(this.form1.controls.postCode.value);
+      this.refreshOfficeLocations(profile.postCode ?? this.form1.controls.postCode.value);
     }
   }
 
   private importTaxPayerChildren(caseId: number, onComplete: () => void): void {
-    const directors = [...this.pendingImportDirectors];
-    const premises = [...this.pendingImportPremises];
-    this.pendingImportDirectors = [];
-    this.pendingImportPremises = [];
+    const directors = [...this.pendingImportDirectors()];
+    const premises = [...this.pendingImportPremises()];
+    this.pendingImportDirectors.set([]);
+    this.pendingImportPremises.set([]);
 
     const importNextDirector = (index: number): void => {
       if (index >= directors.length) {

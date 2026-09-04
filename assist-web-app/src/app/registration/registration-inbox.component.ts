@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { RegistrationCaseSummary } from '../core/models/registration.model';
 import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
+import { registrationSectionLabel } from './registration-section.util';
 import { RegistrationService } from './registration.service';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
 
@@ -66,6 +67,28 @@ export class RegistrationInboxComponent {
       return '—';
     }
     return value.replace('T', ' ').slice(0, 16);
+  }
+
+  sectionLabel(item: RegistrationCaseSummary): string {
+    return registrationSectionLabel(item.sectionId, item.sectionCode);
+  }
+
+  statusHint(item: RegistrationCaseSummary): string | null {
+    if (item.appStatus === 'IN_QUERY' && item.queryRemark) {
+      return item.queryRemark;
+    }
+    if (item.appStatus === 'REJECTED' && item.appStatusReason) {
+      return item.appStatusReason;
+    }
+    return null;
+  }
+
+  isSalesTax(item: RegistrationCaseSummary): boolean {
+    return item.sectionId === SECTION_SALES_TAX;
+  }
+
+  statusClass(status: string): string {
+    return `status-${status.toLowerCase().replace(/_/g, '-')}`;
   }
 
   rowBusy(caseId: number): boolean {

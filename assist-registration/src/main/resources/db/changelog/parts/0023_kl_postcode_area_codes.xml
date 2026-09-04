@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Common KL postcodes used in dev/test (e.g. wizard default address). -->
+    <changeSet id="0023-reg-area-code-kl-postcodes" author="ns3">
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="postcode" value="50013"/>
+            <column name="area_code" value="W10"/>
+            <column name="area_name" value="Wilayah Persekutuan Kuala Lumpur"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="postcode" value="50013"/>
+            <column name="area_code" value="W10"/>
+            <column name="area_name" value="Wilayah Persekutuan Kuala Lumpur"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="ref_postcode_office" schemaName="reference">
+            <column name="postcode" value="50013"/>
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="sort_order" valueNumeric="10"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

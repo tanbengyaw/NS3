@@ -87,7 +87,7 @@ Phase 1 vertical slice: **employer registration** (search, registration cases, a
 |----------|------|--------|
 | **Next UI** | **Angular `assist-web-app` shell** | **Started:** login, shell, employer list. Next: registration wizard, officer inbox. See [assist-web-app/README.md](./assist-web-app/README.md). |
 | **Next backend** | **Extend special cases** | Port from ASSIST `SpecialCase`: **AEC** employer flag, **employee name mismatch** (temp vs live/JPN). Route non-RO submit → `IN_PROGRESS`; RO rules per case type. |
-| Later | Full `reg_area_code` master data | Production employer codes |
+| Later | **Full national postcode master** | Dev seeds cover all wizard postcodes + area codes (0024). Production: export legacy ASSIST → CSV → Liquibase. See [docs/reference-data-load.md](./docs/reference-data-load.md). |
 | Later | PostgreSQL hardening | Dev uses H2; prod profile already defined |
 | Later | Directors, premises, documents | Additional Form 1 / attachments |
 | Later | jBPM / full ASSIST workflow parity | Out of Phase 1 scope |

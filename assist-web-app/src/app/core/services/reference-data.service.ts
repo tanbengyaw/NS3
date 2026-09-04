@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PostcodeOption, RefOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../models/reference.model';
 
@@ -34,7 +34,7 @@ export class ReferenceDataService {
 
   listOfficeLocations(postcode: string | null | undefined): Observable<RefOption[]> {
     if (!postcode?.trim()) {
-      return this.http.get<RefOption[]>(`${this.base}/office-locations`);
+      return of([]);
     }
     const params = new HttpParams().set('postcode', postcode.trim());
     return this.http.get<RefOption[]>(`${this.base}/office-locations`, { params });

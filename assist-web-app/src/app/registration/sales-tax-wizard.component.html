@@ -72,7 +72,7 @@
         <p class="hint search-lock-hint">Search is disabled — <strong>New Tax Payer Registration</strong> is selected. Fill in the form below instead.</p>
       }
       @if (searchedEmployerCode()) {
-        <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft.</p>
+        <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft — directors and premises from the employer appear in the tables further down.</p>
       }
       @if (caseId()) {
         <p class="hint">Draft created — search is read-only. Use Save Form 1 below to update details.</p>
@@ -332,7 +332,11 @@
       <h2 class="section-withbg">Other place of manufacturing address <span class="optional">(optional)</span></h2>
       <div class="section-body">
     @if (!caseId()) {
-      <p class="hint">No draft yet — complete all Form 1 fields above, tick <strong>New Tax Payer Registration</strong> or search an existing tax payer, then click Add premises.</p>
+      @if (pendingImportPremises().length > 0) {
+        <p class="hint">Showing {{ pendingImportPremises().length }} premises from search — they will be saved when you create draft.</p>
+      } @else {
+        <p class="hint">No draft yet — complete all Form 1 fields above, tick <strong>New Tax Payer Registration</strong> or search an existing tax payer, then click Add premises.</p>
+      }
     }
     <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable || !form1EntryAllowed" (click)="openPremisesModal()">
       Add premises
@@ -343,15 +347,17 @@
           <tr><th>Name</th><th>Address</th><th>Postcode</th><th>City</th><th>State</th><th></th></tr>
         </thead>
         <tbody>
-          @for (p of premises(); track p.id) {
-            <tr>
+          @for (p of premisesTableRows(); track p.rowKey) {
+            <tr [class.pending-import]="p.pending">
               <td>{{ p.name }}</td>
               <td>{{ formatPremisesAddress(p) }}</td>
               <td>{{ p.postCode }}</td>
               <td>{{ p.cityName }}</td>
               <td>{{ p.stateName }}</td>
               <td>
-                @if (isEditable) {
+                @if (p.pending) {
+                  <span class="pending-badge">From search</span>
+                } @else if (isEditable) {
                   <span class="row-actions">
                     <button type="button" class="link-btn edit" (click)="openPremisesModal(p)" title="Edit">Edit</button>
                     <button type="button" class="link-btn remove" (click)="requestDeletePremises(p.id)" title="Remove">Remove</button>
@@ -372,7 +378,11 @@
       <h2 class="section-withbg">Details of director / owner <span class="req">*</span> <span class="hint">(≥1 required to submit)</span></h2>
       <div class="section-body">
     @if (!caseId()) {
-      <p class="hint">Create draft first to add directors — or fill Form 1 and use Add director (draft is created automatically).</p>
+      @if (pendingImportDirectors().length > 0) {
+        <p class="hint">Showing {{ pendingImportDirectors().length }} director(s) from search — they will be saved when you create draft.</p>
+      } @else {
+        <p class="hint">Create draft first to add directors — or fill Form 1 and use Add director (draft is created automatically).</p>
+      }
     }
     <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable || !form1EntryAllowed" (click)="openDirectorModal()">
       Add director
@@ -383,15 +393,17 @@
           <tr><th>Name</th><th>ID type</th><th>ID no</th><th>Email</th><th>Designation</th><th></th></tr>
         </thead>
         <tbody>
-          @for (d of directors(); track d.id) {
-            <tr>
+          @for (d of directorTableRows(); track d.rowKey) {
+            <tr [class.pending-import]="d.pending">
               <td>{{ d.name }}</td>
               <td>{{ identificationTypeLabel(d.identificationTypeId) }}</td>
               <td>{{ d.identificationNo }}</td>
               <td>{{ d.email }}</td>
               <td>{{ d.designation }}</td>
               <td>
-                @if (isEditable) {
+                @if (d.pending) {
+                  <span class="pending-badge">From search</span>
+                } @else if (isEditable && d.id) {
                   <span class="row-actions">
                     <button type="button" class="link-btn edit" (click)="openDirectorModal(d)" title="Edit">Edit</button>
                     <button type="button" class="link-btn remove" (click)="requestDeleteDirector(d.id)" title="Remove">Remove</button>
@@ -725,6 +737,10 @@
             <dt>Entity type</dt><dd>{{ businessEntityLabel(form1.controls.businessEntityTypeId.value) }}</dd>
             <dt>MSIC</dt><dd>{{ previewText(form1.controls.msicId.value) }}</dd>
             <dt>PKS branch</dt><dd>{{ officeLocationLabel(form1.controls.pksBranchId.value) }}</dd>
+            @if (appStatus() === 'APPROVED') {
+              <dt>Employer / SST reg no</dt><dd>{{ previewText(employerCode()) }}</dd>
+              <dt>Sales tax SMK no</dt><dd>{{ previewText(salesTaxSmkRegNo()) }}</dd>
+            }
             <dt>Business address</dt><dd>{{ formatBusinessAddressPreview() }}</dd>
             <dt>Premise address</dt><dd>{{ formatPremiseAddressPreview() }}</dd>
             <dt>Email</dt><dd>{{ previewText(form1.controls.email.value) }}</dd>

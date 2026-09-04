@@ -44,6 +44,8 @@ export interface RegistrationCase {
   msicId: number | null;
   methodContributionPaymentId: number | null;
   employerId: number | null;
+  employerCode: string | null;
+  salesTaxSmkRegNo: string | null;
   queryRemark: string | null;
 }
 
@@ -55,6 +57,10 @@ export interface RegistrationCaseSummary {
   sectionCode: string | null;
   employerName: string;
   registrationNo: string;
+  employerCode: string | null;
+  salesTaxSmkRegNo: string | null;
+  queryRemark: string | null;
+  appStatusReason: string | null;
   submissionDate: string | null;
   createdDate: string | null;
 }
@@ -232,8 +238,29 @@ export interface TaxPayerRegistrationProfile {
   msicId: number | null;
   serviceTypeId: number | null;
   pksBranchId: number | null;
+  methodContributionPaymentId?: number | null;
   email: string | null;
   phone: string | null;
+  contactPhones?: string | null;
+  contactFaxes?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  addressLine3?: string | null;
+  stateId?: number | null;
+  cityId?: number | null;
+  cityName?: string | null;
+  postCode?: string | null;
+  corrAddressLine1?: string | null;
+  corrAddressLine2?: string | null;
+  corrAddressLine3?: string | null;
+  corrPostCode?: string | null;
+  corrStateId?: number | null;
+  corrCityId?: number | null;
+  corrCityName?: string | null;
+  tradeName?: string | null;
+  tourTaxRegNo?: string | null;
+  inTaxRefNo?: string | null;
+  cusAudRefNo?: string | null;
   directors: TaxPayerDirectorProfile[];
   premises: TaxPayerPremisesProfile[];
 }

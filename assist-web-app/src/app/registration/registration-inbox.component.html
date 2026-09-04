@@ -21,6 +21,9 @@
       <button type="button" [class.active]="statusFilter() === 'REJECTED'" (click)="setStatusFilter('REJECTED')">
         Rejected
       </button>
+      <button type="button" [class.active]="statusFilter() === 'APPROVED'" (click)="setStatusFilter('APPROVED')">
+        Approved
+      </button>
       <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
     </div>
 
@@ -41,6 +44,9 @@
             <th>Section</th>
             <th>Business</th>
             <th>BRN</th>
+            <th>Employer / SST reg</th>
+            <th>Sales tax SMK</th>
+            <th>Officer note</th>
             <th>Submitted</th>
             <th>Actions</th>
           </tr>
@@ -48,11 +54,34 @@
         <tbody>
           @for (item of cases(); track item.id) {
             <tr>
-              <td>{{ item.caseRefNo }}</td>
-              <td>{{ item.appStatus }}</td>
-              <td>{{ item.sectionId }} {{ item.sectionCode }}</td>
+              <td class="mono">{{ item.caseRefNo }}</td>
+              <td>
+                <span class="status-badge" [class]="statusClass(item.appStatus)">{{ item.appStatus }}</span>
+              </td>
+              <td>{{ sectionLabel(item) }}</td>
               <td>{{ item.employerName }}</td>
-              <td>{{ item.registrationNo }}</td>
+              <td class="mono">{{ item.registrationNo }}</td>
+              <td class="mono codes">
+                @if (item.employerCode) {
+                  {{ item.employerCode }}
+                } @else if (item.appStatus === 'APPROVED') {
+                  <span class="muted">Pending promotion</span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+              <td class="mono codes">
+                @if (item.salesTaxSmkRegNo) {
+                  {{ item.salesTaxSmkRegNo }}
+                } @else if (isSalesTax(item) && item.appStatus === 'APPROVED') {
+                  <span class="muted">Not issued</span>
+                } @else if (isSalesTax(item)) {
+                  <span class="muted">On approve</span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+              <td class="officer-note">{{ statusHint(item) ?? '—' }}</td>
               <td>{{ formatWhen(item.submissionDate) }}</td>
               <td class="row-actions">
                 <a [routerLink]="caseLink(item)">Open →</a>
@@ -71,7 +100,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="empty">
+              <td colspan="10" class="empty">
                 @if (loading()) {
                   Loading…
                 } @else {

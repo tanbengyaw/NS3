@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Area codes for every postcode in reference.ref_postcode_office (letter ref no 208/{areaCode}/{caseRefNo}). -->
+    <changeSet id="0022-reg-area-code-office-postcodes" author="ns3">
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="postcode" value="50450"/>
+            <column name="area_code" value="W11"/>
+            <column name="area_name" value="Kuala Lumpur (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="postcode" value="62000"/>
+            <column name="area_code" value="W15"/>
+            <column name="area_name" value="Putrajaya"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="postcode" value="40000"/>
+            <column name="area_code" value="A37"/>
+            <column name="area_name" value="Shah Alam (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="postcode" value="40800"/>
+            <column name="area_code" value="A37"/>
+            <column name="area_name" value="Shah Alam (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="postcode" value="46000"/>
+            <column name="area_code" value="A38"/>
+            <column name="area_name" value="Petaling (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="postcode" value="41000"/>
+            <column name="area_code" value="A39"/>
+            <column name="area_name" value="Klang (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="3"/>
+            <column name="postcode" value="47810"/>
+            <column name="area_code" value="A43"/>
+            <column name="area_name" value="Petaling Jaya (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="4"/>
+            <column name="postcode" value="80000"/>
+            <column name="area_code" value="J02"/>
+            <column name="area_name" value="Johor Bahru (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="5"/>
+            <column name="postcode" value="10000"/>
+            <column name="area_code" value="P02"/>
+            <column name="area_name" value="Seberang Perai (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0022-ref-postcode-office-tapah" author="ns3">
+        <insert tableName="ref_postcode_office" schemaName="reference">
+            <column name="postcode" value="39100"/>
+            <column name="branch_id" valueNumeric="10"/>
+            <column name="sort_order" valueNumeric="10"/>
+        </insert>
+        <insert tableName="ref_postcode_office" schemaName="reference">
+            <column name="postcode" value="39200"/>
+            <column name="branch_id" valueNumeric="10"/>
+            <column name="sort_order" valueNumeric="10"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0022-ref-branch-state-contact" author="ns3">
+        <addColumn tableName="ref_branch" schemaName="reference">
+            <column name="state_id" type="BIGINT"/>
+            <column name="phone" type="VARCHAR(30)"/>
+            <column name="fax" type="VARCHAR(30)"/>
+        </addColumn>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="14"/>
+            <column name="phone" value="03-4264 5000"/>
+            <column name="fax" value="03-4264 5100"/>
+            <where>id = 1</where>
+        </update>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="12"/>
+            <column name="phone" value="03-5544 6000"/>
+            <column name="fax" value="03-5544 6100"/>
+            <where>id = 2</where>
+        </update>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="12"/>
+            <column name="phone" value="03-7956 8000"/>
+            <column name="fax" value="03-7956 8100"/>
+            <where>id = 3</where>
+        </update>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="1"/>
+            <column name="phone" value="07-224 5000"/>
+            <column name="fax" value="07-224 5100"/>
+            <where>id = 4</where>
+        </update>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="7"/>
+            <column name="phone" value="04-263 5000"/>
+            <column name="fax" value="04-263 5100"/>
+            <where>id = 5</where>
+        </update>
+        <update tableName="ref_branch" schemaName="reference">
+            <column name="state_id" valueNumeric="8"/>
+            <column name="phone" value="05-401 5000"/>
+            <column name="fax" value="05-401 5100"/>
+            <where>id = 10</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

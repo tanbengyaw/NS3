@@ -32,7 +32,9 @@ public class RegistrationLetterCommonAttributeBuilder {
 
         final BranchReferenceReadPlatformService.BranchLetterData branch =
                 branchReferenceReadPlatformService.retrieveBranchForLetter(tempEmployer.getPksBranchId());
-        final String stateName = lookupStateName(tempEmployer.getStateId());
+        final String employerStateName = lookupStateName(tempEmployer.getStateId());
+        final String branchStateName = branch != null ? branch.getStateName() : null;
+        final String stateName = hasText(branchStateName) ? branchStateName : employerStateName;
         final String areaCode = resolveAreaCode(tempEmployer);
         final LocalDate receiveDate = receiveDate(regCase);
 
@@ -78,9 +80,16 @@ public class RegistrationLetterCommonAttributeBuilder {
         headerAttributes.put("perkesoPost", escapeHtml(branch != null ? branch.getPostCode() : ""));
         headerAttributes.put("perkesoCity", escapeHtml(branch != null ? branch.getCityName() : ""));
         headerAttributes.put("perkesoState", escapeHtml(stateName));
-        headerAttributes.put("NoFaks", "-");
+        headerAttributes.put("NoFaks", escapeHtml(formatBranchFax(branch)));
         headerAttributes.put("Emel", "customercare@perkeso.gov.my");
         return templateRenderer.renderHeader(headerAttributes);
+    }
+
+    private static String formatBranchFax(final BranchReferenceReadPlatformService.BranchLetterData branch) {
+        if (branch == null || !hasText(branch.getFax())) {
+            return "-";
+        }
+        return branch.getFax().trim();
     }
 
     private String buildEmployerAddressTableCell(final TempEmployer tempEmployer, final String stateName) {
