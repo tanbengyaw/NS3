@@ -3,11 +3,16 @@
     <div class="brand">ASSIST</div>
     <nav>
       <a routerLink="/employers" routerLinkActive="active">Employers</a>
-      <a routerLink="/registration" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">SOCSO new reg</a>
-      <a routerLink="/registration/sales-tax" routerLinkActive="active">Sales tax</a>
-      @if (isOfficer) {
-        <a routerLink="/registration/inbox" routerLinkActive="active">Officer inbox</a>
-      }
+      <div class="nav-group">
+        <span class="nav-group-label">Registration</span>
+        <a routerLink="/registration" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          SOCSO new registration
+        </a>
+        <a routerLink="/registration/sales-tax" routerLinkActive="active">Sales tax registration</a>
+        @if (isOfficer) {
+          <a routerLink="/registration/inbox" routerLinkActive="active">Officer inbox</a>
+        }
+      </div>
     </nav>
     <div class="sidebar-footer">
       @if (session(); as user) {

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0021-reg-area-code-expansion" author="ns3">
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="postcode" value="61200"/>
+            <column name="area_code" value="W15"/>
+            <column name="area_name" value="Putrajaya"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="3"/>
+            <column name="postcode" value="47301"/>
+            <column name="area_code" value="A42"/>
+            <column name="area_name" value="Petaling Jaya (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="4"/>
+            <column name="postcode" value="80300"/>
+            <column name="area_code" value="J01"/>
+            <column name="area_name" value="Johor Bahru (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="5"/>
+            <column name="postcode" value="10400"/>
+            <column name="area_code" value="P01"/>
+            <column name="area_name" value="Pulau Pinang (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="10"/>
+            <column name="postcode" value="39100"/>
+            <column name="area_code" value="F75"/>
+            <column name="area_name" value="Tapah (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="reg_area_code" schemaName="registration">
+            <column name="branch_id" valueNumeric="10"/>
+            <column name="postcode" value="39200"/>
+            <column name="area_code" value="F75"/>
+            <column name="area_name" value="Tapah (OPA)"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0021-ref-branch-tapah" author="ns3">
+        <insert tableName="ref_branch" schemaName="reference">
+            <column name="id" valueNumeric="10"/>
+            <column name="name" value="Pejabat PERKESO Tapah"/>
+            <column name="sort_order" valueNumeric="10"/>
+            <column name="address_line1" value="Tingkat 1, Bangunan PERKESO"/>
+            <column name="address_line2" value="Jalan Tapah"/>
+            <column name="postcode" value="35000"/>
+            <column name="city_name" value="Tapah"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

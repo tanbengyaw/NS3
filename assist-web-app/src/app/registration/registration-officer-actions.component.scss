@@ -1,0 +1,112 @@
+:host {
+  display: contents;
+}
+
+.actions {
+  display: contents;
+}
+
+button {
+  padding: 0.65rem 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+
+  &.approve {
+    border-color: #137333;
+    background: #137333;
+    color: #fff;
+  }
+
+  &.query {
+    border-color: #e37400;
+    background: #e37400;
+    color: #fff;
+  }
+
+  &.reject {
+    border-color: #c5221f;
+    background: #c5221f;
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+:host(.inline) button {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+
+    textarea {
+      display: block;
+      width: 100%;
+      margin-top: 0.35rem;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font: inherit;
+      resize: vertical;
+    }
+
+    &.field-invalid textarea {
+      border-color: #c5221f;
+    }
+  }
+}
+
+.req {
+  color: #c5221f;
+  margin-left: 0.15em;
+}
+
+.modal-btn {
+  min-width: 7rem;
+  padding: 0.55rem 1.25rem;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &.cancel {
+    border: 1px solid #9aa0a6;
+    background: #fff;
+    color: #3c4043;
+  }
+
+  &.save {
+    border: 1px solid #1a237e;
+    background: #1a237e;
+    color: #fff;
+
+    &.query {
+      border-color: #e37400;
+      background: #e37400;
+    }
+
+    &.reject {
+      border-color: #c5221f;
+      background: #c5221f;
+    }
+  }
+}

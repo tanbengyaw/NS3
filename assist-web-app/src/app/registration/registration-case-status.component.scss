@@ -1,0 +1,22 @@
+.status-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+
+  &.query,
+  &.rejected,
+  &.review {
+    background: #e8f0fe;
+    border: 1px solid #1a73e8;
+    color: #174ea6;
+  }
+
+  .officer-remark {
+    margin: 0.5rem 0 0;
+    color: #202124;
+  }
+
+  .status-actions {
+    margin-top: 0.5rem;
+  }
+}

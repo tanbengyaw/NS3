@@ -1,6 +1,7 @@
 <section class="page" id="sales-tax-wizard-top">
   <header>
-    <h1>Sales tax registration</h1>
+    <p class="module-label">Registration</p>
+    <h1>Sales tax new registration</h1>
     @if (caseRefNo()) {
       <p>
         Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>1100</strong> · Status:
@@ -674,13 +675,27 @@
               }
             </ul>
           </div>
-        } @else if (appStatus() === 'SUBMITTED' || appStatus() === 'IN_PROGRESS') {
-          <div class="preview-routed">
-            <strong>Case routed for officer review.</strong>
-            Status: <strong>{{ appStatus() }}</strong>.
-            An officer can open this case from the
-            <a routerLink="/registration/inbox">Officer inbox</a> and click <strong>Approve</strong> below.
-          </div>
+        } @else if (appStatus() === 'IN_QUERY' || appStatus() === 'REJECTED' || appStatus() === 'SUBMITTED' || appStatus() === 'IN_PROGRESS') {
+          <assist-registration-case-status
+            [appStatus]="appStatus()"
+            [queryRemark]="queryRemark()"
+            [appStatusReason]="appStatusReason()"
+          >
+            @if (appStatus() === 'IN_QUERY') {
+              <div letter-actions class="letter-actions">
+                <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadInquiryLetter()">
+                  Download inquiry letter
+                </button>
+              </div>
+            }
+            @if (appStatus() === 'REJECTED') {
+              <div letter-actions class="letter-actions">
+                <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadRejectionLetter()">
+                  Download rejection letter
+                </button>
+              </div>
+            }
+          </assist-registration-case-status>
         } @else if (appStatus() === 'APPROVED') {
           <div class="preview-ready">
             Case approved and registration completed.
@@ -898,12 +913,27 @@
           Submit &amp; route case
         </button>
       }
-      @if (isOfficer && (appStatus() === 'SUBMITTED' || appStatus() === 'IN_PROGRESS')) {
-        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve case</button>
-      }
+      <assist-registration-officer-actions
+        [caseId]="caseId()"
+        [appStatus]="appStatus()"
+        [busy]="loading()"
+        (workflowStarted)="onOfficerWorkflowStarted()"
+        (workflowCompleted)="onOfficerWorkflowCompleted($event)"
+        (workflowFailed)="onOfficerWorkflowFailed($event)"
+      />
       @if (appStatus() === 'APPROVED') {
         <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadAcknowledgementLetter()">
           Download acknowledgement letter
+        </button>
+      }
+      @if (appStatus() === 'IN_QUERY') {
+        <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadInquiryLetter()">
+          Download inquiry letter
+        </button>
+      }
+      @if (appStatus() === 'REJECTED') {
+        <button type="button" class="letter-btn" [disabled]="loading()" (click)="downloadRejectionLetter()">
+          Download rejection letter
         </button>
       }
     </div>

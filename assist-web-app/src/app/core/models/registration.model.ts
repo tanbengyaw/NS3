@@ -44,6 +44,7 @@ export interface RegistrationCase {
   msicId: number | null;
   methodContributionPaymentId: number | null;
   employerId: number | null;
+  queryRemark: string | null;
 }
 
 export interface RegistrationCaseSummary {

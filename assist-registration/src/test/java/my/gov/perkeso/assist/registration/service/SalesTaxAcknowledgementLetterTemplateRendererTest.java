@@ -46,6 +46,29 @@ class SalesTaxAcknowledgementLetterTemplateRendererTest {
     }
 
     @Test
+    void renderInquiry_includesAppendix16Heading() {
+        final String html = new SalesTaxAcknowledgementLetterTemplateRenderer().renderInquiry(Map.of(
+                "myCSS", "",
+                "declareHeader", "",
+                "refNoYour", "CASE-001",
+                "refNoOur", "208/A37/CASE-001",
+                "receiveDate", "01/06/2024",
+                "employerAddressWithName", "<td>ABC SDN BHD</td>",
+                "employeeList", "",
+                "orderList", "",
+                "tagline", "",
+                "letterPhrase", "",
+                "idStaff", "Pegawai Pendaftaran",
+                "branchTitleWithState", "",
+                "branchName", "",
+                "isCcNeeded", "",
+                "moto", ""));
+
+        assertThat(html).contains("PERMINTAAN");
+        assertThat(html).contains("KEPERLUAN DOKUMEN");
+    }
+
+    @Test
     void normalizeForPdf_escapesBareAmpersandsInDynamicContent() {
         final String html = new SalesTaxAcknowledgementLetterTemplateRenderer().render(Map.of(
                 "employerAddressWithName", "Foo &amp; Bar SDN BHD<br/>47301 PETALING JAYA",

@@ -1,6 +1,7 @@
 <section class="page">
   <header>
-    <h1>Registration wizard</h1>
+    <p class="module-label">Registration</p>
+    <h1>SOCSO new registration</h1>
     @if (caseRefNo()) {
       <p>Case: <strong>{{ caseRefNo() }}</strong> · Status: <strong>{{ appStatus() }}</strong></p>
     } @else {
@@ -87,6 +88,11 @@
   }
 
   @if (step() === 3 && caseId()) {
+    <assist-registration-case-status
+      [appStatus]="appStatus()"
+      [queryRemark]="queryRemark()"
+      [appStatusReason]="appStatusReason()"
+    />
     <div class="summary">
       <p>Employees: {{ employees().length }}</p>
       <p>When you submit, portal users go to <strong>SUBMITTED</strong>; RO auto-approves.</p>
@@ -96,9 +102,14 @@
       @if (isEditable) {
         <button type="button" class="primary" [disabled]="loading()" (click)="submitCase()">Submit case</button>
       }
-      @if (isOfficer && appStatus() === 'SUBMITTED') {
-        <button type="button" class="approve" [disabled]="loading()" (click)="approveCase()">Approve</button>
-      }
+      <assist-registration-officer-actions
+        [caseId]="caseId()"
+        [appStatus]="appStatus()"
+        [busy]="loading()"
+        (workflowStarted)="onOfficerWorkflowStarted()"
+        (workflowCompleted)="onOfficerWorkflowCompleted($event)"
+        (workflowFailed)="onOfficerWorkflowFailed($event)"
+      />
     </div>
   }
 </section>

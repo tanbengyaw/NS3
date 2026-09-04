@@ -25,5 +25,6 @@
     <include file="db/changelog/parts/0018_sst_supporting_documents.xml"/>
     <include file="db/changelog/parts/0019_supporting_documents_optional.xml"/>
     <include file="db/changelog/parts/0020_letter_reference_data.xml"/>
+    <include file="db/changelog/parts/0021_sales_tax_letter_reference_data.xml"/>
 
 </databaseChangeLog>

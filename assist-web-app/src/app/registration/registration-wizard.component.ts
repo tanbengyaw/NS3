@@ -1,20 +1,21 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../core/auth/auth.service';
+import { RegistrationCaseStatusComponent } from './registration-case-status.component';
+import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
+import { RegistrationWorkflowResult } from './registration-workflow.model';
 
 @Component({
   selector: 'assist-registration-wizard',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, RegistrationCaseStatusComponent, RegistrationOfficerActionsComponent],
   templateUrl: './registration-wizard.component.html',
   styleUrl: './registration-wizard.component.scss',
 })
 export class RegistrationWizardComponent {
   private readonly fb = inject(FormBuilder);
   private readonly registration = inject(RegistrationService);
-  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -22,6 +23,8 @@ export class RegistrationWizardComponent {
   readonly caseId = signal<number | null>(null);
   readonly caseRefNo = signal<string | null>(null);
   readonly appStatus = signal<string | null>(null);
+  readonly queryRemark = signal<string | null>(null);
+  readonly appStatusReason = signal<string | null>(null);
   readonly employerCode = signal<string | null>(null);
   readonly employees = signal<
     { id: number; employeeName: string; identificationNo: string; employmentStartDate: string }[]
@@ -56,10 +59,6 @@ export class RegistrationWizardComponent {
     } else {
       this.form1.patchValue({ registrationNo: this.newBrn() });
     }
-  }
-
-  get isOfficer(): boolean {
-    return this.auth.hasRole('OFFICER') || this.auth.hasRole('ADMIN');
   }
 
   get isEditable(): boolean {
@@ -160,23 +159,32 @@ export class RegistrationWizardComponent {
     });
   }
 
-  approveCase(): void {
-    const id = this.caseId();
-    if (!id) {
-      return;
-    }
+  onOfficerWorkflowStarted(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.registration.approveCase(id).subscribe({
-      next: (result) => {
-        this.loading.set(false);
-        this.appStatus.set('APPROVED');
-        this.employerCode.set(result.resourceIdentifier);
-        this.message.set(`Approved. Employer code: ${result.resourceIdentifier}`);
-        this.loadCase(id);
-      },
-      error: (err) => this.onError(err),
-    });
+  }
+
+  onOfficerWorkflowCompleted(result: RegistrationWorkflowResult): void {
+    this.loading.set(false);
+    this.appStatus.set(result.appStatus);
+    if (result.employerCode) {
+      this.employerCode.set(result.employerCode);
+    }
+    if (result.queryRemark) {
+      this.queryRemark.set(result.queryRemark);
+    }
+    if (result.appStatusReason) {
+      this.appStatusReason.set(result.appStatusReason);
+    }
+    this.message.set(result.message);
+    const id = this.caseId();
+    if (id) {
+      this.loadCase(id);
+    }
+  }
+
+  onOfficerWorkflowFailed(err: unknown): void {
+    this.onError(err);
   }
 
   goToStep(next: number): void {
@@ -193,6 +201,8 @@ export class RegistrationWizardComponent {
         this.caseId.set(c.id);
         this.caseRefNo.set(c.caseRefNo);
         this.appStatus.set(c.appStatus);
+        this.queryRemark.set(c.queryRemark ?? null);
+        this.appStatusReason.set(c.appStatusReason ?? null);
         this.form1.patchValue({
           employerName: c.employerName ?? '',
           registrationNo: c.registrationNo ?? '',

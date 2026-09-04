@@ -2,13 +2,15 @@ import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../core/auth/auth.service';
 import { PostcodeOption, RefOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../core/models/reference.model';
 import { ContactLine, TempDirectorOwner, TempPremises, TempSstContactPerson, TempSstSupportingDocument, TempSstTariffCode, TaxPayerRegistrationProfile } from '../core/models/registration.model';
 import { ReferenceDataService } from '../core/services/reference-data.service';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { FormModalComponent } from '../shared/form-modal.component';
+import { RegistrationCaseStatusComponent } from './registration-case-status.component';
+import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
+import { RegistrationWorkflowResult } from './registration-workflow.model';
 
 /** ASSIST section REG_NEW_REG_SST_SALES_TAX */
 const SECTION_SALES_TAX = 1100;
@@ -22,7 +24,7 @@ type PendingDelete = { kind: 'director' | 'premises' | 'tariff' | 'contactPerson
 @Component({
   selector: 'assist-sales-tax-wizard',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, FormModalComponent, ConfirmDialogComponent],
+  imports: [ReactiveFormsModule, RouterLink, FormModalComponent, ConfirmDialogComponent, RegistrationCaseStatusComponent, RegistrationOfficerActionsComponent],
   templateUrl: './sales-tax-wizard.component.html',
   styleUrl: './sales-tax-wizard.component.scss',
 })
@@ -30,7 +32,6 @@ export class SalesTaxWizardComponent {
   private readonly fb = inject(FormBuilder);
   private readonly registration = inject(RegistrationService);
   private readonly referenceData = inject(ReferenceDataService);
-  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -38,6 +39,8 @@ export class SalesTaxWizardComponent {
   readonly caseId = signal<number | null>(null);
   readonly caseRefNo = signal<string | null>(null);
   readonly appStatus = signal<string | null>(null);
+  readonly queryRemark = signal<string | null>(null);
+  readonly appStatusReason = signal<string | null>(null);
   readonly employerCode = signal<string | null>(null);
   readonly salesTaxSmkRegNo = signal<string | null>(null);
   readonly directors = signal<TempDirectorOwner[]>([]);
@@ -215,10 +218,6 @@ export class SalesTaxWizardComponent {
       this.refreshBusinessAddressOptions();
       this.syncForm1EntryState();
     }
-  }
-
-  get isOfficer(): boolean {
-    return this.auth.hasRole('OFFICER') || this.auth.hasRole('ADMIN');
   }
 
   get isEditable(): boolean {
@@ -1127,27 +1126,39 @@ export class SalesTaxWizardComponent {
     });
   }
 
-  approveCase(): void {
-    const id = this.caseId();
-    if (!id) {
-      return;
-    }
+  onOfficerWorkflowStarted(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.registration.approveCase(id).subscribe({
-      next: (result) => {
-        this.loading.set(false);
-        this.appStatus.set('APPROVED');
-        this.employerCode.set(result.resourceIdentifier);
-        const smk = result.changes?.['salesTaxSmkRegNo'];
-        if (typeof smk === 'string') {
-          this.salesTaxSmkRegNo.set(smk);
-        }
-        this.message.set(`Approved. Employer code: ${result.resourceIdentifier}`);
-        this.loadCase(id);
-      },
-      error: (err) => this.onError(err),
-    });
+  }
+
+  onOfficerWorkflowCompleted(result: RegistrationWorkflowResult): void {
+    this.loading.set(false);
+    this.applyWorkflowResult(result);
+    const id = this.caseId();
+    if (id) {
+      this.loadCase(id, () => this.scrollToWizardTop());
+    }
+  }
+
+  onOfficerWorkflowFailed(err: unknown): void {
+    this.onError(err);
+  }
+
+  private applyWorkflowResult(result: RegistrationWorkflowResult): void {
+    this.appStatus.set(result.appStatus);
+    if (result.employerCode) {
+      this.employerCode.set(result.employerCode);
+    }
+    if (result.queryRemark) {
+      this.queryRemark.set(result.queryRemark);
+    }
+    if (result.appStatusReason) {
+      this.appStatusReason.set(result.appStatusReason);
+    }
+    if (result.salesTaxSmkRegNo) {
+      this.salesTaxSmkRegNo.set(result.salesTaxSmkRegNo);
+    }
+    this.message.set(result.message);
   }
 
   goToStep(next: number): void {
@@ -1357,23 +1368,38 @@ export class SalesTaxWizardComponent {
   }
 
   downloadAcknowledgementLetter(): void {
+    this.downloadSalesTaxLetter('acknowledgement', 'sales-tax-acknowledgement');
+  }
+
+  downloadInquiryLetter(): void {
+    this.downloadSalesTaxLetter('inquiry', 'sales-tax-inquiry');
+  }
+
+  downloadRejectionLetter(): void {
+    this.downloadSalesTaxLetter('rejection', 'sales-tax-rejection');
+  }
+
+  private downloadSalesTaxLetter(
+    letterType: 'acknowledgement' | 'inquiry' | 'rejection',
+    filePrefix: string,
+  ): void {
     const caseId = this.caseId();
     if (!caseId) {
       return;
     }
     this.loading.set(true);
     this.error.set(null);
-    this.registration.downloadSalesTaxAcknowledgementLetter(caseId).subscribe({
+    this.registration.downloadSalesTaxLetter(caseId, letterType).subscribe({
       next: (blob) => {
         this.loading.set(false);
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
         const ref = this.caseRefNo()?.replace(/\//g, '-') ?? String(caseId);
-        anchor.download = `sales-tax-acknowledgement-${ref}.pdf`;
+        anchor.download = `${filePrefix}-${ref}.pdf`;
         anchor.click();
         URL.revokeObjectURL(url);
-        this.message.set('Acknowledgement letter downloaded.');
+        this.message.set('Letter downloaded.');
       },
       error: (err) => {
         this.loading.set(false);
@@ -1485,6 +1511,8 @@ export class SalesTaxWizardComponent {
         this.caseId.set(c.id);
         this.caseRefNo.set(c.caseRefNo);
         this.appStatus.set(c.appStatus);
+        this.queryRemark.set(c.queryRemark ?? null);
+        this.appStatusReason.set(c.appStatusReason ?? null);
         this.form1.patchValue({
           employerName: c.employerName ?? '',
           registrationNo: c.registrationNo ?? '',

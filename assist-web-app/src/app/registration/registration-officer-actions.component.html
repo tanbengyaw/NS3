@@ -1,0 +1,37 @@
+@if (canReview) {
+  <div class="actions">
+    <button type="button" class="approve" [disabled]="busy" (click)="approveCase()">{{ approveLabel }}</button>
+    <button type="button" class="query" [disabled]="busy" (click)="openQueryModal()">{{ queryLabel }}</button>
+    <button type="button" class="reject" [disabled]="busy" (click)="openRejectModal()">{{ rejectLabel }}</button>
+  </div>
+}
+
+<assist-form-modal [open]="queryModalOpen()" title="Send case to query" (closed)="closeQueryModal()">
+  <form class="form-grid" [formGroup]="queryForm">
+    <label class="full" [class.field-invalid]="showFieldError(queryForm.controls.remark)">
+      Query remark <span class="req">*</span>
+      <textarea
+        formControlName="remark"
+        rows="5"
+        placeholder="Describe missing documents or information required from the applicant"
+      ></textarea>
+    </label>
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="busy" (click)="closeQueryModal()">Cancel</button>
+    <button type="button" class="modal-btn save query" [disabled]="busy" (click)="submitQuery()">Send to query</button>
+  </div>
+</assist-form-modal>
+
+<assist-form-modal [open]="rejectModalOpen()" title="Reject case" (closed)="closeRejectModal()">
+  <form class="form-grid" [formGroup]="rejectForm">
+    <label class="full" [class.field-invalid]="showFieldError(rejectForm.controls.reason)">
+      Rejection reason <span class="req">*</span>
+      <textarea formControlName="reason" rows="5" placeholder="State why this registration is rejected"></textarea>
+    </label>
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="busy" (click)="closeRejectModal()">Cancel</button>
+    <button type="button" class="modal-btn save reject" [disabled]="busy" (click)="submitReject()">Reject case</button>
+  </div>
+</assist-form-modal>

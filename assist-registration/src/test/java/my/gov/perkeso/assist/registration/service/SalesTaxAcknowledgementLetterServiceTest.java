@@ -33,7 +33,13 @@ class SalesTaxAcknowledgementLetterServiceTest {
     private SstInfoRepository sstInfoRepository;
 
     @Mock
-    private SalesTaxAcknowledgementLetterAttributeBuilder attributeBuilder;
+    private SalesTaxAcknowledgementLetterAttributeBuilder acknowledgementAttributeBuilder;
+
+    @Mock
+    private SalesTaxInquiryLetterAttributeBuilder inquiryAttributeBuilder;
+
+    @Mock
+    private SalesTaxRejectionLetterAttributeBuilder rejectionAttributeBuilder;
 
     @Mock
     private SalesTaxAcknowledgementLetterTemplateRenderer templateRenderer;
@@ -46,14 +52,15 @@ class SalesTaxAcknowledgementLetterServiceTest {
     @BeforeEach
     void setUp() {
         service = new SalesTaxAcknowledgementLetterService(regGeneralInfoRepository, sstInfoRepository,
-                attributeBuilder, templateRenderer, pdfRenderer);
+                acknowledgementAttributeBuilder, inquiryAttributeBuilder, rejectionAttributeBuilder,
+                templateRenderer, pdfRenderer);
     }
 
     @Test
     void generateAcknowledgementLetter_pdfUsesLegacyTemplateContent() {
         stubApprovedCase();
-        when(attributeBuilder.buildAttributes(any(), any())).thenReturn(sampleAttributes());
-        when(templateRenderer.render(sampleAttributes())).thenReturn("<html>KELULUSAN PENDAFTARAN</html>");
+        when(acknowledgementAttributeBuilder.buildAttributes(any(), any())).thenReturn(sampleAttributes());
+        when(templateRenderer.renderAcknowledgement(sampleAttributes())).thenReturn("<html>KELULUSAN PENDAFTARAN</html>");
         when(templateRenderer.templateBaseUri()).thenReturn("file:/templates/legacy/");
         when(pdfRenderer.renderPdf("<html>KELULUSAN PENDAFTARAN</html>", "file:/templates/legacy/"))
                 .thenReturn("%PDF-test".getBytes());
@@ -67,17 +74,36 @@ class SalesTaxAcknowledgementLetterServiceTest {
     }
 
     @Test
-    void generateAcknowledgementLetter_htmlUsesLegacyTemplateRenderer() {
-        stubApprovedCase();
-        when(attributeBuilder.buildAttributes(any(), any())).thenReturn(sampleAttributes());
-        when(templateRenderer.render(sampleAttributes()))
-                .thenReturn("<html>KELULUSAN PENDAFTARAN DI BAWAH SEKSYEN 13</html>");
+    void generateInquiryLetter_usesAppendix16Template() {
+        final RegGeneralInfo regCase = inQuerySalesTaxCase();
+        when(regGeneralInfoRepository.findById(42L)).thenReturn(java.util.Optional.of(regCase));
+        when(inquiryAttributeBuilder.buildAttributes(regCase)).thenReturn(sampleAttributes());
+        when(templateRenderer.renderInquiry(sampleAttributes())).thenReturn("<html>PERMINTAAN</html>");
+        when(templateRenderer.templateBaseUri()).thenReturn("file:/templates/legacy/");
+        when(pdfRenderer.renderPdf("<html>PERMINTAAN</html>", "file:/templates/legacy/"))
+                .thenReturn("%PDF-inquiry".getBytes());
 
         final SalesTaxAcknowledgementLetterService.SalesTaxAcknowledgementLetter letter =
-                service.generateAcknowledgementLetter(42L, SalesTaxAcknowledgementLetterFormat.HTML);
+                service.generateLetter(42L, SalesTaxLetterType.INQUIRY, SalesTaxAcknowledgementLetterFormat.PDF);
 
-        assertThat(letter.fileName()).isEqualTo("sales-tax-acknowledgement-CASE-001.html");
-        assertThat(new String(letter.content())).contains("KELULUSAN PENDAFTARAN");
+        assertThat(letter.fileName()).isEqualTo("sales-tax-inquiry-CASE-001.pdf");
+        assertThat(new String(letter.content())).startsWith("%PDF");
+    }
+
+    @Test
+    void generateRejectionLetter_usesAppendix15Template() {
+        final RegGeneralInfo regCase = rejectedSalesTaxCase();
+        when(regGeneralInfoRepository.findById(42L)).thenReturn(java.util.Optional.of(regCase));
+        when(rejectionAttributeBuilder.buildAttributes(regCase)).thenReturn(sampleAttributes());
+        when(templateRenderer.renderRejection(sampleAttributes())).thenReturn("<html>KELULUSAN</html>");
+        when(templateRenderer.templateBaseUri()).thenReturn("file:/templates/legacy/");
+        when(pdfRenderer.renderPdf("<html>KELULUSAN</html>", "file:/templates/legacy/"))
+                .thenReturn("%PDF-reject".getBytes());
+
+        final SalesTaxAcknowledgementLetterService.SalesTaxAcknowledgementLetter letter =
+                service.generateLetter(42L, SalesTaxLetterType.REJECTION, SalesTaxAcknowledgementLetterFormat.PDF);
+
+        assertThat(letter.fileName()).isEqualTo("sales-tax-rejection-CASE-001.pdf");
     }
 
     @Test
@@ -88,7 +114,7 @@ class SalesTaxAcknowledgementLetterServiceTest {
 
         assertThatThrownBy(() -> service.generateAcknowledgementLetter(42L))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("approved");
+                .hasMessageContaining("APPROVED");
     }
 
     private void stubApprovedCase() {
@@ -104,6 +130,22 @@ class SalesTaxAcknowledgementLetterServiceTest {
     }
 
     private static RegGeneralInfo approvedSalesTaxCase() {
+        return baseSalesTaxCase(AppStatus.APPROVED);
+    }
+
+    private static RegGeneralInfo inQuerySalesTaxCase() {
+        final RegGeneralInfo regCase = baseSalesTaxCase(AppStatus.IN_QUERY);
+        regCase.setQueryRemark("Please upload SSM certificate");
+        return regCase;
+    }
+
+    private static RegGeneralInfo rejectedSalesTaxCase() {
+        final RegGeneralInfo regCase = baseSalesTaxCase(AppStatus.REJECTED);
+        regCase.setAppStatusReason("Duplicate BRN registration");
+        return regCase;
+    }
+
+    private static RegGeneralInfo baseSalesTaxCase(final AppStatus status) {
         final BusinessInfo businessInfo = new BusinessInfo();
         businessInfo.setRegistrationNo("201901234567");
 
@@ -118,7 +160,7 @@ class SalesTaxAcknowledgementLetterServiceTest {
         final RegGeneralInfo regCase = new RegGeneralInfo();
         regCase.setId(42L);
         regCase.setCaseRefNo("CASE-001");
-        regCase.setAppStatus(AppStatus.APPROVED);
+        regCase.setAppStatus(status);
         regCase.setSectionId(RegistrationSection.REG_NEW_REG_SST_SALES_TAX.getAssistSectionId());
         regCase.setEmployerId(99L);
         regCase.setTempEmployer(tempEmployer);

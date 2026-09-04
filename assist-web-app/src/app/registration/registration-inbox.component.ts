@@ -2,14 +2,16 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { RegistrationCaseSummary } from '../core/models/registration.model';
+import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
+import { RegistrationWorkflowResult } from './registration-workflow.model';
 
 const SECTION_SALES_TAX = 1100;
 
 @Component({
   selector: 'assist-registration-inbox',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, RegistrationOfficerActionsComponent],
   templateUrl: './registration-inbox.component.html',
   styleUrl: './registration-inbox.component.scss',
 })
@@ -19,7 +21,9 @@ export class RegistrationInboxComponent {
 
   readonly cases = signal<RegistrationCaseSummary[]>([]);
   readonly loading = signal(false);
+  readonly workflowCaseId = signal<number | null>(null);
   readonly error = signal<string | null>(null);
+  readonly message = signal<string | null>(null);
   readonly statusFilter = signal('SUBMITTED');
 
   constructor() {
@@ -62,5 +66,33 @@ export class RegistrationInboxComponent {
       return '—';
     }
     return value.replace('T', ' ').slice(0, 16);
+  }
+
+  rowBusy(caseId: number): boolean {
+    return this.loading() && this.workflowCaseId() === caseId;
+  }
+
+  onWorkflowStarted(caseId: number): void {
+    this.workflowCaseId.set(caseId);
+    this.loading.set(true);
+    this.error.set(null);
+    this.message.set(null);
+  }
+
+  onWorkflowCompleted(result: RegistrationWorkflowResult): void {
+    this.loading.set(false);
+    this.workflowCaseId.set(null);
+    this.message.set(result.message);
+    this.load();
+  }
+
+  onWorkflowFailed(err: unknown): void {
+    this.loading.set(false);
+    this.workflowCaseId.set(null);
+    this.error.set(
+      (err as { error?: { defaultUserMessage?: string }; message?: string })?.error?.defaultUserMessage ??
+        (err as { message?: string })?.message ??
+        'Workflow action failed',
+    );
   }
 }

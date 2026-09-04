@@ -63,6 +63,14 @@ export class RegistrationService {
     return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}?command=approve`, {});
   }
 
+  queryCase(caseId: number, remark: string): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}?command=query`, { remark });
+  }
+
+  rejectCase(caseId: number, reason: string): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}?command=reject`, { reason });
+  }
+
   listEmployees(caseId: number): Observable<TempEmployee[]> {
     return this.http.get<TempEmployee[]>(`${this.base}/${caseId}/employees`);
   }
@@ -164,10 +172,19 @@ export class RegistrationService {
     });
   }
 
-  downloadSalesTaxAcknowledgementLetter(caseId: number, format: 'pdf' | 'html' = 'pdf'): Observable<Blob> {
+  downloadSalesTaxLetter(
+    caseId: number,
+    letterType: 'acknowledgement' | 'inquiry' | 'rejection' = 'acknowledgement',
+    format: 'pdf' | 'html' = 'pdf',
+  ): Observable<Blob> {
     return this.http.get(`${this.base}/${caseId}/sst-info/acknowledgement-letter`, {
-      params: { format },
+      params: { letterType, format },
       responseType: 'blob',
     });
+  }
+
+  /** @deprecated use {@link #downloadSalesTaxLetter} */
+  downloadSalesTaxAcknowledgementLetter(caseId: number, format: 'pdf' | 'html' = 'pdf'): Observable<Blob> {
+    return this.downloadSalesTaxLetter(caseId, 'acknowledgement', format);
   }
 }
