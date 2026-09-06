@@ -15,6 +15,7 @@ export class RegistrationCaseStatusComponent {
   @Input({ required: true }) appStatus: string | null = null;
   @Input() queryRemark: string | null = null;
   @Input() appStatusReason: string | null = null;
+  @Input() routedToLabel: string | null = null;
   @Input() showInboxLink = true;
 
   get isOfficer(): boolean {

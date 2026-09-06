@@ -10,6 +10,7 @@ import { FormModalComponent } from '../shared/form-modal.component';
 import { RegistrationCaseStatusComponent } from './registration-case-status.component';
 import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
+import { resolveRoutedToLabel } from './case-routing.util';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
 
 /** ASSIST section REG_NEW_REG_SST_SALES_TAX */
@@ -41,6 +42,7 @@ export class SalesTaxWizardComponent {
   readonly appStatus = signal<string | null>(null);
   readonly queryRemark = signal<string | null>(null);
   readonly appStatusReason = signal<string | null>(null);
+  readonly routedToLabel = signal<string | null>(null);
   readonly employerCode = signal<string | null>(null);
   readonly salesTaxSmkRegNo = signal<string | null>(null);
   readonly directors = signal<TempDirectorOwner[]>([]);
@@ -1541,6 +1543,7 @@ export class SalesTaxWizardComponent {
         this.appStatus.set(c.appStatus);
         this.queryRemark.set(c.queryRemark ?? null);
         this.appStatusReason.set(c.appStatusReason ?? null);
+        this.routedToLabel.set(resolveRoutedToLabel(c));
         this.employerCode.set(c.employerCode ?? null);
         this.salesTaxSmkRegNo.set(c.salesTaxSmkRegNo ?? null);
         this.form1.patchValue({

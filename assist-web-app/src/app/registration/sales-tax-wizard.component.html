@@ -6,6 +6,9 @@
       <p>
         Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>1100</strong> · Status:
         <strong>{{ appStatus() }}</strong>
+        @if (routedToLabel()) {
+          · Routed to: <strong>{{ routedToLabel() }}</strong>
+        }
       </p>
     } @else {
       <p>New sales tax registration — mirrors ASSIST Form 1 → Form 2 → Preview</p>
@@ -692,6 +695,7 @@
             [appStatus]="appStatus()"
             [queryRemark]="queryRemark()"
             [appStatusReason]="appStatusReason()"
+            [routedToLabel]="routedToLabel()"
           >
             @if (appStatus() === 'IN_QUERY') {
               <div letter-actions class="letter-actions">

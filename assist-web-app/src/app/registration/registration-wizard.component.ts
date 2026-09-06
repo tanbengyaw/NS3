@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RegistrationCaseStatusComponent } from './registration-case-status.component';
 import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
+import { resolveRoutedToLabel } from './case-routing.util';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
 
 @Component({
@@ -25,6 +26,7 @@ export class RegistrationWizardComponent {
   readonly appStatus = signal<string | null>(null);
   readonly queryRemark = signal<string | null>(null);
   readonly appStatusReason = signal<string | null>(null);
+  readonly routedToLabel = signal<string | null>(null);
   readonly employerCode = signal<string | null>(null);
   readonly employees = signal<
     { id: number; employeeName: string; identificationNo: string; employmentStartDate: string }[]
@@ -203,6 +205,7 @@ export class RegistrationWizardComponent {
         this.appStatus.set(c.appStatus);
         this.queryRemark.set(c.queryRemark ?? null);
         this.appStatusReason.set(c.appStatusReason ?? null);
+        this.routedToLabel.set(resolveRoutedToLabel(c));
         this.form1.patchValue({
           employerName: c.employerName ?? '',
           registrationNo: c.registrationNo ?? '',

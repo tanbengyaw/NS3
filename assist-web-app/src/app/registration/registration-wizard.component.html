@@ -3,7 +3,12 @@
     <p class="module-label">Registration</p>
     <h1>SOCSO new registration</h1>
     @if (caseRefNo()) {
-      <p>Case: <strong>{{ caseRefNo() }}</strong> · Status: <strong>{{ appStatus() }}</strong></p>
+      <p>
+        Case: <strong>{{ caseRefNo() }}</strong> · Status: <strong>{{ appStatus() }}</strong>
+        @if (routedToLabel()) {
+          · Routed to: <strong>{{ routedToLabel() }}</strong>
+        }
+      </p>
     } @else {
       <p>New employer registration — Form 1 and Form 2</p>
     }
@@ -92,6 +97,7 @@
       [appStatus]="appStatus()"
       [queryRemark]="queryRemark()"
       [appStatusReason]="appStatusReason()"
+      [routedToLabel]="routedToLabel()"
     />
     <div class="summary">
       <p>Employees: {{ employees().length }}</p>

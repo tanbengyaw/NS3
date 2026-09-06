@@ -28,6 +28,7 @@ public class EmployerReadPlatformService {
 
     private final JdbcTemplate jdbcTemplate;
     private final RegGeneralInfoRepository regGeneralInfoRepository;
+    private final BranchReferenceReadPlatformService branchReferenceReadPlatformService;
 
     public Page<EmployerData> retrieveAll(final SearchParameters params) {
         final StringBuilder sql = new StringBuilder("""
@@ -99,8 +100,10 @@ public class EmployerReadPlatformService {
         final StringBuilder sql = new StringBuilder("""
                 SELECT r.id, r.case_ref_no, r.app_status, r.section_id, r.submission_date, r.created_date,
                        r.query_remark, r.app_status_reason,
+                       r.submitted_by_username, r.created_by_username,
                        t.employer_name, bi.registration_no,
                        e.employer_code,
+                       b.name AS processing_branch_name,
                        (SELECT s.sales_tax_smk_reg_no FROM registration.sst_info s
                         WHERE s.reg_general_info_id = r.id AND s.is_deleted = FALSE
                         ORDER BY s.id DESC LIMIT 1) AS sales_tax_smk_reg_no
@@ -108,6 +111,7 @@ public class EmployerReadPlatformService {
                 JOIN registration.temp_employer t ON t.id = r.temp_employer_id
                 JOIN registration.business_info bi ON bi.id = t.business_info_id
                 LEFT JOIN registration.employer e ON e.id = r.employer_id AND e.is_deleted = FALSE
+                LEFT JOIN reference.ref_branch b ON b.id = r.processing_pks_branch_id
                 WHERE 1 = 1
                 """);
         final List<Object> args = new ArrayList<>();
@@ -132,10 +136,14 @@ public class EmployerReadPlatformService {
                     sectionCode = "SECTION_" + assistSectionId;
                 }
             }
+            final String rowStatus = rs.getString("app_status");
+            final String processingBranchName = rs.getString("processing_branch_name");
+            final RegistrationCaseRouting.Target routedTo = RegistrationCaseRouting.resolve(rowStatus, assistSectionId,
+                    processingBranchName, rs.getString("submitted_by_username"), rs.getString("created_by_username"));
             return RegistrationCaseSummaryData.builder()
                     .id(rs.getLong("id"))
                     .caseRefNo(rs.getString("case_ref_no"))
-                    .appStatus(rs.getString("app_status"))
+                    .appStatus(rowStatus)
                     .sectionId(assistSectionId)
                     .sectionCode(sectionCode)
                     .employerName(rs.getString("employer_name"))
@@ -150,6 +158,10 @@ public class EmployerReadPlatformService {
                     .createdDate(rs.getTimestamp("created_date") != null
                             ? rs.getTimestamp("created_date").toLocalDateTime()
                             : null)
+                    .processingPksBranchName(processingBranchName)
+                    .routedToRole(routedTo != null ? routedTo.role() : null)
+                    .routedToUsername(routedTo != null ? routedTo.username() : null)
+                    .routedToLabel(routedTo != null ? routedTo.label() : null)
                     .build();
         }, args.toArray());
     }
@@ -195,6 +207,10 @@ public class EmployerReadPlatformService {
         final TempEmployer temp = regCase.getTempEmployer();
         final RegistrationSection section = RegistrationSection.fromAssistSectionId(regCase.getSectionId());
         final DataSource dataSource = DataSource.fromAssistId(regCase.getDataSourceId());
+        final String processingBranchName = lookupProcessingBranchName(regCase.getProcessingPksBranchId());
+        final RegistrationCaseRouting.Target routedTo = RegistrationCaseRouting.resolve(regCase.getAppStatus().name(),
+                regCase.getSectionId(), processingBranchName, regCase.getSubmittedByUsername(),
+                regCase.getCreatedByUsername());
         return RegistrationCaseData.builder().id(regCase.getId()).caseRefNo(regCase.getCaseRefNo())
                 .appStatus(regCase.getAppStatus().name()).appStatusReason(regCase.getAppStatusReason())
                 .sectionId(regCase.getSectionId()).sectionCode(section.name())
@@ -223,7 +239,18 @@ public class EmployerReadPlatformService {
                 .documentReceivedDate(regCase.getDocumentReceivedDate())
                 .submissionDate(regCase.getSubmissionDate()).createdDate(regCase.getCreatedDate())
                 .inqueryByUsername(regCase.getInqueryByUsername()).inqueryDate(regCase.getInqueryDate())
-                .queryRemark(regCase.getQueryRemark()).build();
+                .queryRemark(regCase.getQueryRemark())
+                .processingPksBranchName(processingBranchName)
+                .routedToRole(routedTo != null ? routedTo.role() : null)
+                .routedToUsername(routedTo != null ? routedTo.username() : null)
+                .routedToLabel(routedTo != null ? routedTo.label() : null)
+                .build();
+    }
+
+    private String lookupProcessingBranchName(final Long branchId) {
+        final BranchReferenceReadPlatformService.BranchLetterData branch =
+                branchReferenceReadPlatformService.retrieveBranchForLetter(branchId);
+        return branch != null ? branch.getName() : null;
     }
 
     private String lookupEmployerCode(final Long employerId) {

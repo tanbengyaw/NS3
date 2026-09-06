@@ -41,6 +41,7 @@
           <tr>
             <th>Case ref</th>
             <th>Status</th>
+            <th>Routed to</th>
             <th>Section</th>
             <th>Business</th>
             <th>BRN</th>
@@ -58,6 +59,7 @@
               <td>
                 <span class="status-badge" [class]="statusClass(item.appStatus)">{{ item.appStatus }}</span>
               </td>
+              <td>{{ routedTo(item) }}</td>
               <td>{{ sectionLabel(item) }}</td>
               <td>{{ item.employerName }}</td>
               <td class="mono">{{ item.registrationNo }}</td>
@@ -100,7 +102,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="10" class="empty">
+              <td colspan="11" class="empty">
                 @if (loading()) {
                   Loading…
                 } @else {

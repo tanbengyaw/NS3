@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { RegistrationCaseSummary } from '../core/models/registration.model';
 import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
+import { resolveRoutedToLabel } from './case-routing.util';
 import { registrationSectionLabel } from './registration-section.util';
 import { RegistrationService } from './registration.service';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
@@ -71,6 +72,10 @@ export class RegistrationInboxComponent {
 
   sectionLabel(item: RegistrationCaseSummary): string {
     return registrationSectionLabel(item.sectionId, item.sectionCode);
+  }
+
+  routedTo(item: RegistrationCaseSummary): string {
+    return resolveRoutedToLabel(item) ?? '—';
   }
 
   statusHint(item: RegistrationCaseSummary): string | null {

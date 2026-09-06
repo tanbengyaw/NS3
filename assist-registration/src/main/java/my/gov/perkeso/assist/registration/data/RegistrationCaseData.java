@@ -56,4 +56,8 @@ public class RegistrationCaseData {
     private final String inqueryByUsername;
     private final LocalDateTime inqueryDate;
     private final String queryRemark;
+    private final String processingPksBranchName;
+    private final String routedToRole;
+    private final String routedToUsername;
+    private final String routedToLabel;
 }

@@ -47,6 +47,13 @@ export interface RegistrationCase {
   employerCode: string | null;
   salesTaxSmkRegNo: string | null;
   queryRemark: string | null;
+  createdByUsername: string | null;
+  submittedByUsername: string | null;
+  inqueryByUsername: string | null;
+  processingPksBranchName: string | null;
+  routedToRole: string | null;
+  routedToUsername: string | null;
+  routedToLabel: string | null;
 }
 
 export interface RegistrationCaseSummary {
@@ -63,6 +70,10 @@ export interface RegistrationCaseSummary {
   appStatusReason: string | null;
   submissionDate: string | null;
   createdDate: string | null;
+  processingPksBranchName: string | null;
+  routedToRole: string | null;
+  routedToUsername: string | null;
+  routedToLabel: string | null;
 }
 
 export interface TempEmployee {

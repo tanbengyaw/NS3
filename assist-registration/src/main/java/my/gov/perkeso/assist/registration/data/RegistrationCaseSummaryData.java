@@ -21,4 +21,8 @@ public class RegistrationCaseSummaryData {
     private final String appStatusReason;
     private final LocalDateTime submissionDate;
     private final LocalDateTime createdDate;
+    private final String processingPksBranchName;
+    private final String routedToRole;
+    private final String routedToUsername;
+    private final String routedToLabel;
 }

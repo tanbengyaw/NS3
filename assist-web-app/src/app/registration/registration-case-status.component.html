@@ -2,6 +2,9 @@
   <div class="status-banner query">
     <strong>Case is in query.</strong>
     Officer requested additional information. Review the query remark, update the case, and resubmit when ready.
+    @if (routedToLabel) {
+      <p class="routed-to">Routed to: <strong>{{ routedToLabel }}</strong></p>
+    }
     @if (queryRemark) {
       <p class="officer-remark"><strong>Query remark:</strong> {{ queryRemark }}</p>
     }
@@ -21,8 +24,11 @@
   </div>
 } @else if (showReviewQueue) {
   <div class="status-banner review">
-    <strong>Case routed for officer review.</strong>
+    <strong>Case routed for review.</strong>
     Status: <strong>{{ appStatus }}</strong>.
+    @if (routedToLabel) {
+      <p class="routed-to">Routed to: <strong>{{ routedToLabel }}</strong></p>
+    }
     @if (canOfficerReview) {
       Use <strong>Approve</strong>, <strong>Send to query</strong>, or <strong>Reject</strong> below.
     } @else if (showInboxLink) {
