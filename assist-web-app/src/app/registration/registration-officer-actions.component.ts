@@ -2,6 +2,7 @@ import { Component, EventEmitter, HostBinding, Input, Output, inject, signal } f
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../core/auth/auth.service';
 import { FormModalComponent } from '../shared/form-modal.component';
+import { isUoWorkflowSection } from './submit-routing.util';
 import {
   RegistrationWorkflowAction,
   RegistrationWorkflowResult,
@@ -23,6 +24,7 @@ export class RegistrationOfficerActionsComponent {
 
   @Input({ required: true }) caseId: number | null = null;
   @Input({ required: true }) appStatus: string | null = null;
+  @Input() sectionId: number | null = null;
   @Input() busy = false;
   @Input() layout: 'bar' | 'inline' = 'bar';
 
@@ -47,11 +49,25 @@ export class RegistrationOfficerActionsComponent {
   }
 
   get canReview(): boolean {
-    return this.isOfficer && this.appStatus === 'SUBMITTED';
+    if (this.appStatus !== 'SUBMITTED') {
+      return false;
+    }
+    // Update Tax Payer (1200-1204) / Discontinue Tax (1103) route to the UO queue specifically
+    // (mirrors legacy ASSIST's UpdateTaxPayerInfoCounter BPM routing) — only a UO may act on
+    // these, enforced backend-side too, so hide the buttons for other staff rather than let them
+    // click through to a 403.
+    if (isUoWorkflowSection(this.sectionId)) {
+      return this.auth.hasRole('UO');
+    }
+    return this.isOfficer;
   }
 
   get isOfficer(): boolean {
-    return this.auth.hasRole('OFFICER') || this.auth.hasRole('ADMIN');
+    return this.auth.hasStaffAccess();
+  }
+
+  get isUoOnlySection(): boolean {
+    return isUoWorkflowSection(this.sectionId);
   }
 
   get approveLabel(): string {
@@ -127,7 +143,9 @@ export class RegistrationOfficerActionsComponent {
         if (action === 'reject') {
           this.rejectModalOpen.set(false);
         }
-        this.workflowCompleted.emit(buildRegistrationWorkflowResult(action, result, extras));
+        this.workflowCompleted.emit(
+          buildRegistrationWorkflowResult(action, result, { ...extras, sectionId: this.sectionId }),
+        );
       },
       error: (err) => this.workflowFailed.emit(err),
     });

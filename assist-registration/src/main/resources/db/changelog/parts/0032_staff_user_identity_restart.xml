@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Dev seeds in 0030 insert explicit ids 1–6; advance identity so new staff users start at id 7. -->
+    <changeSet id="0032-staff-user-h2-identity-restart" author="ns3" dbms="h2">
+        <sql>ALTER TABLE identity.staff_user ALTER COLUMN id RESTART WITH 7;</sql>
+    </changeSet>
+
+    <changeSet id="0032-staff-user-pg-identity-restart" author="ns3" dbms="postgresql">
+        <sql>
+            SELECT setval(
+                pg_get_serial_sequence('identity.staff_user', 'id'),
+                COALESCE((SELECT MAX(id) FROM identity.staff_user), 1)
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -36,9 +36,13 @@
         </thead>
         <tbody>
           @for (employer of employers(); track employer.id) {
-            <tr>
-              <td>{{ employer.employerCode }}</td>
-              <td>{{ employer.employerName }}</td>
+            <tr class="clickable-row">
+              <td>
+                <a [routerLink]="['/employers', employer.id]" class="row-link">{{ employer.employerCode }}</a>
+              </td>
+              <td>
+                <a [routerLink]="['/employers', employer.id]" class="row-link">{{ employer.employerName }}</a>
+              </td>
               <td>{{ employer.registrationNo }}</td>
               <td>{{ employer.operationalStatus ?? '—' }}</td>
               <td>{{ employer.contributionActive ? 'Active' : 'Inactive' }}</td>

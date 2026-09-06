@@ -39,6 +39,8 @@ public class SpringPlatformUserContext implements PlatformUserContext {
                 case "ROLE_EMPLOYER" -> roles.add(PlatformUserRole.EMPLOYER);
                 case "ROLE_OFFICER" -> roles.add(PlatformUserRole.OFFICER);
                 case "ROLE_RO" -> roles.add(PlatformUserRole.RO);
+                case "ROLE_UO" -> roles.add(PlatformUserRole.UO);
+                case "ROLE_PKR_BO" -> roles.add(PlatformUserRole.PKR_BO);
                 case "ROLE_ADMIN" -> roles.add(PlatformUserRole.ADMIN);
                 default -> {
                     // ignore unknown roles

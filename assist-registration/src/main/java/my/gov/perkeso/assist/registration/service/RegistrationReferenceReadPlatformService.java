@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.registration.data.RefOptionData;
+import my.gov.perkeso.assist.registration.data.SstServiceTypeData;
 import my.gov.perkeso.assist.registration.data.SupportingDocumentTypeData;
 import my.gov.perkeso.assist.registration.data.TariffCodeSalesTypeData;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegistrationReferenceReadPlatformService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final BaseReferenceReadPlatformService baseReferenceReadPlatformService;
 
     public List<RefOptionData> retrieveBusinessEntityTypes() {
         return jdbcTemplate.query("""
@@ -26,21 +28,39 @@ public class RegistrationReferenceReadPlatformService {
                 """, (rs, rowNum) -> RefOptionData.builder().id(rs.getLong("id")).label(rs.getString("name")).build());
     }
 
-    public List<RefOptionData> retrieveIdentificationTypes(final boolean directorFormOnly) {
-        final String sql = directorFormOnly
-                ? """
-                        SELECT id, name
-                        FROM reference.ref_identification_type
-                        WHERE director_form_eligible = TRUE
-                        ORDER BY sort_order, name
-                        """
-                : """
-                        SELECT id, name
-                        FROM reference.ref_identification_type
-                        ORDER BY sort_order, name
-                        """;
+    public List<RefOptionData> retrieveIdentificationTypes(final boolean directorFormOnly, final boolean portalFormOnly) {
+        final String sql;
+        if (portalFormOnly) {
+            sql = """
+                    SELECT id, name
+                    FROM reference.ref_identification_type
+                    WHERE portal_form_eligible = TRUE
+                    ORDER BY sort_order, name
+                    """;
+        } else if (directorFormOnly) {
+            sql = """
+                    SELECT id, name
+                    FROM reference.ref_identification_type
+                    WHERE director_form_eligible = TRUE
+                    ORDER BY sort_order, name
+                    """;
+        } else {
+            sql = """
+                    SELECT id, name
+                    FROM reference.ref_identification_type
+                    ORDER BY sort_order, name
+                    """;
+        }
         return jdbcTemplate.query(sql,
                 (rs, rowNum) -> RefOptionData.builder().id(rs.getLong("id")).label(rs.getString("name")).build());
+    }
+
+    public List<RefOptionData> retrieveRegNoTypes() {
+        return jdbcTemplate.query("""
+                SELECT id, name
+                FROM reference.ref_reg_no_type
+                ORDER BY sort_order, name
+                """, (rs, rowNum) -> RefOptionData.builder().id(rs.getLong("id")).label(rs.getString("name")).build());
     }
 
     public List<TariffCodeSalesTypeData> searchTariffCodeSalesTypes(final String search) {
@@ -86,18 +106,63 @@ public class RegistrationReferenceReadPlatformService {
                 .collect(Collectors.toMap(TariffCodeSalesTypeData::getId, row -> row));
     }
 
-    public List<SupportingDocumentTypeData> retrieveSupportingDocumentTypesForSalesTax() {
+    public List<SstServiceTypeData> searchSstServiceTypes(final String search) {
+        final String term = search == null ? "" : search.trim();
+        if (term.isEmpty()) {
+            return jdbcTemplate.query("""
+                    SELECT id, code, description, is_accommodation
+                    FROM reference.ref_sst_service_type
+                    WHERE is_deleted = FALSE
+                    ORDER BY code
+                    LIMIT 50
+                    """, (rs, rowNum) -> SstServiceTypeData.builder()
+                    .id(rs.getLong("id"))
+                    .code(rs.getString("code"))
+                    .description(rs.getString("description"))
+                    .accommodation(rs.getBoolean("is_accommodation"))
+                    .build());
+        }
+        final String pattern = "%" + term.toUpperCase() + "%";
         return jdbcTemplate.query("""
-                SELECT id, code, label, required_for_sales_tax
-                FROM reference.ref_supporting_document_type
+                SELECT id, code, description, is_accommodation
+                FROM reference.ref_sst_service_type
                 WHERE is_deleted = FALSE
-                ORDER BY sort_order, label
-                """, (rs, rowNum) -> SupportingDocumentTypeData.builder()
+                  AND (UPPER(code) LIKE ? OR UPPER(description) LIKE ?)
+                ORDER BY code
+                LIMIT 50
+                """, (rs, rowNum) -> SstServiceTypeData.builder()
                 .id(rs.getLong("id"))
                 .code(rs.getString("code"))
-                .label(rs.getString("label"))
-                .requiredForSalesTax(rs.getBoolean("required_for_sales_tax"))
-                .build());
+                .description(rs.getString("description"))
+                .accommodation(rs.getBoolean("is_accommodation"))
+                .build(), pattern, pattern);
+    }
+
+    public Map<Long, SstServiceTypeData> retrieveSstServiceTypeMap(final Iterable<Long> ids) {
+        final List<Long> idList = ids == null ? List.of() : java.util.stream.StreamSupport.stream(ids.spliterator(), false)
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+        if (idList.isEmpty()) {
+            return Map.of();
+        }
+        final String placeholders = idList.stream().map(id -> "?").collect(Collectors.joining(","));
+        final Object[] args = idList.toArray();
+        return jdbcTemplate.query("""
+                SELECT id, code, description, is_accommodation
+                FROM reference.ref_sst_service_type
+                WHERE is_deleted = FALSE AND id IN (%s)
+                """.formatted(placeholders), (rs, rowNum) -> SstServiceTypeData.builder()
+                .id(rs.getLong("id"))
+                .code(rs.getString("code"))
+                .description(rs.getString("description"))
+                .accommodation(rs.getBoolean("is_accommodation"))
+                .build(), args).stream()
+                .collect(Collectors.toMap(SstServiceTypeData::getId, row -> row));
+    }
+
+    public List<SupportingDocumentTypeData> retrieveSupportingDocumentTypesForSalesTax() {
+        return baseReferenceReadPlatformService.retrieveSupportingDocumentTypesForSalesTax();
     }
 
     public Map<Long, SupportingDocumentTypeData> retrieveSupportingDocumentTypeMap() {
@@ -106,15 +171,10 @@ public class RegistrationReferenceReadPlatformService {
     }
 
     public SupportingDocumentTypeData requireSupportingDocumentType(final Long documentTypeId) {
-        return retrieveSupportingDocumentTypeMap().values().stream()
-                .filter(type -> type.getId().equals(documentTypeId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unknown supporting document type: " + documentTypeId));
+        return baseReferenceReadPlatformService.requireSalesTaxDocumentType(documentTypeId);
     }
 
     public List<SupportingDocumentTypeData> retrieveRequiredSupportingDocumentTypesForSalesTax() {
-        return retrieveSupportingDocumentTypesForSalesTax().stream()
-                .filter(SupportingDocumentTypeData::isRequiredForSalesTax)
-                .toList();
+        return baseReferenceReadPlatformService.retrieveRequiredSupportingDocumentTypesForSalesTax();
     }
 }

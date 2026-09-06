@@ -17,6 +17,7 @@ import my.gov.perkeso.assist.registration.data.TempDirectorOwnerData;
 import my.gov.perkeso.assist.registration.data.TempPremisesData;
 import my.gov.perkeso.assist.registration.data.TempSstContactPersonData;
 import my.gov.perkeso.assist.registration.data.TempSstInfoData;
+import my.gov.perkeso.assist.registration.data.TempSstServiceCategoryData;
 import my.gov.perkeso.assist.registration.data.TempSstTariffCodeData;
 import my.gov.perkeso.assist.registration.service.TempSstInfoWritePlatformService;
 import org.springframework.stereotype.Component;
@@ -25,14 +26,14 @@ import org.springframework.stereotype.Component;
 @Path("/v1/registration-cases/{caseId}/sst-info")
 @Produces({ MediaType.APPLICATION_JSON })
 @Consumes({ MediaType.APPLICATION_JSON })
-@Tag(name = "Registration Case SST Info", description = "Sales tax SST draft data (section 1100)")
+@Tag(name = "Registration Case SST Info", description = "SST new-reg draft data (sections 1100, 1101, 1102, 1104)")
 @RequiredArgsConstructor
 public class RegistrationCaseSstInfoApiResource {
 
     private final TempSstInfoWritePlatformService tempSstInfoService;
 
     @GET
-    @Operation(summary = "Get SST draft data for a sales tax registration case")
+    @Operation(summary = "Get SST draft data for an SST new registration case")
     public TempSstInfoData getSstInfo(@PathParam("caseId") final Long caseId) {
         return tempSstInfoService.getSstInfo(caseId);
     }
@@ -69,7 +70,7 @@ public class RegistrationCaseSstInfoApiResource {
 
     @POST
     @Path("premises")
-    @Operation(summary = "Add draft premises (optional)")
+    @Operation(summary = "Add draft premises (required for tourism tax submit)")
     public TempPremisesData createPremises(@PathParam("caseId") final Long caseId, final String json) {
         return tempSstInfoService.createPremises(caseId, json);
     }
@@ -111,6 +112,23 @@ public class RegistrationCaseSstInfoApiResource {
     @Operation(summary = "Remove draft tariff code")
     public Response deleteTariffCode(@PathParam("caseId") final Long caseId, @PathParam("tariffId") final Long tariffId) {
         tempSstInfoService.deleteTariffCode(caseId, tariffId);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("service-categories")
+    @Operation(summary = "Add draft SST service type code (required for service tax submit)")
+    public TempSstServiceCategoryData createServiceCategory(@PathParam("caseId") final Long caseId,
+            final String json) {
+        return tempSstInfoService.createServiceCategory(caseId, json);
+    }
+
+    @DELETE
+    @Path("service-categories/{categoryId}")
+    @Operation(summary = "Remove draft SST service type code")
+    public Response deleteServiceCategory(@PathParam("caseId") final Long caseId,
+            @PathParam("categoryId") final Long categoryId) {
+        tempSstInfoService.deleteServiceCategory(caseId, categoryId);
         return Response.noContent().build();
     }
 

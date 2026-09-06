@@ -1,12 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Employer, EmployerSearchType } from '../core/models/employer.model';
 import { EmployersService } from './employers.service';
 
 @Component({
   selector: 'assist-employers-list',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './employers-list.component.html',
   styleUrl: './employers-list.component.scss',
 })

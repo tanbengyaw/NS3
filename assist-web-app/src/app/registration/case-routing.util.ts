@@ -9,6 +9,7 @@ export function resolveRoutedToLabel(input: {
   appStatus: string | null | undefined;
   sectionId?: number | null;
   processingPksBranchName?: string | null;
+  processingBranchName?: string | null;
   submittedByUsername?: string | null;
   createdByUsername?: string | null;
   routedToLabel?: string | null;
@@ -27,7 +28,8 @@ export function resolveRoutedToLabel(input: {
   }
   if (status === 'SUBMITTED' || status === 'IN_PROGRESS') {
     const queue = isUoWorkflowSection(input.sectionId) ? 'UO' : 'Officer';
-    return input.processingPksBranchName ? `${queue} — ${input.processingPksBranchName}` : queue;
+    const branchName = input.processingPksBranchName ?? input.processingBranchName ?? null;
+    return branchName ? `${queue} — ${branchName}` : queue;
   }
   return null;
 }

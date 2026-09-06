@@ -1,0 +1,113 @@
+<section class="page">
+  <header>
+    <p class="back-link">
+      @if (fromInbox) {
+        <a routerLink="/registration/inbox">← Back to inbox</a>
+      } @else {
+        <a routerLink="/registration/inbox">← Officer inbox</a>
+      }
+    </p>
+    <p class="module-label">Registration</p>
+    @if (caseData(); as item) {
+      <h1>{{ item.caseRefNo }}</h1>
+      <p class="subtitle">
+        <span class="status-badge" [class]="statusClass(item.appStatus)">{{ item.appStatus }}</span>
+        · {{ sectionLabel(item) }}
+      </p>
+    } @else {
+      <h1>Case review</h1>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+
+  @if (message()) {
+    <p class="message banner">{{ message() }}</p>
+  }
+
+  @if (loading() && !caseData()) {
+    <p class="status">Loading…</p>
+  } @else {
+    @if (caseData(); as item) {
+    <assist-registration-case-status
+      [appStatus]="item.appStatus"
+      [queryRemark]="item.queryRemark"
+      [appStatusReason]="item.appStatusReason"
+      [showInboxLink]="false"
+      [sectionId]="item.sectionId"
+    />
+
+    <div class="detail-card">
+      <h2>Case summary</h2>
+      <dl class="detail-dl">
+        <dt>Business name</dt>
+        <dd>{{ item.employerName }}</dd>
+
+        <dt>BRN</dt>
+        <dd class="mono">{{ item.registrationNo }}</dd>
+
+        <dt>Section</dt>
+        <dd>{{ sectionLabel(item) }}</dd>
+
+        <dt>Branch</dt>
+        <dd>{{ branchLabel(item.pksBranchId) }}</dd>
+
+        <dt>Email</dt>
+        <dd>{{ item.email ?? '—' }}</dd>
+
+        <dt>Phone</dt>
+        <dd>{{ item.phone ?? '—' }}</dd>
+
+        <dt>Address</dt>
+        <dd>{{ formatAddress(item) }}</dd>
+
+        @if (item.employerId) {
+          <dt>Employer code</dt>
+          <dd class="mono">
+            <a [routerLink]="['/employers', item.employerId]">{{ item.employerCode }}</a>
+          </dd>
+        } @else if (item.employerCode) {
+          <dt>Employer code</dt>
+          <dd class="mono">{{ item.employerCode }}</dd>
+        }
+
+        @if (item.salesTaxSmkRegNo) {
+          <dt>SST SMK</dt>
+          <dd class="mono">{{ item.salesTaxSmkRegNo }}</dd>
+        }
+
+        @if (item.submittedByUsername) {
+          <dt>Submitted by</dt>
+          <dd>{{ item.submittedByUsername }}</dd>
+        } @else if (item.createdByUsername) {
+          <dt>Created by</dt>
+          <dd>{{ item.createdByUsername }}</dd>
+        }
+
+        @if (item.appStatus === 'IN_QUERY' && item.inqueryByUsername) {
+          <dt>Sent to query by</dt>
+          <dd>{{ item.inqueryByUsername }}</dd>
+        }
+      </dl>
+    </div>
+
+    <div class="actions-bar">
+      @if (wizardLink(item); as link) {
+        <a class="wizard-link" [routerLink]="link">{{ wizardLabel(item) }} →</a>
+      }
+
+      <assist-registration-officer-actions
+        [caseId]="item.id"
+        [appStatus]="item.appStatus"
+        [sectionId]="item.sectionId"
+        [busy]="loading()"
+        (workflowStarted)="onWorkflowStarted()"
+        (workflowCompleted)="onWorkflowCompleted($event)"
+        (workflowFailed)="onWorkflowFailed($event)"
+      />
+    </div>
+    }
+  }
+</section>

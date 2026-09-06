@@ -10,14 +10,18 @@ import {
   CreatePremisesRequest,
   CreateRegistrationCaseRequest,
   CreateTariffCodeRequest,
+  DiscontinueTaxInfo,
   RegistrationCase,
   RegistrationCaseSummary,
   TaxPayerRegistrationProfile,
+  TaxUpdateChangedField,
+  UpsertDiscontinueTaxInfoRequest,
   TempDirectorOwner,
   TempEmployee,
   TempPremises,
   TempSstContactPerson,
   TempSstInfo,
+  TempSstServiceCategory,
   TempSstSupportingDocument,
   TempSstTariffCode,
   UpdateRegistrationCaseRequest,
@@ -33,12 +37,19 @@ export class RegistrationService {
     return this.http.get<RegistrationCase>(`${this.base}/id/${caseId}`);
   }
 
-  listCases(params?: { appStatus?: string; sectionId?: number; limit?: number }): Observable<RegistrationCaseSummary[]> {
+  listCases(params?: {
+    appStatus?: string;
+    sectionId?: number;
+    sectionIds?: number[];
+    limit?: number;
+  }): Observable<RegistrationCaseSummary[]> {
     let httpParams = new HttpParams();
     if (params?.appStatus) {
       httpParams = httpParams.set('appStatus', params.appStatus);
     }
-    if (params?.sectionId != null) {
+    if (params?.sectionIds?.length) {
+      httpParams = httpParams.set('sectionIds', params.sectionIds.join(','));
+    } else if (params?.sectionId != null) {
       httpParams = httpParams.set('sectionId', String(params.sectionId));
     }
     if (params?.limit != null) {
@@ -55,8 +66,8 @@ export class RegistrationService {
     return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}`, body);
   }
 
-  submitCase(caseId: number): Observable<CommandProcessingResult> {
-    return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}?command=submit`, {});
+  submitCase(caseId: number, body: { incomplete?: boolean } = {}): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}?command=submit`, body);
   }
 
   approveCase(caseId: number): Observable<CommandProcessingResult> {
@@ -117,6 +128,29 @@ export class RegistrationService {
     });
   }
 
+  startTaxPayerUpdate(employerId: number, sectionId: number): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/tax-updates`, { employerId, sectionId });
+  }
+
+  getTaxUpdateDiff(caseId: number): Observable<TaxUpdateChangedField[]> {
+    return this.http.get<TaxUpdateChangedField[]>(`${this.base}/${caseId}/tax-update-diff`);
+  }
+
+  startDiscontinueTax(employerId: number, sstInfoId: number): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/discontinue-tax`, { employerId, sstInfoId });
+  }
+
+  getDiscontinueInfo(caseId: number): Observable<DiscontinueTaxInfo> {
+    return this.http.get<DiscontinueTaxInfo>(`${this.base}/${caseId}/discontinue-info`);
+  }
+
+  upsertDiscontinueInfo(
+    caseId: number,
+    body: UpsertDiscontinueTaxInfoRequest,
+  ): Observable<DiscontinueTaxInfo> {
+    return this.http.put<DiscontinueTaxInfo>(`${this.base}/${caseId}/discontinue-info`, body);
+  }
+
   addTariffCode(caseId: number, body: CreateTariffCodeRequest): Observable<TempSstTariffCode> {
     return this.http.post<TempSstTariffCode>(`${this.base}/${caseId}/sst-info/tariff-codes`, body);
   }
@@ -127,6 +161,14 @@ export class RegistrationService {
 
   deleteTariffCode(caseId: number, tariffId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${caseId}/sst-info/tariff-codes/${tariffId}`);
+  }
+
+  addServiceCategory(caseId: number, body: { sstServiceTypeId: number; remark?: string | null }): Observable<TempSstServiceCategory> {
+    return this.http.post<TempSstServiceCategory>(`${this.base}/${caseId}/sst-info/service-categories`, body);
+  }
+
+  deleteServiceCategory(caseId: number, categoryId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${caseId}/sst-info/service-categories/${categoryId}`);
   }
 
   addContactPerson(caseId: number, body: CreateContactPersonRequest): Observable<TempSstContactPerson> {

@@ -83,4 +83,19 @@ table {
     text-align: center;
     color: #5f6368;
   }
+
+  .clickable-row:hover {
+    background: #f8f9fa;
+  }
+}
+
+.row-link {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    color: #1a73e8;
+    text-decoration: underline;
+  }
 }

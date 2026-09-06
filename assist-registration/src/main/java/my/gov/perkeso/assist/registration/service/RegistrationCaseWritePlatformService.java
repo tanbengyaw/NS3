@@ -18,7 +18,7 @@ import my.gov.perkeso.assist.registration.domain.RegGeneralInfo;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfoRepository;
 import my.gov.perkeso.assist.registration.domain.SstInfo;
 import my.gov.perkeso.assist.registration.data.RegistrationSpecialCase;
-import my.gov.perkeso.assist.registration.constant.RegistrationSection;
+import my.gov.perkeso.assist.registration.constant.RegistrationSectionRouting;
 import my.gov.perkeso.assist.registration.domain.TempEmployer;
 import my.gov.perkeso.assist.registration.exception.RegistrationBrnDuplicateException;
 import my.gov.perkeso.assist.registration.exception.RegistrationCaseInvalidStatusException;
@@ -42,7 +42,9 @@ public class RegistrationCaseWritePlatformService {
     private final EmployeePromotionService employeePromotionService;
     private final RegistrationSpecialCaseService registrationSpecialCaseService;
     private final SstInfoPromotionService sstInfoPromotionService;
+    private final PostcodeBranchRoutingService postcodeBranchRoutingService;
     private final PlatformUserContext platformUserContext;
+    private final DiscontinueTaxCaseService discontinueTaxCaseService;
 
     @Transactional
     public CommandProcessingResult createCase(final JsonCommand command) {
@@ -101,16 +103,18 @@ public class RegistrationCaseWritePlatformService {
         registrationCaseSubmitValidator.validateForSubmit(regCase);
 
         final PlatformUser currentUser = platformUserContext.getCurrentUser();
+        postcodeBranchRoutingService.applyPortalSubmitBranchRouting(regCase);
         final List<RegistrationSpecialCase> specialCases = registrationSpecialCaseService.checkOnSubmit(regCase);
         final AppStatus submitStatus = registrationCaseSubmitRouter.resolveSubmitStatus(currentUser, command,
-                specialCases);
+                specialCases, regCase.getSectionId());
         regCase.setIncomplete(registrationCaseSubmitRouter.isIncompleteSubmit(command));
         regCase.setSubmissionDate(LocalDateTime.now());
         regCase.setSubmittedByUsername(currentUser.username());
         regCase.setUpdatedDate(LocalDateTime.now());
 
         if (submitStatus == AppStatus.APPROVED) {
-            if (registrationCaseSubmitRouter.shouldRejectRoDuplicateBrn(currentUser, specialCases)) {
+            if (registrationCaseSubmitRouter.shouldRejectRoDuplicateBrn(currentUser, specialCases,
+                    regCase.getSectionId())) {
                 regCase.setAppStatus(AppStatus.REJECTED);
                 regCase.setAppStatusReason(registrationCaseSubmitRouter.duplicateBrnRejectReason(specialCases));
                 regGeneralInfoRepository.save(regCase);
@@ -153,17 +157,22 @@ public class RegistrationCaseWritePlatformService {
     public CommandProcessingResult approveCase(final JsonCommand command) {
         final RegGeneralInfo regCase = loadCase(command.getEntityId());
         assertStatus(regCase, AppStatus.SUBMITTED);
+        assertUoForWorkflowSection(regCase);
         return approveAndPromote(regCase);
     }
 
     private CommandProcessingResult approveAndPromote(final RegGeneralInfo regCase) {
-        final RegistrationSection section = regCase.getSectionId() == null
-                ? RegistrationSection.REG_NEW_REG
-                : RegistrationSection.fromAssistSectionId(regCase.getSectionId());
+        if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())) {
+            return approveAndPromoteUpdate(regCase);
+        }
+        if (RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())) {
+            return approveAndPromoteDiscontinue(regCase);
+        }
+
         final Employer employer;
         final boolean isNewEmployer;
 
-        if (section == RegistrationSection.REG_NEW_REG_SST_SALES_TAX) {
+        if (RegistrationSectionRouting.isSstNewRegSection(regCase.getSectionId())) {
             final Optional<Employer> existing = employerCodeGenerator.findExistingEmployerByRegistrationNo(
                     regCase.getTempEmployer().getBusinessInfo().getRegistrationNo());
             isNewEmployer = existing.isEmpty();
@@ -182,7 +191,7 @@ public class RegistrationCaseWritePlatformService {
             employeePromotionService.promoteOnApprove(regCase.getTempEmployer().getId(), employer);
         }
 
-        final SstInfo sstInfo = sstInfoPromotionService.promoteSalesTaxOnApprove(regCase, employer);
+        final SstInfo sstInfo = sstInfoPromotionService.promoteSstOnApprove(regCase, employer);
 
         regCase.setAppStatus(AppStatus.APPROVED);
         regCase.setEmployerId(employer.getId());
@@ -192,16 +201,120 @@ public class RegistrationCaseWritePlatformService {
         final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
                 "employerCode", employer.getEmployerCode(), "appStatus", AppStatus.APPROVED.name()));
         if (sstInfo != null) {
-            changes.put("salesTaxSmkRegNo", sstInfo.getSalesTaxSmkRegNo());
+            final String smk = sstInfo.taxSpecificSmkRegNo();
+            changes.put("sstSmkRegNo", smk);
+            changes.put("salesTaxSmkRegNo", smk);
+            if (sstInfo.getTourismTaxSmkRegNo() != null) {
+                changes.put("tourismTaxSmkRegNo", sstInfo.getTourismTaxSmkRegNo());
+            }
+            if (sstInfo.getDigitalTaxSmkRegNo() != null) {
+                changes.put("digitalTaxSmkRegNo", sstInfo.getDigitalTaxSmkRegNo());
+            }
+            if (sstInfo.getDpspTaxSmkRegNo() != null) {
+                changes.put("dpspTaxSmkRegNo", sstInfo.getDpspTaxSmkRegNo());
+            }
+            if (sstInfo.getServiceTaxSmkRegNo() != null) {
+                changes.put("serviceTaxSmkRegNo", sstInfo.getServiceTaxSmkRegNo());
+            }
             changes.put("sstInfoId", sstInfo.getId());
         }
         return CommandProcessingResult.withChanges(employer.getId(), employer.getEmployerCode(), changes);
+    }
+
+    /**
+     * Update Tax Payer approval (sections 1200-1204): applies the case's temp employer edits onto
+     * the EXISTING employer in place and updates the existing SstInfo/children (see
+     * {@link SstInfoPromotionService#promoteSstOnUpdateApprove}). Unlike new-reg approval, this
+     * never creates a new employer/employer-status/portal-user-link/employee promotion — the
+     * employer is already active.
+     */
+    private CommandProcessingResult approveAndPromoteUpdate(final RegGeneralInfo regCase) {
+        final Long employerId = regCase.getEmployerId();
+        if (employerId == null) {
+            throw new IllegalArgumentException(
+                    "Update tax payer case " + regCase.getCaseRefNo() + " has no employerId set");
+        }
+        final Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException(
+                        "Employer not found: " + employerId));
+
+        applyTempEmployerToExistingEmployer(employer, regCase.getTempEmployer());
+        employerRepository.save(employer);
+
+        final SstInfo sstInfo = sstInfoPromotionService.promoteSstOnUpdateApprove(regCase, employer);
+
+        regCase.setAppStatus(AppStatus.APPROVED);
+        regCase.setUpdatedDate(LocalDateTime.now());
+        regGeneralInfoRepository.save(regCase);
+
+        final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
+                "employerCode", employer.getEmployerCode(), "appStatus", AppStatus.APPROVED.name()));
+        if (sstInfo != null) {
+            final String smk = sstInfo.taxSpecificSmkRegNo();
+            changes.put("sstSmkRegNo", smk);
+            changes.put("salesTaxSmkRegNo", smk);
+            if (sstInfo.getTourismTaxSmkRegNo() != null) {
+                changes.put("tourismTaxSmkRegNo", sstInfo.getTourismTaxSmkRegNo());
+            }
+            if (sstInfo.getDigitalTaxSmkRegNo() != null) {
+                changes.put("digitalTaxSmkRegNo", sstInfo.getDigitalTaxSmkRegNo());
+            }
+            if (sstInfo.getDpspTaxSmkRegNo() != null) {
+                changes.put("dpspTaxSmkRegNo", sstInfo.getDpspTaxSmkRegNo());
+            }
+            if (sstInfo.getServiceTaxSmkRegNo() != null) {
+                changes.put("serviceTaxSmkRegNo", sstInfo.getServiceTaxSmkRegNo());
+            }
+            changes.put("sstInfoId", sstInfo.getId());
+        }
+        return CommandProcessingResult.withChanges(employer.getId(), employer.getEmployerCode(), changes);
+    }
+
+    /**
+     * Discontinue Tax approval (section 1103): flips the target {@code SstStatusInfo} row to the
+     * requested new status as of the cessation-effective date (see
+     * {@link DiscontinueTaxCaseService#promoteOnApprove}). Never touches Employer/SstInfo fields,
+     * never creates a new employer/SMK.
+     */
+    private CommandProcessingResult approveAndPromoteDiscontinue(final RegGeneralInfo regCase) {
+        final Map<String, Object> promotionResult = discontinueTaxCaseService.promoteOnApprove(regCase);
+
+        regCase.setAppStatus(AppStatus.APPROVED);
+        regCase.setUpdatedDate(LocalDateTime.now());
+        regGeneralInfoRepository.save(regCase);
+
+        final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
+                "appStatus", AppStatus.APPROVED.name()));
+        changes.putAll(promotionResult);
+        return CommandProcessingResult.withChanges(regCase.getId(), regCase.getCaseRefNo(), changes);
+    }
+
+    /**
+     * Applies the fields the {@code Employer}/{@code BusinessInfo} entities actually carry
+     * (mirrors {@code EmployerCodeGenerator#buildNewEmployer}'s field list) from the case's temp
+     * employer onto the existing employer, in place. Employer has no address/postcode columns of
+     * its own (those only exist on {@code TempEmployer}), so address fields are not applicable here.
+     */
+    private static void applyTempEmployerToExistingEmployer(final Employer employer, final TempEmployer tempEmployer) {
+        employer.setEmployerName(tempEmployer.getEmployerName());
+        employer.getBusinessInfo().setRegistrationNo(tempEmployer.getBusinessInfo().getRegistrationNo());
+        employer.getBusinessInfo().setBusinessEntityTypeId(tempEmployer.getBusinessInfo().getBusinessEntityTypeId());
+        employer.setServiceTypeId(tempEmployer.getServiceTypeId());
+        employer.setPksBranchId(tempEmployer.getPksBranchId());
+        employer.setBranch(tempEmployer.isBranch());
+        employer.setMsicId(tempEmployer.getMsicId());
+        employer.setMethodContributionPaymentId(tempEmployer.getMethodContributionPaymentId());
+        employer.setEmployerRegisterStatus(tempEmployer.getEmployerRegisterStatus());
+        employer.setEmail(tempEmployer.getEmail());
+        employer.setPhone(tempEmployer.getPhone());
+        employer.setUpdatedDate(LocalDateTime.now());
     }
 
     @Transactional
     public CommandProcessingResult rejectCase(final JsonCommand command) {
         final RegGeneralInfo regCase = loadCase(command.getEntityId());
         assertStatus(regCase, AppStatus.SUBMITTED);
+        assertUoForWorkflowSection(regCase);
         regCase.setAppStatus(AppStatus.REJECTED);
         regCase.setAppStatusReason(command.stringValueOfParameterNamed("reason"));
         regCase.setUpdatedDate(LocalDateTime.now());
@@ -218,6 +331,7 @@ public class RegistrationCaseWritePlatformService {
 
         final RegGeneralInfo regCase = loadCase(command.getEntityId());
         assertStatus(regCase, AppStatus.SUBMITTED);
+        assertUoForWorkflowSection(regCase);
 
         final String remark = command.stringValueOfParameterNamed("remark");
         if (remark == null || remark.isBlank()) {
@@ -249,6 +363,24 @@ public class RegistrationCaseWritePlatformService {
         }
         throw new RegistrationCaseInvalidStatusException(regCase.getCaseRefNo(), regCase.getAppStatus().name(),
                 allowed[0].name());
+    }
+
+    /**
+     * Mirrors legacy ASSIST's {@code UpdateTaxPayerInfoCounter} workflow driver, which routes
+     * Update Tax Payer (1200-1204) and Discontinue Tax (1103) cases to the UO role via BPM
+     * ({@code TaskActionEnum.REGISTRATION_ROUTE_TO_UO}) — only a UO may approve, reject, or query
+     * these cases once submitted. Other sections remain unrestricted (any staff role may act on
+     * them), matching this app's existing permissive behaviour elsewhere.
+     */
+    private void assertUoForWorkflowSection(final RegGeneralInfo regCase) {
+        if (!RegistrationSectionRouting.isUoWorkflowSection(regCase.getSectionId())) {
+            return;
+        }
+        final PlatformUser currentUser = platformUserContext.getCurrentUser();
+        if (!currentUser.isUo()) {
+            throw new SecurityException("Only a UO user may approve, reject, or query case "
+                    + regCase.getCaseRefNo() + " (section " + regCase.getSectionId() + ")");
+        }
     }
 
     private void validateRequiredFields(final JsonCommand command) {

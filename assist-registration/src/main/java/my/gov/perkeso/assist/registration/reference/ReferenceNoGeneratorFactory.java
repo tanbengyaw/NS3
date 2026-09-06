@@ -21,6 +21,7 @@ public class ReferenceNoGeneratorFactory {
     public ReferenceNoGenerator forSection(final RegistrationSection section) {
         return switch (section) {
             case REG_NEW_REG, REG_NEW_REG_SST_SALES_TAX, REG_SST_TOURISM_TAX, REG_SST_DIGITAL_TAX, REG_SST_DPSP_TAX,
+                    REG_SST_SERVICE_TAX,
                     REG_INCOMPLETE_TAX_PAYER_SERVICE_TAX, REG_INCOMPLETE_TAX_PAYER_SALES_TAX,
                     REG_INCOMPLETE_TAX_PAYER_TOURISM_TAX, REG_INCOMPLETE_TAX_PAYER_DIGITAL_TAX,
                     REG_INCOMPLETE_TAX_PAYER_DPSP_TAX -> newRegReferenceNoGenerator;

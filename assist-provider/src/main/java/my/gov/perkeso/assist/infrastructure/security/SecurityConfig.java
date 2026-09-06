@@ -1,6 +1,6 @@
 package my.gov.perkeso.assist.infrastructure.security;
 
-import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -17,7 +16,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http,
+            final DbUserDetailsService dbUserDetailsService) throws Exception {
         http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -27,27 +27,12 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
-                .httpBasic(Customizer.withDefaults());
+                .userDetailsService(dbUserDetailsService)
+                .httpBasic(basic -> basic.authenticationEntryPoint((request, response, authException) -> {
+                    // Omit WWW-Authenticate so browsers do not show a native Basic Auth dialog.
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                }));
         return http.build();
-    }
-
-    @Bean
-    public InMemoryUserDetailsManager userDetailsService(final AssistUserDetailsLookup assistUserDetailsLookup) {
-        return new InMemoryUserDetailsManager(assistUserDetailsLookup.all().toArray(new AssistUserDetails[0]));
-    }
-
-    @Bean
-    public AssistUserDetailsLookup assistUserDetailsLookup(final PasswordEncoder passwordEncoder) {
-        return new AssistUserDetailsLookup(devUsers(passwordEncoder));
-    }
-
-    private static List<AssistUserDetails> devUsers(final PasswordEncoder passwordEncoder) {
-        final String encodedPassword = passwordEncoder.encode("password");
-        return List.of(
-                new AssistUserDetails("admin", encodedPassword, List.of("ADMIN", "OFFICER"), 2L,
-                        "officer@perkeso.example"),
-                new AssistUserDetails("ro", encodedPassword, List.of("RO"), 2L, "ro@perkeso.example"),
-                new AssistUserDetails("employer", encodedPassword, List.of("EMPLOYER"), null, "hr@acme.example"));
     }
 
     @Bean

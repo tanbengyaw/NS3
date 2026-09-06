@@ -1,11 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../core/auth/auth.service';
 import { RegistrationCaseStatusComponent } from './registration-case-status.component';
 import { RegistrationOfficerActionsComponent } from './registration-officer-actions.component';
 import { RegistrationService } from './registration.service';
 import { resolveRoutedToLabel } from './case-routing.util';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
+import { canMarkIncompleteSubmit, submitStatusHint } from './submit-routing.util';
 
 @Component({
   selector: 'assist-registration-wizard',
@@ -17,6 +19,7 @@ import { RegistrationWorkflowResult } from './registration-workflow.model';
 export class RegistrationWizardComponent {
   private readonly fb = inject(FormBuilder);
   private readonly registration = inject(RegistrationService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -24,6 +27,8 @@ export class RegistrationWizardComponent {
   readonly caseId = signal<number | null>(null);
   readonly caseRefNo = signal<string | null>(null);
   readonly appStatus = signal<string | null>(null);
+  readonly sectionId = signal<number | null>(null);
+  readonly submitIncomplete = signal(false);
   readonly queryRemark = signal<string | null>(null);
   readonly appStatusReason = signal<string | null>(null);
   readonly routedToLabel = signal<string | null>(null);
@@ -34,6 +39,16 @@ export class RegistrationWizardComponent {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
+
+  readonly submitHint = computed(() => {
+    const session = this.auth.currentSession();
+    return submitStatusHint(session?.roles ?? [], this.sectionId(), this.submitIncomplete());
+  });
+
+  readonly showIncompleteOption = computed(() => {
+    const session = this.auth.currentSession();
+    return session ? canMarkIncompleteSubmit(session.roles) : false;
+  });
 
   readonly form1 = this.fb.nonNullable.group({
     employerName: ['', Validators.required],
@@ -144,7 +159,8 @@ export class RegistrationWizardComponent {
     }
     this.loading.set(true);
     this.error.set(null);
-    this.registration.submitCase(id).subscribe({
+    const body = this.showIncompleteOption() && this.submitIncomplete() ? { incomplete: true } : {};
+    this.registration.submitCase(id, body).subscribe({
       next: (result) => {
         this.loading.set(false);
         const status = String(result.changes?.['appStatus'] ?? 'SUBMITTED');
@@ -203,6 +219,7 @@ export class RegistrationWizardComponent {
         this.caseId.set(c.id);
         this.caseRefNo.set(c.caseRefNo);
         this.appStatus.set(c.appStatus);
+        this.sectionId.set(c.sectionId ?? null);
         this.queryRemark.set(c.queryRemark ?? null);
         this.appStatusReason.set(c.appStatusReason ?? null);
         this.routedToLabel.set(resolveRoutedToLabel(c));
@@ -234,7 +251,11 @@ export class RegistrationWizardComponent {
 
   private onError(err: unknown): void {
     this.loading.set(false);
-    const body = (err as { error?: { message?: string; defaultUserMessage?: string } })?.error;
+    const httpErr = err as { status?: number; error?: { message?: string; defaultUserMessage?: string } };
+    if (httpErr.status === 401) {
+      return;
+    }
+    const body = httpErr.error;
     this.error.set(body?.defaultUserMessage ?? body?.message ?? 'Request failed. Check API is running.');
   }
 

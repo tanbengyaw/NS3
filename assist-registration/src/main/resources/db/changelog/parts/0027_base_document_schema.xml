@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0027-ref-doc-type" author="ns3">
+        <createTable tableName="ref_doc_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module_code" type="VARCHAR(50)"/>
+            <column name="required_for_portal_id" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0027-seed-portal-doc-types" author="ns3">
+        <insert tableName="ref_doc_type" schemaName="reference">
+            <column name="id" valueNumeric="1"/>
+            <column name="code" value="APPLICANT_ID"/>
+            <column name="label" value="NRIC / passport (applicant)"/>
+            <column name="module_code" value="PORTAL_ID"/>
+            <column name="required_for_portal_id" valueBoolean="true"/>
+            <column name="sort_order" valueNumeric="1"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_type" schemaName="reference">
+            <column name="id" valueNumeric="2"/>
+            <column name="code" value="SSM_CERT"/>
+            <column name="label" value="SSM / business registration certificate"/>
+            <column name="module_code" value="PORTAL_ID"/>
+            <column name="required_for_portal_id" valueBoolean="true"/>
+            <column name="sort_order" valueNumeric="2"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_type" schemaName="reference">
+            <column name="id" valueNumeric="3"/>
+            <column name="code" value="AUTHORIZATION_LETTER"/>
+            <column name="label" value="Authorization letter"/>
+            <column name="module_code" value="PORTAL_ID"/>
+            <column name="required_for_portal_id" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="3"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0027-doc-file" author="ns3">
+        <createTable tableName="doc_file" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="ref_doc_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_uploaded" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doc_name" type="VARCHAR(100)"/>
+            <column name="doc_uri" type="VARCHAR(255)"/>
+            <column name="content_type" type="VARCHAR(100)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="remarks" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0027-doc-mapping" author="ns3">
+        <createTable tableName="doc_mapping" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="doc_file_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="process_instance_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="individual_id" type="BIGINT"/>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex indexName="idx_doc_mapping_owner" tableName="doc_mapping" schemaName="base">
+            <column name="table_name"/>
+            <column name="table_pk_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0027-temp-doc-file" author="ns3">
+        <createTable tableName="temp_doc_file" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="ref_doc_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_uploaded" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doc_name" type="VARCHAR(100)"/>
+            <column name="doc_uri" type="VARCHAR(255)"/>
+            <column name="content_type" type="VARCHAR(100)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="remarks" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0027-temp-doc-mapping" author="ns3">
+        <createTable tableName="temp_doc_mapping" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_doc_file_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="process_instance_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="individual_id" type="BIGINT"/>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex indexName="idx_temp_doc_mapping_draft" tableName="temp_doc_mapping" schemaName="base">
+            <column name="table_name"/>
+            <column name="description"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

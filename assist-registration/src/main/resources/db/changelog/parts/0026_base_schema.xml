@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0026-create-base-schema" author="ns3">
+        <sql>CREATE SCHEMA IF NOT EXISTS base;</sql>
+    </changeSet>
+
+    <changeSet id="0026-user-employer" author="ns3">
+        <createTable tableName="user_employer" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT"/>
+            <column name="application_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employer_code" type="VARCHAR(20)"/>
+            <column name="employer_name" type="VARCHAR(100)"/>
+            <column name="registration_type_id" type="BIGINT"/>
+            <column name="registration_no" type="VARCHAR(30)"/>
+            <column name="full_name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_type" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_value" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_of_companies" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="branch_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-temp-user-employer" author="ns3">
+        <createTable tableName="temp_user_employer" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="application_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employer_code" type="VARCHAR(20)"/>
+            <column name="employer_name" type="VARCHAR(100)"/>
+            <column name="registration_type_id" type="BIGINT"/>
+            <column name="registration_no" type="VARCHAR(30)"/>
+            <column name="full_name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_type" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identification_value" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_phrase" type="VARCHAR(50)"/>
+            <column name="group_of_companies" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="branch_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-address" author="ns3">
+        <createTable tableName="address" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="address_line_1" type="VARCHAR(100)"/>
+            <column name="address_line_2" type="VARCHAR(100)"/>
+            <column name="address_line_3" type="VARCHAR(100)"/>
+            <column name="country_id" type="BIGINT"/>
+            <column name="state_id" type="BIGINT"/>
+            <column name="city_id" type="BIGINT"/>
+            <column name="postcode" type="VARCHAR(10)"/>
+            <column name="po_box" type="VARCHAR(30)"/>
+            <column name="locked_bag" type="VARCHAR(30)"/>
+            <column name="wdt" type="VARCHAR(30)"/>
+            <column name="address_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-temp-address" author="ns3">
+        <createTable tableName="temp_address" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="address_line_1" type="VARCHAR(100)"/>
+            <column name="address_line_2" type="VARCHAR(100)"/>
+            <column name="address_line_3" type="VARCHAR(100)"/>
+            <column name="country_id" type="BIGINT"/>
+            <column name="state_id" type="BIGINT"/>
+            <column name="city_id" type="BIGINT"/>
+            <column name="postcode" type="VARCHAR(10)"/>
+            <column name="po_box" type="VARCHAR(30)"/>
+            <column name="locked_bag" type="VARCHAR(30)"/>
+            <column name="wdt" type="VARCHAR(30)"/>
+            <column name="address_type_id" type="BIGINT"/>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-contact" author="ns3">
+        <createTable tableName="contact" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="contact_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact_value" type="VARCHAR(50)"/>
+            <column name="ext" type="VARCHAR(10)"/>
+            <column name="calling_code" type="VARCHAR(10)"/>
+            <column name="address_id" type="BIGINT"/>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-temp-contact" author="ns3">
+        <createTable tableName="temp_contact" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="contact_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact_value" type="VARCHAR(50)"/>
+            <column name="ext" type="VARCHAR(10)"/>
+            <column name="calling_code" type="VARCHAR(10)"/>
+            <column name="temp_address_id" type="BIGINT"/>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-employer-mapping" author="ns3">
+        <createTable tableName="employer_mapping" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_employer_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_employer_id" type="BIGINT"/>
+            <column name="status" type="INT" defaultValueNumeric="2">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-temp-employer-mapping" author="ns3">
+        <createTable tableName="temp_employer_mapping" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_user_employer_id" type="BIGINT"/>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_employer_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0026-portal-user-user-employer-link" author="ns3">
+        <addColumn tableName="portal_user" schemaName="registration">
+            <column name="user_employer_id" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

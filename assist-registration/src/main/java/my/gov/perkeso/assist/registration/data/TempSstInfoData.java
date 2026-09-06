@@ -14,6 +14,10 @@ public class TempSstInfoData {
     Long caseId;
     String tradeName;
     String tourTaxRegNo;
+    String motacRegNo;
+    boolean labuan;
+    String form1ContactPerson;
+    String websiteAddress;
     String inTaxRefNo;
     String cusAudRefNo;
     String preRegNo;
@@ -39,6 +43,20 @@ public class TempSstInfoData {
     List<TempDirectorOwnerData> directors;
     List<TempPremisesData> premises;
     List<TempSstTariffCodeData> tariffCodes;
+    List<TempSstServiceCategoryData> serviceCategories;
     List<TempSstContactPersonData> contactPersons;
     List<TempSstSupportingDocumentData> supportingDocuments;
+    boolean tourismTaxTriggered;
+    Long tourismTaxCaseId;
+    String tourismTaxCaseRefNo;
+    boolean dsTypeSoftwareAppsGame;
+    boolean dsTypeMusicEbookFilm;
+    boolean dsTypeAdOnlinePlatform;
+    boolean dsTypeSearchEngineSocialNetwork;
+    boolean dsTypeDatabaseHosting;
+    boolean dsTypeInternetBasedTelecom;
+    boolean dsTypeOnlineTraining;
+    boolean dsTypeOthers;
+    LocalDate achievingValueOfDsDate;
+    BigDecimal dsTotalValue;
 }

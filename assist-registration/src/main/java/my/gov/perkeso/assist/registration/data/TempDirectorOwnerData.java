@@ -14,4 +14,5 @@ public class TempDirectorOwnerData {
     String identificationNo;
     String email;
     String designation;
+    String telephoneNo;
 }

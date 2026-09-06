@@ -93,4 +93,15 @@ public class RegGeneralInfo {
 
     @Column(name = "query_remark", length = 500)
     private String queryRemark;
+
+    /**
+     * Backward link when this case was auto-created from another case (e.g. Tourism Tax
+     * auto-triggered from Service Tax — see {@code TourismTaxAutoTriggerService}), so the UI
+     * can navigate back to the originating case.
+     */
+    @Column(name = "linked_case_id")
+    private Long linkedCaseId;
+
+    @Column(name = "linked_case_ref_no", length = 30)
+    private String linkedCaseRefNo;
 }

@@ -8,6 +8,9 @@ import java.util.UUID;
 import my.gov.perkeso.assist.ServerApplication;
 import my.gov.perkeso.assist.registration.domain.EmployeeRepository;
 import my.gov.perkeso.assist.registration.domain.PortalUserRepository;
+import my.gov.perkeso.assist.registration.domain.base.BaseDocMappingRepository;
+import my.gov.perkeso.assist.registration.domain.base.BaseTableNames;
+import my.gov.perkeso.assist.registration.domain.base.UserEmployerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -38,6 +41,12 @@ class RegistrationWorkflowE2EIT {
 
     @Autowired
     private PortalUserRepository portalUserRepository;
+
+    @Autowired
+    private UserEmployerRepository userEmployerRepository;
+
+    @Autowired
+    private BaseDocMappingRepository baseDocMappingRepository;
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -314,16 +323,40 @@ class RegistrationWorkflowE2EIT {
     @Order(6)
     void portalEnrollmentNewAndExistingEmployer() {
         final RegistrationApiClient admin = client("admin", "password");
+        final String draftToken = UUID.randomUUID().toString();
+        uploadRequiredPortalDocuments(admin, draftToken);
 
         final JsonNode newEnrollment = admin.enrollPortalUser("""
                 {
                   "username": "portal_new",
                   "email": "portal_new@example.com",
-                  "applicationType": "NEW_EMPLOYER"
+                  "applicationType": "NEW_EMPLOYER",
+                  "employerName": "Portal New Co Sdn Bhd",
+                  "registrationTypeId": 1,
+                  "registrationNo": "201901019999",
+                  "addressLine1": "No 1 Jalan Portal",
+                  "stateId": 14,
+                  "cityId": 1401,
+                  "cityName": "Kuala Lumpur",
+                  "postCode": "50450",
+                  "fullName": "Portal New User",
+                  "identificationTypeId": 2,
+                  "identificationNo": "900101011234",
+                  "phoneCallingCode": "+60",
+                  "phoneNumber": "123456789",
+                  "securityPhrase": "My secret phrase",
+                  "draftToken": "%s"
                 }
-                """);
+                """.formatted(draftToken));
         assertThat(newEnrollment.get("applicationType").asText()).isEqualTo("NEW_EMPLOYER");
         assertThat(newEnrollment.get("employerId").isNull()).isTrue();
+
+        final var portalUser = portalUserRepository.findByUsernameIgnoreCase("portal_new");
+        assertThat(portalUser).isPresent();
+        assertThat(portalUser.get().getUserEmployerId()).isNotNull();
+        assertThat(userEmployerRepository.findByUserIdAndDeletedFalse(portalUser.get().getId())).isPresent();
+        assertThat(baseDocMappingRepository.findByTableNameAndTablePkIdAndDeletedFalse(
+                BaseTableNames.USER_EMPLOYER, portalUser.get().getUserEmployerId())).hasSize(2);
 
         final String brn = uniqueBrn();
         final RegistrationApiClient ro = client("ro", "password");
@@ -347,17 +380,115 @@ class RegistrationWorkflowE2EIT {
         final JsonNode approved = ro.submitCase(caseId, "{}");
         final String employerCode = approved.get("resourceIdentifier").asText();
 
+        final String existingDraftToken = UUID.randomUUID().toString();
+        uploadRequiredPortalDocuments(admin, existingDraftToken);
+
         final JsonNode existingEnrollment = admin.enrollPortalUser("""
                 {
                   "username": "portal_existing",
                   "email": "portal_existing@example.com",
                   "applicationType": "EXISTING_EMPLOYER",
-                  "employerCode": "%s"
+                  "employerCode": "%s",
+                  "employerName": "Linked Co Sdn Bhd",
+                  "registrationTypeId": 1,
+                  "registrationNo": "%s",
+                  "addressLine1": "No 5 Jalan Linked",
+                  "stateId": 14,
+                  "cityId": 1401,
+                  "cityName": "Kuala Lumpur",
+                  "postCode": "50812",
+                  "fullName": "Portal Existing User",
+                  "identificationTypeId": 2,
+                  "identificationNo": "900101011235",
+                  "phoneCallingCode": "+60",
+                  "phoneNumber": "123456780",
+                  "securityPhrase": "Linked secret phrase",
+                  "draftToken": "%s"
                 }
-                """.formatted(employerCode));
+                """.formatted(employerCode, brn, existingDraftToken));
         assertThat(existingEnrollment.get("applicationType").asText()).isEqualTo("EXISTING_EMPLOYER");
         assertThat(existingEnrollment.get("employerCode").asText()).isEqualTo(employerCode);
         assertThat(existingEnrollment.get("employerId").asLong()).isPositive();
+
+        final var linkedPortalUser = portalUserRepository.findByUsernameIgnoreCase("portal_existing");
+        assertThat(linkedPortalUser).isPresent();
+        assertThat(linkedPortalUser.get().getUserEmployerId()).isNotNull();
+        assertThat(userEmployerRepository.findByUserIdAndDeletedFalse(linkedPortalUser.get().getId()))
+                .isPresent()
+                .get()
+                .satisfies(userEmployer -> assertThat(userEmployer.getEmployerId()).isPositive());
+    }
+
+    @Test
+    @Order(7)
+    void portalEnrollmentInQueryThenResubmit() {
+        final RegistrationApiClient admin = client("admin", "password");
+        final String username = "portal_inquery_" + UUID.randomUUID().toString().substring(0, 8);
+        final String draftToken = UUID.randomUUID().toString();
+        uploadRequiredPortalDocuments(admin, draftToken);
+
+        admin.enrollPortalUser("""
+                {
+                  "username": "%s",
+                  "email": "%s@example.com",
+                  "applicationType": "NEW_EMPLOYER",
+                  "employerName": "In Query Co Sdn Bhd",
+                  "registrationTypeId": 1,
+                  "registrationNo": "201901018888",
+                  "addressLine1": "No 1 Jalan Query",
+                  "stateId": 14,
+                  "cityId": 1401,
+                  "cityName": "Kuala Lumpur",
+                  "postCode": "50450",
+                  "fullName": "In Query User",
+                  "identificationTypeId": 2,
+                  "identificationNo": "900101011236",
+                  "phoneCallingCode": "+60",
+                  "phoneNumber": "123456781",
+                  "securityPhrase": "Query secret phrase",
+                  "draftToken": "%s"
+                }
+                """.formatted(username, username, draftToken));
+
+        final JsonNode queried = admin.queryPortalEnrollment(username, """
+                {"remark": "Please update address line 2"}
+                """);
+        assertThat(queried.get("enrollmentStatus").asText()).isEqualTo("IN_QUERY");
+        assertThat(queried.get("queryRemark").asText()).isEqualTo("Please update address line 2");
+
+        final JsonNode resubmitted = admin.resubmitPortalEnrollment(username, """
+                {
+                  "email": "%s@example.com",
+                  "applicationType": "NEW_EMPLOYER",
+                  "employerName": "In Query Co Sdn Bhd",
+                  "registrationTypeId": 1,
+                  "registrationNo": "201901018888",
+                  "addressLine1": "No 1 Jalan Query",
+                  "addressLine2": "Suite 10",
+                  "stateId": 14,
+                  "cityId": 1401,
+                  "cityName": "Kuala Lumpur",
+                  "postCode": "50450",
+                  "fullName": "In Query User",
+                  "identificationTypeId": 2,
+                  "identificationNo": "900101011236",
+                  "phoneCallingCode": "+60",
+                  "phoneNumber": "123456781",
+                  "securityPhrase": "Query secret phrase"
+                }
+                """.formatted(username));
+        assertThat(resubmitted.get("enrollmentStatus").asText()).isEqualTo("SUBMITTED");
+        assertThat(resubmitted.get("queryRemark").isNull()).isTrue();
+        assertThat(resubmitted.get("addressLine2").asText()).isEqualTo("Suite 10");
+    }
+
+    private void uploadRequiredPortalDocuments(final RegistrationApiClient client, final String draftToken) {
+        client.uploadPortalDraftDocument(draftToken, 1L, minimalPdf(), "applicant-id.pdf", "application/pdf");
+        client.uploadPortalDraftDocument(draftToken, 2L, minimalPdf(), "ssm-cert.pdf", "application/pdf");
+    }
+
+    private static byte[] minimalPdf() {
+        return ("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF").getBytes(java.nio.charset.StandardCharsets.US_ASCII);
     }
 
     private RegistrationApiClient client(final String username, final String password) {

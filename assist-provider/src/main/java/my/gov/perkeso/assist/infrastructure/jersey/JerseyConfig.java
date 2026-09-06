@@ -13,8 +13,10 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
 import java.util.Set;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,11 +28,13 @@ public class JerseyConfig extends ResourceConfig {
 
     public JerseyConfig(final ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        register(MultiPartFeature.class);
+        register(JacksonFeature.class);
+        property(ServerProperties.WADL_FEATURE_DISABLE, true);
     }
 
     @PostConstruct
     public void setup() {
-        register(MultiPartFeature.class);
         applicationContext.getBeansWithAnnotation(Path.class).values().forEach(this::register);
         applicationContext.getBeansWithAnnotation(Provider.class).values().forEach(this::register);
         registerOpenApi();

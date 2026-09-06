@@ -26,7 +26,8 @@ public class IdentificationTypesReferenceApiResource {
     @GET
     @Operation(summary = "List identification types for registration forms")
     public List<RefOptionData> retrieveIdentificationTypes(
-            @QueryParam("directorFormOnly") @DefaultValue("true") final boolean directorFormOnly) {
-        return registrationReferenceService.retrieveIdentificationTypes(directorFormOnly);
+            @QueryParam("directorFormOnly") @DefaultValue("true") final boolean directorFormOnly,
+            @QueryParam("portalFormOnly") @DefaultValue("false") final boolean portalFormOnly) {
+        return registrationReferenceService.retrieveIdentificationTypes(directorFormOnly, portalFormOnly);
     }
 }

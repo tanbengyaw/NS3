@@ -1,6 +1,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
+import { isUoWorkflowSection } from './submit-routing.util';
 
 @Component({
   selector: 'assist-registration-case-status',
@@ -17,13 +18,26 @@ export class RegistrationCaseStatusComponent {
   @Input() appStatusReason: string | null = null;
   @Input() routedToLabel: string | null = null;
   @Input() showInboxLink = true;
+  @Input() sectionId: number | null = null;
 
   get isOfficer(): boolean {
-    return this.auth.hasRole('OFFICER') || this.auth.hasRole('ADMIN');
+    return this.auth.hasStaffAccess();
+  }
+
+  get isUoOnlySection(): boolean {
+    return isUoWorkflowSection(this.sectionId);
   }
 
   get canOfficerReview(): boolean {
-    return this.isOfficer && this.appStatus === 'SUBMITTED';
+    if (this.appStatus !== 'SUBMITTED') {
+      return false;
+    }
+    // Mirrors RegistrationOfficerActionsComponent.canReview — Update Tax Payer / Discontinue Tax
+    // cases route to the UO queue specifically, so only a UO can act on them.
+    if (this.isUoOnlySection) {
+      return this.auth.hasRole('UO');
+    }
+    return this.isOfficer;
   }
 
   get showReviewQueue(): boolean {

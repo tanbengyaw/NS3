@@ -29,5 +29,22 @@
     <include file="db/changelog/parts/0022_letter_reference_data_expansion.xml"/>
     <include file="db/changelog/parts/0023_kl_postcode_area_codes.xml"/>
     <include file="db/changelog/parts/0024_reference_data_expansion.xml"/>
+    <include file="db/changelog/parts/0025_portal_id_registration.xml"/>
+    <include file="db/changelog/parts/0026_base_schema.xml"/>
+    <include file="db/changelog/parts/0027_base_document_schema.xml"/>
+    <include file="db/changelog/parts/0028_base_reference_tables.xml"/>
+    <include file="db/changelog/parts/0029_registration_doc_types_unification.xml"/>
+    <include file="db/changelog/parts/0030_staff_user_schema.xml"/>
+    <include file="db/changelog/parts/0031_fix_staff_dev_password_hash.xml"/>
+    <include file="db/changelog/parts/0032_staff_user_identity_restart.xml"/>
+    <include file="db/changelog/parts/0033_portal_user_query_remark.xml"/>
+    <include file="db/changelog/parts/0034_tourism_form1_fields.xml"/>
+    <include file="db/changelog/parts/0035_sst_website_address.xml"/>
+    <include file="db/changelog/parts/0036_sst_service_type.xml"/>
+    <include file="db/changelog/parts/0037_tourism_tax_auto_trigger.xml"/>
+    <include file="db/changelog/parts/0038_reg_general_info_linked_case.xml"/>
+    <include file="db/changelog/parts/0039_digital_tax_fields.xml"/>
+    <include file="db/changelog/parts/0040_uo_shah_alam_seed.xml"/>
+    <include file="db/changelog/parts/0041_discontinue_tax.xml"/>
 
 </databaseChangeLog>

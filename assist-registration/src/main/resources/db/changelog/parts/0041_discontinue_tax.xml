@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        "Discontinue Tax" (section 1103) — mirrors ASSIST DiscontinueTaxFormDto / SstStatusEnum.
+        A draft row per case holding the (sstInfoId, taxTypeId) being discontinued, the requested
+        new status, and the cessation-effective date. On approve, the promotion service flips the
+        target SstStatusInfo row (is_current=false, end_date set) and inserts a fresh one with the
+        new status. No new Employer/SstInfo/SMK is ever created for this section.
+    -->
+    <changeSet id="0041-temp-discontinue-tax" author="ns3">
+        <createTable tableName="temp_discontinue_tax" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="reg_general_info_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tax_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="new_sst_status_id" type="BIGINT"/>
+            <column name="cessation_tax_effective_from" type="DATE"/>
+            <column name="created_date" type="TIMESTAMP"/>
+            <column name="updated_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

@@ -31,7 +31,7 @@ public class SalesTaxAcknowledgementLetterAttributeBuilder {
         attributes.put("employerAddressWithName", formatEmployerAddressWithName(tempEmployer));
         attributes.put("refNoOur", escapeHtml(regCase.getCaseRefNo()));
         attributes.put("date", LetterDateFormats.formatLetterDate(approvalDate(regCase, sstInfo)));
-        attributes.put("refNoYour", escapeHtml(Objects.requireNonNullElse(sstInfo.getSalesTaxSmkRegNo(), "—")));
+        attributes.put("refNoYour", escapeHtml(Objects.requireNonNullElse(sstInfo.taxSpecificSmkRegNo(), "—")));
         attributes.put("branchOffice", escapeHtml(formatStesenMengawal(tempEmployer)));
         attributes.put("requestDate", LetterDateFormats.formatLetterDate(requestDate(regCase)));
         attributes.put("approvalDate", LetterDateFormats.formatLetterDate(approvalDate(regCase, sstInfo)));

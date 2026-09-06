@@ -2,8 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PostcodeOption, RefOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../core/models/reference.model';
-import { ContactLine, TempDirectorOwner, TempPremises, TempSstContactPerson, TempSstSupportingDocument, TempSstTariffCode, TaxPayerRegistrationProfile } from '../core/models/registration.model';
+import { PostcodeOption, RefOption, SstServiceTypeOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../core/models/reference.model';
+import { ContactLine, TaxUpdateChangedField, TempDirectorOwner, TempPremises, TempSstContactPerson, TempSstInfo, TempSstServiceCategory, TempSstSupportingDocument, TempSstTariffCode, TaxPayerRegistrationProfile, UpsertSstInfoRequest } from '../core/models/registration.model';
+import { AuthService } from '../core/auth/auth.service';
 import { ReferenceDataService } from '../core/services/reference-data.service';
 import { ConfirmDialogComponent } from '../shared/confirm-dialog.component';
 import { FormModalComponent } from '../shared/form-modal.component';
@@ -12,15 +13,15 @@ import { RegistrationOfficerActionsComponent } from './registration-officer-acti
 import { RegistrationService } from './registration.service';
 import { resolveRoutedToLabel } from './case-routing.util';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
+import { resolveSstNewRegConfig } from './sst-new-reg.config';
+import { canMarkIncompleteSubmit, submitStatusHint } from './submit-routing.util';
 
-/** ASSIST section REG_NEW_REG_SST_SALES_TAX */
-const SECTION_SALES_TAX = 1100;
 /** SstContractType.MAIN_CONTRACT */
 const MAIN_CONTRACT = 1;
 /** SstContractType.SUB_CONTRACT */
 const SUB_CONTRACT = 2;
 
-type PendingDelete = { kind: 'director' | 'premises' | 'tariff' | 'contactPerson' | 'supportingDocument'; id: number };
+type PendingDelete = { kind: 'director' | 'premises' | 'tariff' | 'serviceCode' | 'contactPerson' | 'supportingDocument'; id: number };
 
 @Component({
   selector: 'assist-sales-tax-wizard',
@@ -33,8 +34,11 @@ export class SalesTaxWizardComponent {
   private readonly fb = inject(FormBuilder);
   private readonly registration = inject(RegistrationService);
   private readonly referenceData = inject(ReferenceDataService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  readonly config = resolveSstNewRegConfig(this.route.snapshot.data['sstTax']);
 
   readonly step = signal(1);
   readonly caseId = signal<number | null>(null);
@@ -44,22 +48,29 @@ export class SalesTaxWizardComponent {
   readonly appStatusReason = signal<string | null>(null);
   readonly routedToLabel = signal<string | null>(null);
   readonly employerCode = signal<string | null>(null);
+  readonly sectionId = signal<number | null>(null);
+  readonly changedFields = signal<TaxUpdateChangedField[]>([]);
+  readonly linkedFromCase = signal<{ caseId: number; caseRefNo: string | null } | null>(null);
   readonly salesTaxSmkRegNo = signal<string | null>(null);
   readonly directors = signal<TempDirectorOwner[]>([]);
   readonly premises = signal<TempPremises[]>([]);
   readonly tariffCodes = signal<TempSstTariffCode[]>([]);
+  readonly serviceCodes = signal<TempSstServiceCategory[]>([]);
   readonly contactPersons = signal<TempSstContactPerson[]>([]);
   readonly supportingDocuments = signal<TempSstSupportingDocument[]>([]);
+  readonly tourismTaxTrigger = signal<{ caseId: number; caseRefNo: string | null } | null>(null);
   readonly supportingDocumentTypes = signal<SupportingDocumentTypeOption[]>([]);
   readonly selectedDocumentTypeId = signal<number | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly message = signal<string | null>(null);
+  readonly submitIncomplete = signal(false);
   readonly editingDirectorId = signal<number | null>(null);
   readonly editingPremisesId = signal<number | null>(null);
   readonly directorModalOpen = signal(false);
   readonly premisesModalOpen = signal(false);
   readonly tariffModalOpen = signal(false);
+  readonly serviceCodeModalOpen = signal(false);
   readonly contactPersonModalOpen = signal(false);
   readonly pendingDelete = signal<PendingDelete | null>(null);
   readonly editingTariffId = signal<number | null>(null);
@@ -68,9 +79,28 @@ export class SalesTaxWizardComponent {
   readonly tariffSearchAttempted = signal(false);
   readonly tariffSearching = signal(false);
   readonly tariffModalNotice = signal<string | null>(null);
+  readonly serviceCodeSearchResults = signal<SstServiceTypeOption[]>([]);
+  readonly serviceCodeSearching = signal(false);
+  readonly serviceCodeModalNotice = signal<string | null>(null);
 
   readonly mainContractType = MAIN_CONTRACT;
   readonly subContractType = SUB_CONTRACT;
+
+  readonly submitHint = computed(() => {
+    const session = this.auth.currentSession();
+    return submitStatusHint(session?.roles ?? [], this.config.sectionId, this.submitIncomplete());
+  });
+
+  readonly showIncompleteOption = computed(() => {
+    const session = this.auth.currentSession();
+    return session ? canMarkIncompleteSubmit(session.roles) : false;
+  });
+
+  /** Update-tax-payer cases reuse this wizard as-is; detected from the loaded case's REG_UPDATE_TAX_PAYER_* sectionId (1200-1204). */
+  readonly isUpdateMode = computed(() => {
+    const id = this.sectionId();
+    return id != null && id >= 1200 && id <= 1204;
+  });
 
   readonly showPreRegBlock = signal(false);
   readonly taxPayerSearchFound = signal<boolean | null>(null);
@@ -144,6 +174,10 @@ export class SalesTaxWizardComponent {
     sameAsTradeName: [false],
     tradeName: [''],
     tourTaxRegNo: [''],
+    motacRegNo: [''],
+    labuan: [false],
+    contactPerson: [''],
+    websiteAddress: [''],
     inTaxRefNo: [''],
     cusAudRefNo: [''],
     preRegNo: [''],
@@ -169,6 +203,16 @@ export class SalesTaxWizardComponent {
     designation: [''],
     applicantEmail: [''],
     applicantTelNo: [''],
+    dsTypeSoftwareAppsGame: [false],
+    dsTypeMusicEbookFilm: [false],
+    dsTypeAdOnlinePlatform: [false],
+    dsTypeSearchEngineSocialNetwork: [false],
+    dsTypeDatabaseHosting: [false],
+    dsTypeInternetBasedTelecom: [false],
+    dsTypeOnlineTraining: [false],
+    dsTypeOthers: [false],
+    achievingValueOfDsDate: [''],
+    dsTotalValue: [0],
   });
 
   readonly contactPersonForm = this.fb.nonNullable.group({
@@ -187,6 +231,7 @@ export class SalesTaxWizardComponent {
     identificationNo: ['', Validators.required],
     email: [''],
     designation: ['Managing Director'],
+    telephoneNo: [''],
   });
 
   readonly premisesForm = this.fb.nonNullable.group({
@@ -208,6 +253,14 @@ export class SalesTaxWizardComponent {
     tariffDescription: [''],
     contractTypeId: [MAIN_CONTRACT, Validators.required],
     finishedGoods: ['', Validators.required],
+  });
+
+  readonly serviceCodeForm = this.fb.nonNullable.group({
+    serviceCodeSearch: [''],
+    sstServiceTypeId: [null as number | null, Validators.required],
+    serviceCode: [''],
+    serviceDescription: [''],
+    remark: [''],
   });
 
   constructor() {
@@ -233,6 +286,13 @@ export class SalesTaxWizardComponent {
         nameCtrl.clearValidators();
       }
       nameCtrl.updateValueAndValidity({ emitEvent: false });
+    });
+    this.applyPartBValidators();
+    this.applyForm1VariantValidators();
+    this.form1.controls.businessEntityTypeId.valueChanges.subscribe(() => {
+      if (!this.showLabuanCheckbox && this.form1.controls.labuan.value) {
+        this.form1.controls.labuan.setValue(false, { emitEvent: false });
+      }
     });
     const idParam = this.route.snapshot.paramMap.get('caseId');
     if (idParam) {
@@ -311,7 +371,7 @@ export class SalesTaxWizardComponent {
     if (this.form1.invalid) {
       this.form1.markAllAsTouched();
       this.showFormError(
-        `${this.validationSummary(this.form1, 'Create draft')} Complete all Form 1 sections (including Contact and Premise address below) first.`,
+        `${this.validationSummary(this.form1, 'Create draft')} Complete all required Form 1 fields first.`,
       );
       return;
     }
@@ -319,7 +379,7 @@ export class SalesTaxWizardComponent {
     this.loading.set(true);
     this.error.set(null);
     this.registration
-      .createCase({ ...this.createCasePayload(), sectionId: SECTION_SALES_TAX, dataSourceId: 1 })
+      .createCase({ ...this.createCasePayload(), sectionId: this.config.sectionId, dataSourceId: 1 })
       .subscribe({
         next: (result) => {
           const id = result.resourceId!;
@@ -339,7 +399,7 @@ export class SalesTaxWizardComponent {
 
   private syncRouteAfterDraft(caseId: number): void {
     if (!this.route.snapshot.paramMap.get('caseId')) {
-      void this.router.navigate(['/registration/sales-tax', caseId], { replaceUrl: true });
+      void this.router.navigate([this.config.routeBase, caseId], { replaceUrl: true });
     }
   }
 
@@ -384,10 +444,11 @@ export class SalesTaxWizardComponent {
         this.syncForm1EntryState();
         const directorCount = profile.directors?.length ?? 0;
         const premisesCount = profile.premises?.length ?? 0;
-        const importNote =
-          directorCount || premisesCount
+        const importNote = this.config.requiresDirectors
+          ? directorCount || premisesCount
             ? ` · ${directorCount} director(s) and ${premisesCount} premises will copy when you create draft`
-            : ' · No directors or premises on file — add at least one director before submit';
+            : ' · No directors or premises on file — add at least one director before submit'
+          : '';
         this.message.set(`Found tax payer: ${profile.employerName} (${profile.employerCode})${importNote}`);
       },
       error: (err) => {
@@ -568,7 +629,7 @@ export class SalesTaxWizardComponent {
       this.message.set(null);
       return;
     }
-    this.persistForm2(id, 'Sales tax Part B saved.');
+    this.persistForm2(id, 'Part B saved.');
   }
 
   savePartC(): void {
@@ -599,18 +660,139 @@ export class SalesTaxWizardComponent {
     this.persistForm2(id, 'Part C declaration saved.');
   }
 
+  private applyForm1VariantValidators(): void {
+    if (this.config.requireForm1Email) {
+      this.form1.controls.email.setValidators([Validators.required, Validators.email]);
+    } else {
+      this.form1.controls.email.clearValidators();
+    }
+    this.form1.controls.email.updateValueAndValidity({ emitEvent: false });
+    if (this.config.requireForm1ContactPerson) {
+      this.form1.controls.contactPerson.setValidators(Validators.required);
+    } else {
+      this.form1.controls.contactPerson.clearValidators();
+    }
+    this.form1.controls.contactPerson.updateValueAndValidity({ emitEvent: false });
+    if (this.config.showWebsiteAddress) {
+      this.form1.controls.websiteAddress.setValidators(Validators.required);
+    } else {
+      this.form1.controls.websiteAddress.clearValidators();
+    }
+    this.form1.controls.websiteAddress.updateValueAndValidity({ emitEvent: false });
+  }
+
+  get showLabuanCheckbox(): boolean {
+    const typeId = this.form1.controls.businessEntityTypeId.value;
+    return typeId === 2 || typeId === 3 || typeId === 7;
+  }
+
+  get labuanCheckboxLabel(): string {
+    const typeId = this.form1.controls.businessEntityTypeId.value;
+    return typeId === 7 ? 'Labuan' : 'Labuan / Sabah / Sarawak';
+  }
+
+  get form1RegistrationNoLabel(): string {
+    if (this.config.showTourismPartA) {
+      return this.tourismRegistrationNoLabel;
+    }
+    if (this.config.showWebsiteAddress) {
+      return 'Registration no';
+    }
+    return 'BRN (business registration no)';
+  }
+
+  get existingSstRegNo(): string {
+    return this.searchedEmployerCode() || this.employerCode() || '';
+  }
+
+  get tourismRegistrationNoLabel(): string {
+    if (this.form1.controls.labuan.value) {
+      return 'Identity card no';
+    }
+    if (this.showLabuanCheckbox) {
+      return 'Registration no';
+    }
+    return 'Identity card no';
+  }
+
+  get showExistingSstRegNo(): boolean {
+    return !this.form1.controls.newRegisterTax.value && !!(this.searchedEmployerCode() || this.employerCode());
+  }
+
+  private applyPartBValidators(): void {
+    if (this.config.requiresSalesBreakdown) {
+      return;
+    }
+    // For showPartBDates (service tax): clear only the sales-breakdown-specific controls.
+    const salesBreakdownOnly = [
+      this.form2.controls.localSales,
+      this.form2.controls.exportSales,
+      this.form2.controls.salesToDesignArea,
+      this.form2.controls.othersSales,
+    ];
+    for (const control of salesBreakdownOnly) {
+      control.clearValidators();
+      control.updateValueAndValidity({ emitEvent: false });
+    }
+    if (!this.config.showPartBDates) {
+      // Non-sales, non-service-tax: also clear the Part B date controls.
+      const dateControls = [
+        this.form2.controls.manComDate,
+        this.form2.controls.dateSaleValTaxGoods,
+        this.form2.controls.anTotalTaxSalesVal,
+      ];
+      for (const control of dateControls) {
+        control.clearValidators();
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+  }
+
   private persistForm2(caseId: number, successMessage: string): void {
     this.loading.set(true);
     this.error.set(null);
     const raw = this.form2.getRawValue();
+    const body: UpsertSstInfoRequest = {
+      finYrEndMon: raw.finYrEndMon,
+      businessComDate: raw.businessComDate || undefined,
+      declareTrue: raw.declareTrue,
+      declareDate: raw.declareDate || null,
+      applicantName: raw.applicantName,
+      identityCard: raw.identityCard,
+      designation: raw.designation,
+      applicantEmail: raw.applicantEmail,
+      applicantTelNo: raw.applicantTelNo,
+    };
+    if (this.config.requiresSalesBreakdown || this.config.showPartBDates) {
+      body.manComDate = raw.manComDate || undefined;
+      body.dateSaleValTaxGoods = raw.dateSaleValTaxGoods || undefined;
+      body.anTotalTaxSalesVal = raw.anTotalTaxSalesVal;
+    }
+    if (this.config.requiresSalesBreakdown) {
+      body.localSales = raw.localSales;
+      body.exportSales = raw.exportSales;
+      body.salesToDesignArea = raw.salesToDesignArea;
+      body.othersSales = raw.othersSales;
+      body.subContractWork = raw.subContractWork;
+    }
+    if (this.config.requiresDigitalServiceTypes) {
+      body.dsTypeSoftwareAppsGame = raw.dsTypeSoftwareAppsGame;
+      body.dsTypeMusicEbookFilm = raw.dsTypeMusicEbookFilm;
+      body.dsTypeAdOnlinePlatform = raw.dsTypeAdOnlinePlatform;
+      body.dsTypeSearchEngineSocialNetwork = raw.dsTypeSearchEngineSocialNetwork;
+      body.dsTypeDatabaseHosting = raw.dsTypeDatabaseHosting;
+      body.dsTypeInternetBasedTelecom = raw.dsTypeInternetBasedTelecom;
+      body.dsTypeOnlineTraining = raw.dsTypeOnlineTraining;
+      body.dsTypeOthers = raw.dsTypeOthers;
+      body.achievingValueOfDsDate = raw.achievingValueOfDsDate || undefined;
+      body.dsTotalValue = raw.dsTotalValue;
+    }
     this.registration
-      .upsertSstInfo(caseId, {
-        ...raw,
-        declareDate: raw.declareDate || null,
-      })
+      .upsertSstInfo(caseId, body)
       .subscribe({
-        next: () => {
+        next: (sst) => {
           this.loading.set(false);
+          this.applyTourismTaxTrigger(sst);
           this.message.set(successMessage);
         },
         error: (err) => this.onError(err),
@@ -662,6 +844,7 @@ export class SalesTaxWizardComponent {
         identificationNo: director.identificationNo,
         email: director.email ?? '',
         designation: director.designation ?? 'Managing Director',
+        telephoneNo: director.telephoneNo ?? '',
       });
     } else {
       this.resetDirectorForm();
@@ -683,6 +866,7 @@ export class SalesTaxWizardComponent {
       identificationNo: '',
       email: '',
       designation: 'Managing Director',
+      telephoneNo: '',
     });
   }
 
@@ -715,6 +899,8 @@ export class SalesTaxWizardComponent {
       this.executeRemoveContactPerson(pending.id);
     } else if (pending.kind === 'supportingDocument') {
       this.executeRemoveSupportingDocument(pending.id);
+    } else if (pending.kind === 'serviceCode') {
+      this.deleteServiceCode(pending.id);
     } else {
       this.executeRemoveTariff(pending.id);
     }
@@ -926,6 +1112,83 @@ export class SalesTaxWizardComponent {
     this.resetTariffForm();
   }
 
+  openServiceCodeModal(): void {
+    this.serviceCodeForm.reset({ serviceCodeSearch: '', sstServiceTypeId: null, serviceCode: '', serviceDescription: '', remark: '' });
+    this.serviceCodeSearchResults.set([]);
+    this.serviceCodeModalNotice.set(null);
+    this.error.set(null);
+    this.serviceCodeModalOpen.set(true);
+  }
+
+  closeServiceCodeModal(): void {
+    this.serviceCodeModalOpen.set(false);
+  }
+
+  searchServiceCodes(): void {
+    const term = this.serviceCodeForm.controls.serviceCodeSearch.value.trim();
+    this.serviceCodeSearching.set(true);
+    this.serviceCodeModalNotice.set(null);
+    this.referenceData.searchSstServiceTypes(term).subscribe({
+      next: (rows) => {
+        this.serviceCodeSearching.set(false);
+        this.serviceCodeSearchResults.set(rows);
+        if (rows.length === 0) {
+          this.serviceCodeModalNotice.set('No service type codes found. Try a code like "A01" or a keyword like "consult".');
+        }
+      },
+      error: () => {
+        this.serviceCodeSearching.set(false);
+        this.serviceCodeModalNotice.set('Service type search failed — check the API is running and restart the backend for migration 0036.');
+      },
+    });
+  }
+
+  selectServiceCode(option: SstServiceTypeOption): void {
+    this.serviceCodeForm.patchValue({
+      sstServiceTypeId: option.id,
+      serviceCode: option.code,
+      serviceCodeSearch: option.code,
+      serviceDescription: option.description,
+    });
+    this.serviceCodeModalNotice.set(null);
+  }
+
+  saveServiceCode(): void {
+    const id = this.caseId();
+    if (!id || !this.serviceCodeForm.controls.sstServiceTypeId.value) {
+      this.serviceCodeModalNotice.set('Select a service type code first.');
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    const body = {
+      sstServiceTypeId: this.serviceCodeForm.controls.sstServiceTypeId.value,
+      remark: this.serviceCodeForm.controls.remark.value || null,
+    };
+    this.registration.addServiceCategory(id, body).subscribe({
+      next: () => {
+        this.closeServiceCodeModal();
+        this.loadSstInfo(id);
+        this.message.set('Service type code added.');
+      },
+      error: (err) => this.onError(err),
+    });
+  }
+
+  deleteServiceCode(categoryId: number): void {
+    const id = this.caseId();
+    if (!id) { return; }
+    this.loading.set(true);
+    this.error.set(null);
+    this.registration.deleteServiceCategory(id, categoryId).subscribe({
+      next: () => {
+        this.loadSstInfo(id);
+        this.message.set('Service type code removed.');
+      },
+      error: (err) => this.onError(err),
+    });
+  }
+
   searchTariffCodes(): void {
     const term = this.tariffForm.controls.tariffCodeSearch.value.trim();
     if (!term) {
@@ -1132,14 +1395,16 @@ export class SalesTaxWizardComponent {
     }
     this.loading.set(true);
     this.error.set(null);
-    this.registration.submitCase(id).subscribe({
+    const body = this.showIncompleteOption() && this.submitIncomplete() ? { incomplete: true } : {};
+    this.registration.submitCase(id, body).subscribe({
       next: (result) => {
         this.loading.set(false);
         const status = String(result.changes?.['appStatus'] ?? 'SUBMITTED');
         this.appStatus.set(status);
         if (status === 'APPROVED') {
           this.employerCode.set(result.resourceIdentifier);
-          const smk = result.changes?.['salesTaxSmkRegNo'];
+          const smk = result.changes?.['sstSmkRegNo'] ?? result.changes?.['salesTaxSmkRegNo']
+            ?? result.changes?.['tourismTaxSmkRegNo'] ?? result.changes?.['dpspTaxSmkRegNo'];
           if (typeof smk === 'string') {
             this.salesTaxSmkRegNo.set(smk);
           }
@@ -1211,6 +1476,16 @@ export class SalesTaxWizardComponent {
       this.step.set(3);
       this.message.set(null);
       this.scrollToWizardTop();
+      if (this.isUpdateMode()) {
+        this.loadChangedFields(id);
+      }
+    });
+  }
+
+  private loadChangedFields(caseId: number): void {
+    this.registration.getTaxUpdateDiff(caseId).subscribe({
+      next: (rows) => this.changedFields.set(rows),
+      error: () => this.changedFields.set([]),
     });
   }
 
@@ -1223,22 +1498,66 @@ export class SalesTaxWizardComponent {
       issues.push('Business name is required — save Form 1');
     }
     if (!f1.registrationNo?.trim()) {
-      issues.push('BRN is required — save Form 1');
+      issues.push(
+        this.config.showTourismPartA
+          ? 'Registration / identity no is required — save Form 1'
+          : 'BRN is required — save Form 1',
+      );
     }
-    if (this.directors().length === 0) {
-      issues.push('At least one director is required');
+    if (this.config.requireForm1ContactPerson && !f1.contactPerson?.trim()) {
+      issues.push('Contact person is required — save Form 1');
     }
-    if (!f2.manComDate || !f2.dateSaleValTaxGoods || !f2.businessComDate) {
+    if (this.config.showWebsiteAddress && !f1.websiteAddress?.trim()) {
+      issues.push('Website address is required — save Form 1');
+    }
+    if (this.config.requireForm1Email && !f1.email?.trim()) {
+      issues.push('Email is required — save Form 1');
+    }
+    if (this.config.requiresServiceCodes && this.serviceCodes().length === 0) {
+      issues.push('At least one service type code is required');
+    }
+    if (this.config.requiresDirectors && this.directors().length === 0) {
+      issues.push(
+        this.config.requiresAuthorisedPersonnel
+          ? 'At least one authorised personnel is required'
+          : 'At least one director is required',
+      );
+    }
+    if (this.config.requiresDigitalServiceTypes) {
+      const hasDigitalServiceType = f2.dsTypeSoftwareAppsGame || f2.dsTypeMusicEbookFilm
+        || f2.dsTypeAdOnlinePlatform || f2.dsTypeSearchEngineSocialNetwork || f2.dsTypeDatabaseHosting
+        || f2.dsTypeInternetBasedTelecom || f2.dsTypeOnlineTraining || f2.dsTypeOthers;
+      if (!hasDigitalServiceType) {
+        issues.push('At least one type of digital service is required — save Part B');
+      }
+      if (!f2.achievingValueOfDsDate) {
+        issues.push('Date achieving value of digital service is required — save Part B');
+      }
+      if (f2.dsTotalValue == null || f2.dsTotalValue <= 0) {
+        issues.push('Total value of digital service must be greater than zero — save Part B');
+      }
+    }
+    if (this.config.requiresPremises && this.premises().length === 0) {
+      issues.push('At least one accommodation premises is required');
+    }
+    if (!f2.finYrEndMon || !f2.businessComDate) {
       issues.push('Part B dates are incomplete — save Part B');
     }
-    if (f2.anTotalTaxSalesVal == null || f2.anTotalTaxSalesVal <= 0) {
-      issues.push('Annual taxable sales value must be greater than zero — save Part B');
+    if (this.config.requiresSalesBreakdown || this.config.showPartBDates) {
+      if (!f2.manComDate || !f2.dateSaleValTaxGoods) {
+        issues.push('Part B dates are incomplete — save Part B');
+      }
+      if (f2.anTotalTaxSalesVal == null || f2.anTotalTaxSalesVal <= 0) {
+        issues.push('Annual taxable service/sales value must be greater than zero — save Part B');
+      }
     }
-    if (this.mainTariffCount === 0) {
-      issues.push('At least one main-contract tariff code is required');
-    }
-    if (f2.subContractWork && this.subTariffCount === 0) {
-      issues.push('Sub-contract tariff codes are required when sub-contract work is flagged');
+    if (this.config.requiresSalesBreakdown) {
+      if (this.mainTariffCount === 0) {
+        issues.push('At least one main-contract tariff code is required');
+      }
+      if (f2.subContractWork && this.subTariffCount === 0) {
+        issues.push('Sub-contract tariff codes are required when sub-contract work is flagged');
+      }
     }
     if (!f2.declareTrue) {
       issues.push('Part C declaration must be accepted — save Part C');
@@ -1503,7 +1822,10 @@ export class SalesTaxWizardComponent {
   private fieldLabel(name: string): string {
     const labels: Record<string, string> = {
       employerName: 'Employer name',
-      registrationNo: 'BRN',
+      registrationNo: this.config.showTourismPartA ? this.tourismRegistrationNoLabel : 'BRN',
+      contactPerson: 'Contact person',
+      websiteAddress: 'Website address',
+      motacRegNo: 'MOTAC registration no',
       businessEntityTypeId: 'Business entity type',
       msicId: 'MSIC / industry code',
       postCode: 'Postcode',
@@ -1545,7 +1867,9 @@ export class SalesTaxWizardComponent {
         this.appStatusReason.set(c.appStatusReason ?? null);
         this.routedToLabel.set(resolveRoutedToLabel(c));
         this.employerCode.set(c.employerCode ?? null);
+        this.sectionId.set(c.sectionId ?? null);
         this.salesTaxSmkRegNo.set(c.salesTaxSmkRegNo ?? null);
+        this.linkedFromCase.set(c.linkedCaseId ? { caseId: c.linkedCaseId, caseRefNo: c.linkedCaseRefNo } : null);
         this.form1.patchValue({
           employerName: c.employerName ?? '',
           registrationNo: c.registrationNo ?? '',
@@ -1585,6 +1909,14 @@ export class SalesTaxWizardComponent {
     });
   }
 
+  private applyTourismTaxTrigger(sst: TempSstInfo): void {
+    this.tourismTaxTrigger.set(
+      sst.tourismTaxTriggered && sst.tourismTaxCaseId
+        ? { caseId: sst.tourismTaxCaseId, caseRefNo: sst.tourismTaxCaseRefNo }
+        : null,
+    );
+  }
+
   private loadSstInfo(caseId: number, onReady?: () => void): void {
     this.registration.getSstInfo(caseId).subscribe({
       next: (sst) => {
@@ -1592,11 +1924,17 @@ export class SalesTaxWizardComponent {
         this.directors.set(sst.directors ?? []);
         this.premises.set(sst.premises ?? []);
         this.tariffCodes.set(sst.tariffCodes ?? []);
+        this.serviceCodes.set(sst.serviceCategories ?? []);
+        this.applyTourismTaxTrigger(sst);
         this.contactPersons.set(sst.contactPersons ?? []);
         this.supportingDocuments.set(sst.supportingDocuments ?? []);
         this.form1.patchValue({
           tradeName: sst.tradeName ?? '',
           tourTaxRegNo: sst.tourTaxRegNo ?? '',
+          motacRegNo: sst.motacRegNo ?? '',
+          labuan: sst.labuan ?? false,
+          contactPerson: sst.form1ContactPerson ?? '',
+          websiteAddress: sst.websiteAddress ?? '',
           inTaxRefNo: sst.inTaxRefNo ?? '',
           cusAudRefNo: sst.cusAudRefNo ?? '',
           preRegNo: sst.preRegNo ?? '',
@@ -1606,21 +1944,10 @@ export class SalesTaxWizardComponent {
         if (sst.preRegNo || sst.preRegName || sst.dateOfReplacement) {
           this.showPreRegBlock.set(true);
         }
-        if (sst.manComDate) {
-          this.form2.patchValue({
-            manComDate: sst.manComDate,
-            dateSaleValTaxGoods: sst.dateSaleValTaxGoods ?? '',
-            finYrEndMon: sst.finYrEndMon ?? 12,
-            businessComDate: sst.businessComDate ?? '',
-            anTotalTaxSalesVal: sst.anTotalTaxSalesVal ?? 0,
-            localSales: sst.localSales ?? 0,
-            exportSales: sst.exportSales ?? 0,
-            salesToDesignArea: sst.salesToDesignArea ?? 0,
-            othersSales: sst.othersSales ?? 0,
-            subContractWork: sst.subContractWork ?? false,
-          });
-        }
+        // finYrEndMon / businessComDate are always visible in Part B regardless of kind.
         this.form2.patchValue({
+          finYrEndMon: sst.finYrEndMon ?? 12,
+          businessComDate: sst.businessComDate ?? '',
           declareTrue: sst.declareTrue ?? false,
           declareDate: sst.declareDate ?? '',
           applicantName: sst.applicantName ?? '',
@@ -1629,6 +1956,36 @@ export class SalesTaxWizardComponent {
           applicantEmail: sst.applicantEmail ?? '',
           applicantTelNo: sst.applicantTelNo ?? '',
         });
+        if (this.config.requiresSalesBreakdown || this.config.showPartBDates) {
+          this.form2.patchValue({
+            manComDate: sst.manComDate ?? '',
+            dateSaleValTaxGoods: sst.dateSaleValTaxGoods ?? '',
+            anTotalTaxSalesVal: sst.anTotalTaxSalesVal ?? 0,
+          });
+        }
+        if (this.config.requiresSalesBreakdown) {
+          this.form2.patchValue({
+            localSales: sst.localSales ?? 0,
+            exportSales: sst.exportSales ?? 0,
+            salesToDesignArea: sst.salesToDesignArea ?? 0,
+            othersSales: sst.othersSales ?? 0,
+            subContractWork: sst.subContractWork ?? false,
+          });
+        }
+        if (this.config.requiresDigitalServiceTypes) {
+          this.form2.patchValue({
+            dsTypeSoftwareAppsGame: sst.dsTypeSoftwareAppsGame ?? false,
+            dsTypeMusicEbookFilm: sst.dsTypeMusicEbookFilm ?? false,
+            dsTypeAdOnlinePlatform: sst.dsTypeAdOnlinePlatform ?? false,
+            dsTypeSearchEngineSocialNetwork: sst.dsTypeSearchEngineSocialNetwork ?? false,
+            dsTypeDatabaseHosting: sst.dsTypeDatabaseHosting ?? false,
+            dsTypeInternetBasedTelecom: sst.dsTypeInternetBasedTelecom ?? false,
+            dsTypeOnlineTraining: sst.dsTypeOnlineTraining ?? false,
+            dsTypeOthers: sst.dsTypeOthers ?? false,
+            achievingValueOfDsDate: sst.achievingValueOfDsDate ?? '',
+            dsTotalValue: sst.dsTotalValue ?? 0,
+          });
+        }
         if (sst.declareTrue) {
           this.form2.controls.applicantName.setValidators(Validators.required);
           this.form2.controls.applicantName.updateValueAndValidity({ emitEvent: false });
@@ -1636,6 +1993,9 @@ export class SalesTaxWizardComponent {
         const status = this.appStatus();
         if (status && status !== 'NEW' && this.caseId()) {
           this.step.set(3);
+          if (this.isUpdateMode()) {
+            this.loadChangedFields(caseId);
+          }
         }
         onReady?.();
       },
@@ -1874,6 +2234,20 @@ export class SalesTaxWizardComponent {
 
   private sstForm1Payload() {
     const v = this.form1.getRawValue();
+    if (this.config.showTourismPartA) {
+      return {
+        tradeName: v.tradeName || undefined,
+        motacRegNo: v.motacRegNo || undefined,
+        labuan: v.labuan,
+        form1ContactPerson: v.contactPerson || undefined,
+      };
+    }
+    if (this.config.showWebsiteAddress) {
+      return {
+        tradeName: v.tradeName || undefined,
+        websiteAddress: v.websiteAddress || undefined,
+      };
+    }
     return {
       tradeName: v.tradeName || undefined,
       tourTaxRegNo: v.tourTaxRegNo || undefined,
@@ -1898,8 +2272,8 @@ export class SalesTaxWizardComponent {
   }
 
   private applyTaxPayerProfile(profile: TaxPayerRegistrationProfile): void {
-    this.pendingImportDirectors.set(profile.directors ?? []);
-    this.pendingImportPremises.set(profile.premises ?? []);
+    this.pendingImportDirectors.set(this.config.requiresDirectors ? profile.directors ?? [] : []);
+    this.pendingImportPremises.set(this.config.premisesOnForm1 ? profile.premises ?? [] : []);
     const addressFields = {
       addressLine1: profile.addressLine1 ?? '',
       addressLine2: profile.addressLine2 ?? '',

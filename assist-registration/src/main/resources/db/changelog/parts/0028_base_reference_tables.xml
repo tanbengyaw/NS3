@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0028-ref-doc-section" author="ns3">
+        <createTable tableName="ref_doc_section" schemaName="base">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module_code" type="VARCHAR(50)"/>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <insert tableName="ref_doc_section" schemaName="base">
+            <column name="id" valueNumeric="1"/>
+            <column name="code" value="PORTAL_ID"/>
+            <column name="label" value="Portal ID registration"/>
+            <column name="module_code" value="BASE"/>
+            <column name="sort_order" valueNumeric="1"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0028-ref-address-type" author="ns3">
+        <createTable tableName="ref_address_type" schemaName="base">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <insert tableName="ref_address_type" schemaName="base">
+            <column name="id" valueNumeric="2"/><column name="code" value="POSTAL"/><column name="label" value="Postal"/>
+            <column name="sort_order" valueNumeric="1"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_address_type" schemaName="base">
+            <column name="id" valueNumeric="3"/><column name="code" value="INDUSTRY"/><column name="label" value="Industry"/>
+            <column name="sort_order" valueNumeric="2"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_address_type" schemaName="base">
+            <column name="id" valueNumeric="4"/><column name="code" value="SSM"/><column name="label" value="SSM"/>
+            <column name="sort_order" valueNumeric="3"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_address_type" schemaName="base">
+            <column name="id" valueNumeric="5"/><column name="code" value="MYCOID"/><column name="label" value="MYCOID"/>
+            <column name="sort_order" valueNumeric="4"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0028-ref-contact-type" author="ns3">
+        <createTable tableName="ref_contact_type" schemaName="base">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="1"/><column name="code" value="MOBILE"/><column name="label" value="Mobile"/>
+            <column name="sort_order" valueNumeric="1"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="2"/><column name="code" value="FIXED_LINE"/><column name="label" value="Fixed Line"/>
+            <column name="sort_order" valueNumeric="2"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="3"/><column name="code" value="EMAIL"/><column name="label" value="Email"/>
+            <column name="sort_order" valueNumeric="3"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="4"/><column name="code" value="FAX"/><column name="label" value="Fax"/>
+            <column name="sort_order" valueNumeric="4"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="7"/><column name="code" value="OFFICE_NUMBER"/><column name="label" value="Office Number"/>
+            <column name="sort_order" valueNumeric="5"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_contact_type" schemaName="base">
+            <column name="id" valueNumeric="8"/><column name="code" value="SECONDARY_EMAIL"/><column name="label" value="Secondary Email"/>
+            <column name="sort_order" valueNumeric="6"/><column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0028-ref-doc-type" author="ns3">
+        <createTable tableName="ref_doc_type" schemaName="base">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doc_section_id" type="BIGINT"/>
+            <column name="module_code" type="VARCHAR(50)"/>
+            <column name="is_required" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0028-migrate-ref-doc-type-to-base" author="ns3">
+        <sql>
+            INSERT INTO base.ref_doc_type (id, code, label, doc_section_id, module_code, is_required, sort_order, is_deleted)
+            SELECT id, code, label, 1, module_code, required_for_portal_id, sort_order, is_deleted
+            FROM reference.ref_doc_type;
+        </sql>
+        <dropTable tableName="ref_doc_type" schemaName="reference"/>
+    </changeSet>
+
+</databaseChangeLog>

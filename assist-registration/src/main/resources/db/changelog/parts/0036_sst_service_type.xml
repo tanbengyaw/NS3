@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Reference: SST service types (lookup for service-tax registration service codes) -->
+    <changeSet id="0036-ref-sst-service-type" author="ns3">
+        <createTable tableName="ref_sst_service_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_sst_service_type_code" tableName="ref_sst_service_type" schemaName="reference">
+            <column name="code"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Sample SST service type codes for dev / tests -->
+    <changeSet id="0036-seed-sst-service-type" author="ns3">
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="1"/><column name="code" value="A01"/><column name="description" value="Consultancy and management services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="2"/><column name="code" value="A02"/><column name="description" value="Accounting, auditing and bookkeeping services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="3"/><column name="code" value="A03"/><column name="description" value="Legal services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="4"/><column name="code" value="A04"/><column name="description" value="Engineering and related technical services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="5"/><column name="code" value="A05"/><column name="description" value="Architecture and related services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="6"/><column name="code" value="B01"/><column name="description" value="Information technology services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="7"/><column name="code" value="B02"/><column name="description" value="Telecommunication services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="8"/><column name="code" value="C01"/><column name="description" value="Parking services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="9"/><column name="code" value="D01"/><column name="description" value="Courier delivery services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="10"/><column name="code" value="E01"/><column name="description" value="Hire and drive (vehicle rental) services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="11"/><column name="code" value="F01"/><column name="description" value="Employment agency and labour supply services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="12"/><column name="code" value="G01"/><column name="description" value="Advertising services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="13"/><column name="code" value="G02"/><column name="description" value="Marketing services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="14"/><column name="code" value="H01"/><column name="description" value="Security and guard services"/><column name="is_deleted" valueBoolean="false"/></insert>
+        <insert tableName="ref_sst_service_type" schemaName="reference"><column name="id" valueNumeric="15"/><column name="code" value="H02"/><column name="description" value="Cleaning services"/><column name="is_deleted" valueBoolean="false"/></insert>
+    </changeSet>
+
+    <!-- Draft child table: service categories selected during registration -->
+    <changeSet id="0036-temp-sst-service-category" author="ns3">
+        <createTable tableName="temp_sst_service_category" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="temp_sst_info_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sst_service_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Permanent child table: promoted on case approval -->
+    <changeSet id="0036-sst-service-category" author="ns3">
+        <createTable tableName="sst_service_category" schemaName="registration">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sst_service_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

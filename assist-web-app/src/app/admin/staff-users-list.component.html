@@ -1,0 +1,159 @@
+<section class="page">
+  <header>
+    <p class="module-label">Administration</p>
+    <h1>Staff users</h1>
+    <p>Manage PERKESO counter and back-office login accounts (ADMIN only).</p>
+  </header>
+
+  @if (!isAdmin) {
+    <p class="error banner">Admin role required.</p>
+  } @else {
+    <div class="toolbar">
+      <button type="button" class="primary" (click)="openCreateModal()">Add staff user</button>
+    </div>
+
+    @if (message()) {
+      <p class="message">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    @if (loading()) {
+      <p class="status">Loading…</p>
+    } @else {
+      <p class="status">{{ users().length }} staff user(s)</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Branch</th>
+              <th>Roles</th>
+              <th>Active</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ branchLabel(user.branchId) }}</td>
+                <td>{{ formatRoles(user.roles) }}</td>
+                <td>
+                  <span class="badge" [class.active]="user.active" [class.inactive]="!user.active">
+                    {{ user.active ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td>{{ formatDate(user.updatedDate ?? user.createdDate) }}</td>
+                <td class="actions-cell">
+                  <button type="button" class="link-btn" (click)="openEditModal(user)">Edit</button>
+                  @if (canToggleActive(user)) {
+                    <button
+                      type="button"
+                      class="link-btn"
+                      [class.deactivate]="user.active"
+                      [class.reactivate]="!user.active"
+                      [disabled]="togglingActive()"
+                      (click)="toggleActivePrompt(user)"
+                    >
+                      {{ toggleActiveLabel(user) }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">No staff users found.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>
+
+<assist-form-modal
+  [open]="modalOpen()"
+  [title]="editingUserId() == null ? 'Add staff user' : 'Edit staff user'"
+  (closed)="closeModal()"
+>
+  @if (modalError()) {
+    <p class="modal-error" role="alert">{{ modalError() }}</p>
+  }
+  <form class="form-grid" [formGroup]="form">
+    <label [class.field-invalid]="showFieldError('username')">
+      Username <span class="req">*</span>
+      <input formControlName="username" autocomplete="off" />
+      @if (showFieldError('username')) {
+        <span class="field-error">{{ fieldError('username') }}</span>
+      }
+    </label>
+    <label [class.field-invalid]="showFieldError('email')">
+      Email <span class="req">*</span>
+      <input type="email" formControlName="email" autocomplete="off" />
+      @if (showFieldError('email')) {
+        <span class="field-error">{{ fieldError('email') }}</span>
+      }
+    </label>
+    <label [class.field-invalid]="showFieldError('password')">
+      Password
+      @if (editingUserId() == null) {
+        <span class="req">*</span>
+      } @else {
+        <span class="hint">(leave blank to keep current)</span>
+      }
+      <input type="password" formControlName="password" autocomplete="new-password" />
+      @if (showFieldError('password')) {
+        <span class="field-error">{{ fieldError('password') }}</span>
+      }
+    </label>
+    <label>
+      Branch
+      <select formControlName="branchId">
+        <option [ngValue]="null">— None —</option>
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" formControlName="active" />
+      Active account
+    </label>
+    <fieldset class="roles-fieldset full" [class.field-invalid]="rolesInvalid()">
+      <legend>Roles <span class="req">*</span></legend>
+      <div class="role-grid" formGroupName="roles">
+        @for (role of staffRoleOptions; track role) {
+          <label class="role-option">
+            <input type="checkbox" [formControlName]="role" (change)="onRolesChanged()" />
+            {{ role }}
+          </label>
+        }
+      </div>
+    </fieldset>
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="saving()" (click)="closeModal()">Cancel</button>
+    <button type="button" class="modal-btn save" [disabled]="saving()" (click)="saveUser()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</assist-form-modal>
+
+@let pendingToggle = pendingToggleUser();
+@if (pendingToggle) {
+  <assist-confirm-dialog
+    [open]="true"
+    [title]="toggleConfirmTitle(pendingToggle)"
+    [message]="toggleConfirmMessage(pendingToggle)"
+    [busy]="togglingActive()"
+    (confirmed)="confirmToggleActive()"
+    (cancelled)="cancelToggleActive()"
+  />
+}

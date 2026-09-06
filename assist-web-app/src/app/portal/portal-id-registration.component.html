@@ -1,0 +1,395 @@
+<section class="page">
+  <header>
+    <p class="module-label">Base</p>
+    <h1>Portal ID registration</h1>
+    <p>Register a portal user for new or existing SST taxpayers (legacy ASSIST base module).</p>
+  </header>
+
+  <nav class="mode-tabs">
+    <button type="button" [class.active]="pageMode() === 'new'" (click)="setPageMode('new')">New enrollment</button>
+    <button type="button" [class.active]="pageMode() === 'manage'" (click)="setPageMode('manage')">
+      Manage / resubmit
+    </button>
+  </nav>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  @if (message() && !enrollmentResult()) {
+    <p class="message">{{ message() }}</p>
+  }
+
+  @if (enrollmentResult(); as result) {
+    <section class="success-panel">
+      <h2>{{ isResubmitMode ? 'Enrollment resubmitted' : 'Enrollment submitted' }}</h2>
+      <p class="success-lead">
+        Portal ID <strong>{{ result.username }}</strong> was created for
+        {{ applicationTypeLabel(result.applicationType) }} enrollment.
+      </p>
+      <dl class="result-grid">
+        <div>
+          <dt>Username</dt>
+          <dd>{{ result.username }}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ result.email }}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>{{ enrollmentStatusLabel(result.enrollmentStatus) }}</dd>
+        </div>
+        <div>
+          <dt>Employer code</dt>
+          <dd>{{ employerCodeLabel(result) }}</dd>
+        </div>
+        <div class="full">
+          <dt>Employer name</dt>
+          <dd>{{ result.employerName ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Full name</dt>
+          <dd>{{ result.fullName ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt>Enrolled date</dt>
+          <dd>{{ formatDate(result.enrolledDate) }}</dd>
+        </div>
+      </dl>
+      <div class="actions">
+        <button type="button" class="primary" (click)="startNewEnrollment()">Register another</button>
+      </div>
+    </section>
+  } @else {
+    @if (pageMode() === 'manage') {
+      <section class="manage-panel">
+        <label class="lookup-field">
+          Portal username
+          <input
+            [value]="lookupUsername()"
+            (input)="lookupUsername.set($any($event.target).value)"
+            placeholder="Enter portal username"
+          />
+        </label>
+        <button type="button" class="secondary" [disabled]="loading()" (click)="loadPortalUser()">
+          {{ loading() ? 'Loading…' : 'Load enrollment' }}
+        </button>
+      </section>
+
+      @if (loadedUser(); as user) {
+        <section class="status-panel">
+          <p>
+            <strong>{{ user.username }}</strong> · Status:
+            <strong>{{ enrollmentStatusLabel(user.enrollmentStatus) }}</strong>
+          </p>
+
+          @if (user.enrollmentStatus === 'IN_QUERY' && user.queryRemark) {
+            <p class="query-banner">
+              <strong>Officer query:</strong> {{ user.queryRemark }}
+            </p>
+          }
+
+          @if (user.enrollmentStatus === 'SUBMITTED') {
+            <div class="query-form">
+              <label>
+                Query remark
+                <textarea
+                  rows="3"
+                  [value]="queryRemark()"
+                  (input)="queryRemark.set($any($event.target).value)"
+                  placeholder="Explain what the applicant must correct"
+                ></textarea>
+              </label>
+              <button type="button" class="secondary" [disabled]="loading()" (click)="sendToQuery()">
+                Send to query
+              </button>
+            </div>
+          }
+        </section>
+      }
+    }
+
+    @if (pageMode() === 'new' || loadedUser()) {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <p class="form-hint">
+        @if (isResubmitMode) {
+          Update the fields below and resubmit. Upload new documents only if replacing supporting files.
+        } @else if (!isFormEditable) {
+          Enrollment is read-only in its current status.
+        } @else {
+          Fields marked <span class="req">*</span> are required.
+        }
+      </p>
+
+      <section class="form-section">
+        <h2 class="section-withbg">1. Information</h2>
+        <div class="section-body form-grid">
+          <label class="full">
+            Application type
+            <select formControlName="applicationType" (change)="onApplicationTypeChange()" [disabled]="!isFormEditable">
+              <option value="NEW_EMPLOYER">New taxpayer</option>
+              <option value="EXISTING_EMPLOYER">Existing taxpayer</option>
+            </select>
+          </label>
+
+          @if (isExistingTaxpayer) {
+            <label>
+              Search by
+              <select
+                [value]="existingSearchType()"
+                (change)="existingSearchType.set($any($event.target).value)"
+              >
+                <option value="CODE">Employer code</option>
+                <option value="SST_REGISTRATION_NO">SST registration no.</option>
+              </select>
+            </label>
+            <label>
+              @if (existingSearchType() === 'CODE') {
+                Employer code
+              } @else {
+                SST registration no.
+              }
+              <input
+                formControlName="employerCodeSearch"
+                [placeholder]="existingSearchType() === 'CODE' ? 'e.g. A3700000001F' : 'e.g. A37-92026-00000002'"
+              />
+            </label>
+            <label class="search-action">
+              <span>&nbsp;</span>
+              <button type="button" class="secondary" [disabled]="searching()" (click)="searchExistingTaxpayer()">
+                {{ searching() ? 'Searching…' : 'Search' }}
+              </button>
+            </label>
+            <label class="full" [class.field-invalid]="showFieldError(form.controls.employerCode)">
+              Linked employer code <span class="req">*</span>
+              <input formControlName="employerCode" readonly />
+              @if (showFieldError(form.controls.employerCode)) {
+                <span class="field-error">Search and select an existing taxpayer first.</span>
+              }
+            </label>
+          }
+
+          <label class="full" [class.field-invalid]="showFieldError(form.controls.employerName)">
+            Employer / taxpayer name <span class="req">*</span>
+            <input formControlName="employerName" [readonly]="!isFormEditable" />
+            @if (showFieldError(form.controls.employerName)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.employerName) }}</span>
+            }
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.registrationTypeId)">
+            Registration type <span class="req">*</span>
+            <select formControlName="registrationTypeId">
+              <option [ngValue]="null">— Select —</option>
+              @for (type of regNoTypes(); track type.id) {
+                <option [ngValue]="type.id">{{ type.label }}</option>
+              }
+            </select>
+            @if (showFieldError(form.controls.registrationTypeId)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.registrationTypeId) }}</span>
+            }
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.registrationNo)">
+            Registration no. <span class="req">*</span>
+            <input formControlName="registrationNo" />
+            @if (showFieldError(form.controls.registrationNo)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.registrationNo) }}</span>
+            }
+          </label>
+
+          <label class="full" [class.field-invalid]="showFieldError(form.controls.addressLine1)">
+            Address line 1 <span class="req">*</span>
+            <input formControlName="addressLine1" />
+            @if (showFieldError(form.controls.addressLine1)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.addressLine1) }}</span>
+            }
+          </label>
+          <label class="full">Address line 2<input formControlName="addressLine2" /></label>
+          <label class="full">Address line 3<input formControlName="addressLine3" /></label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.stateId)">
+            State <span class="req">*</span>
+            <select formControlName="stateId">
+              <option [ngValue]="null">— Select —</option>
+              @for (state of states(); track state.id) {
+                <option [ngValue]="state.id">{{ state.label }}</option>
+              }
+            </select>
+            @if (showFieldError(form.controls.stateId)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.stateId) }}</span>
+            }
+          </label>
+
+          <label>
+            City
+            <select formControlName="cityId">
+              <option [ngValue]="null">— Select —</option>
+              @for (city of cities(); track city.id) {
+                <option [ngValue]="city.id">{{ city.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.postCode)">
+            Postcode <span class="req">*</span>
+            <select formControlName="postCode">
+              <option value="">— Select —</option>
+              @for (row of postcodes(); track row.postcode) {
+                <option [value]="row.postcode">{{ row.label }}</option>
+              }
+            </select>
+            @if (showFieldError(form.controls.postCode)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.postCode) }}</span>
+            }
+          </label>
+
+          <label>
+            City name (if not listed)
+            <input formControlName="cityName" />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">2. Owner / representative</h2>
+        <div class="section-body form-grid">
+          <label [class.field-invalid]="showFieldError(form.controls.username)">
+          Portal username <span class="req">*</span>
+          <input formControlName="username" autocomplete="username" [readonly]="pageMode() === 'manage'" />
+            @if (showFieldError(form.controls.username)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.username) }}</span>
+            }
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.fullName)">
+            Full name <span class="req">*</span>
+            <input formControlName="fullName" />
+            @if (showFieldError(form.controls.fullName)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.fullName) }}</span>
+            }
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.identificationTypeId)">
+            ID type <span class="req">*</span>
+            <select formControlName="identificationTypeId">
+              <option [ngValue]="null">— Select —</option>
+              @for (type of idTypes(); track type.id) {
+                <option [ngValue]="type.id">{{ type.label }}</option>
+              }
+            </select>
+            @if (showFieldError(form.controls.identificationTypeId)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.identificationTypeId) }}</span>
+            }
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.identificationNo)">
+            ID no. <span class="req">*</span>
+            <input formControlName="identificationNo" />
+            @if (showFieldError(form.controls.identificationNo)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.identificationNo) }}</span>
+            }
+          </label>
+
+          <label>
+            Phone calling code
+            <input formControlName="phoneCallingCode" />
+          </label>
+
+          <label [class.field-invalid]="showFieldError(form.controls.phoneNumber)">
+            Phone number <span class="req">*</span>
+            <input formControlName="phoneNumber" />
+            @if (showFieldError(form.controls.phoneNumber)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.phoneNumber) }}</span>
+            }
+          </label>
+
+          <label class="full" [class.field-invalid]="showFieldError(form.controls.email)">
+            Email <span class="req">*</span>
+            <input type="email" formControlName="email" autocomplete="email" />
+            @if (showFieldError(form.controls.email)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.email) }}</span>
+            }
+          </label>
+
+          <label class="full" [class.field-invalid]="showFieldError(form.controls.securityPhrase)">
+            Security phrase <span class="req">*</span>
+            <input formControlName="securityPhrase" />
+            @if (showFieldError(form.controls.securityPhrase)) {
+              <span class="field-error">{{ fieldErrorText(form.controls.securityPhrase) }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      @if (isFormEditable) {
+      <section class="form-section">
+        <h2 class="section-withbg">3. Supporting documents <span class="req">*</span></h2>
+        <div class="section-body">
+          <p class="hint">
+            Upload PDF, JPG, JPEG, or PNG files (max 10 MB each). Documents marked
+            <span class="required">Required</span> must be uploaded before submit.
+          </p>
+          <div class="doc-list">
+            @for (type of docTypes(); track type.id) {
+              <div
+                class="doc-row"
+                [class.doc-row-missing]="type.requiredForPortalId && documentsForType(type.id).length === 0"
+              >
+                <div>
+                  <strong>{{ type.label }}</strong>
+                  @if (type.requiredForPortalId) {
+                    <span class="required">Required</span>
+                  }
+                  @if (documentsForType(type.id).length > 0) {
+                    <ul class="doc-uploads">
+                      @for (doc of documentsForType(type.id); track doc.id) {
+                        <li>
+                          <span class="doc-meta">
+                            {{ doc.fileName }}
+                            <span class="doc-size">({{ formatFileSize(doc.fileSize) }})</span>
+                          </span>
+                          <button
+                            type="button"
+                            class="link-danger"
+                            [disabled]="deletingDocumentId() === doc.id || loading()"
+                            (click)="deleteDraftDocument(doc.id)"
+                          >
+                            {{ deletingDocumentId() === doc.id ? 'Removing…' : 'Remove' }}
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+                <label class="upload-action">
+                  <span>{{ uploadingDocTypeId() === type.id ? 'Uploading…' : 'Choose file' }}</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    [disabled]="uploadingDocTypeId() !== null || loading()"
+                    (change)="onDocumentSelected(type.id, $event)"
+                  />
+                </label>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+      }
+
+      @if (isFormEditable) {
+      <div class="actions">
+        <button type="submit" class="primary" [disabled]="loading()">
+          @if (loading()) {
+            {{ isResubmitMode ? 'Resubmitting…' : 'Submitting…' }}
+          } @else {
+            {{ isResubmitMode ? 'Resubmit enrollment' : 'Submit enrollment' }}
+          }
+        </button>
+      </div>
+      }
+    </form>
+    }
+  }
+</section>

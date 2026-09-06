@@ -113,8 +113,8 @@ class SstSalesTaxRegistrationE2EIT {
                 """.formatted(SstContractType.MAIN_CONTRACT.getAssistId()));
 
         final byte[] pdfSample = "%PDF-1.4 test".getBytes();
-        ro.uploadSupportingDocument(caseId, 1L, pdfSample, "ssm-cert.pdf", "application/pdf");
-        ro.uploadSupportingDocument(caseId, 2L, pdfSample, "applicant-id.pdf", "application/pdf");
+        ro.uploadSupportingDocument(caseId, 2L, pdfSample, "ssm-cert.pdf", "application/pdf");
+        ro.uploadSupportingDocument(caseId, 1L, pdfSample, "applicant-id.pdf", "application/pdf");
 
         final JsonNode approved = ro.submitCase(caseId, "{}");
         assertThat(approved.get("changes").get("appStatus").asText()).isEqualTo("APPROVED");

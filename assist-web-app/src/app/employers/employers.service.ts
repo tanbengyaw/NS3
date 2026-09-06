@@ -21,4 +21,14 @@ export class EmployersService {
     }
     return this.http.get<Page<Employer>>(`${environment.apiBaseUrl}/employers`, { params });
   }
+
+  getById(employerId: number): Observable<Employer> {
+    return this.http.get<Employer>(`${environment.apiBaseUrl}/employers/${employerId}`);
+  }
+
+  getByCode(employerCode: string): Observable<Employer> {
+    return this.http.get<Employer>(
+      `${environment.apiBaseUrl}/employers/code/${encodeURIComponent(employerCode)}`,
+    );
+  }
 }

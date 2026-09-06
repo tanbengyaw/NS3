@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Dev seed gap: 0030_staff_user_schema.xml only seeded one UO account (uo_jb, branch 4 -
+        Johor Bahru). There was no UO for branch 2 (Pejabat PERKESO Shah Alam), where most of the
+        other dev-seed staff (admin, ro) and most manually-created test cases live, so there was
+        no way to approve/reject/query a Shah Alam-branch UO-routed case (e.g. Update Tax Payer)
+        in the dev environment. Add uo_sa for that branch, dev password "password" (same bcrypt
+        hash as the other dev seed users). Use raw SQL (not <insert> column values) to avoid the
+        "$" stripping issue in bcrypt hashes that required the 0031 repair migration.
+    -->
+    <changeSet id="0040-uo-shah-alam-seed" author="ns3">
+        <!-- Do not hardcode id: staff_user.id is auto-increment and by the time this migration
+             runs on an already-used dev DB, portal enrollments may have already consumed ids. -->
+        <sql><![CDATA[
+            INSERT INTO identity.staff_user (username, email, password_hash, branch_id, active, created_date)
+            VALUES ('uo_sa', 'uo.sa@perkeso.example',
+                    '{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2, TRUE,
+                    TIMESTAMP '2026-01-01 00:00:00');
+
+            INSERT INTO identity.staff_user_role (staff_user_id, role_code)
+            SELECT id, 'UO' FROM identity.staff_user WHERE username = 'uo_sa';
+        ]]></sql>
+    </changeSet>
+
+</databaseChangeLog>

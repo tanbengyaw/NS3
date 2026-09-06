@@ -24,13 +24,15 @@
   </div>
 } @else if (showReviewQueue) {
   <div class="status-banner review">
-    <strong>Case routed for review.</strong>
+    <strong>Case routed for {{ isUoOnlySection ? 'UO' : 'officer' }} review.</strong>
     Status: <strong>{{ appStatus }}</strong>.
     @if (routedToLabel) {
       <p class="routed-to">Routed to: <strong>{{ routedToLabel }}</strong></p>
     }
     @if (canOfficerReview) {
       Use <strong>Approve</strong>, <strong>Send to query</strong>, or <strong>Reject</strong> below.
+    } @else if (isUoOnlySection && isOfficer) {
+      Only a UO user may approve, query, or reject this case.
     } @else if (showInboxLink) {
       An officer can open this case from the
       <a routerLink="/registration/inbox">Officer inbox</a>.

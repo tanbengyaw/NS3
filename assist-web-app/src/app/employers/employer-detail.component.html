@@ -1,0 +1,67 @@
+<section class="page">
+  <header>
+    <p class="back-link">
+      <a routerLink="/employers">← Back to employers</a>
+    </p>
+    <h1>{{ pageTitle() }}</h1>
+    @if (employer(); as item) {
+      <p class="subtitle">Employer code {{ item.employerCode }}</p>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (loading()) {
+    <p class="status">Loading…</p>
+  } @else {
+    @if (employer(); as item) {
+      <div class="detail-card">
+        <h2>Profile</h2>
+        <dl class="detail-dl">
+          <dt>Employer code</dt>
+          <dd>{{ item.employerCode }}</dd>
+
+          <dt>Business name</dt>
+          <dd>{{ item.employerName }}</dd>
+
+          <dt>BRN</dt>
+          <dd>{{ item.registrationNo }}</dd>
+
+          <dt>Operational status</dt>
+          <dd>
+            @if (item.operationalStatus) {
+              <span class="badge">{{ item.operationalStatus }}</span>
+            } @else {
+              —
+            }
+          </dd>
+
+          <dt>Contribution</dt>
+          <dd>
+            <span class="badge" [class.badge-active]="item.contributionActive" [class.badge-inactive]="!item.contributionActive">
+              {{ item.contributionActive ? 'Active' : 'Inactive' }}
+            </span>
+          </dd>
+
+          <dt>Branch office</dt>
+          <dd>{{ branchLabel(item.pksBranchId) }}</dd>
+
+          <dt>Employer type</dt>
+          <dd>{{ item.branch ? 'Branch employer' : 'Head office' }}</dd>
+
+          <dt>Service type</dt>
+          <dd>{{ item.serviceTypeId ?? '—' }}</dd>
+
+          <dt>MSIC</dt>
+          <dd>{{ item.msicId ?? '—' }}</dd>
+
+          <dt>Registered</dt>
+          <dd>{{ formatDate(item.createdDate) }}</dd>
+
+          <dt>Internal id</dt>
+          <dd>{{ item.id }}</dd>
+        </dl>
+      </div>
+    }
+  }
+</section>

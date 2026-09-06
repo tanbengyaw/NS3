@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Digital Tax (section 1102) new-registration Part B fields — mirrors ASSIST
+        SstDigitalTaxForm2Dto (types of digital service, achieving-value date, total value).
+    -->
+    <changeSet id="0039-temp-sst-info-digital-fields" author="ns3">
+        <addColumn tableName="temp_sst_info" schemaName="registration">
+            <column name="ds_type_software_apps_game" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_music_ebook_film" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_ad_online_platform" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_search_engine_social_network" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_database_hosting" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_internet_based_telecom" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_online_training" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_others" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="achieving_value_of_ds_date" type="DATE"/>
+            <column name="ds_total_value" type="DECIMAL(18,2)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0039-sst-info-digital-fields" author="ns3">
+        <addColumn tableName="sst_info" schemaName="registration">
+            <column name="ds_type_software_apps_game" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_music_ebook_film" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_ad_online_platform" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_search_engine_social_network" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_database_hosting" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_internet_based_telecom" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_online_training" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ds_type_others" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="achieving_value_of_ds_date" type="DATE"/>
+            <column name="ds_total_value" type="DECIMAL(18,2)"/>
+        </addColumn>
+    </changeSet>
+
+    <!--
+        "Authorised personnel" (Digital Tax's term for the director/owner list) additionally
+        captures a telephone number on the legacy JSP — add it to both the draft and promoted
+        director tables (nullable; unused by other SST tax types).
+    -->
+    <changeSet id="0039-director-owner-telephone" author="ns3">
+        <addColumn tableName="temp_director_owner" schemaName="registration">
+            <column name="telephone_no" type="VARCHAR(30)"/>
+        </addColumn>
+        <addColumn tableName="director_owner" schemaName="registration">
+            <column name="telephone_no" type="VARCHAR(30)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

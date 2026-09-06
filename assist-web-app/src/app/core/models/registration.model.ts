@@ -40,6 +40,7 @@ export interface RegistrationCase {
   corrCityName: string | null;
   serviceTypeId: number | null;
   pksBranchId: number | null;
+  processingPksBranchId: number | null;
   branch: boolean;
   msicId: number | null;
   methodContributionPaymentId: number | null;
@@ -47,6 +48,8 @@ export interface RegistrationCase {
   employerCode: string | null;
   salesTaxSmkRegNo: string | null;
   queryRemark: string | null;
+  linkedCaseId: number | null;
+  linkedCaseRefNo: string | null;
   createdByUsername: string | null;
   submittedByUsername: string | null;
   inqueryByUsername: string | null;
@@ -68,6 +71,8 @@ export interface RegistrationCaseSummary {
   salesTaxSmkRegNo: string | null;
   queryRemark: string | null;
   appStatusReason: string | null;
+  processingPksBranchId: number | null;
+  processingBranchName: string | null;
   submissionDate: string | null;
   createdDate: string | null;
   processingPksBranchName: string | null;
@@ -93,6 +98,8 @@ export interface TempDirectorOwner {
   identificationNo: string;
   email: string | null;
   designation: string | null;
+  /** Digital tax "authorised personnel" telephone number (unused by other SST tax types). */
+  telephoneNo: string | null;
 }
 
 export interface TempPremises {
@@ -122,11 +129,24 @@ export interface TempSstContactPerson {
   email: string;
 }
 
+export interface TempSstServiceCategory {
+  id: number;
+  sstServiceTypeId: number;
+  serviceCode: string | null;
+  serviceDescription: string | null;
+  remark: string | null;
+}
+
+
 export interface TempSstInfo {
   id: number | null;
   caseId: number;
   tradeName: string | null;
   tourTaxRegNo: string | null;
+  motacRegNo: string | null;
+  labuan: boolean;
+  form1ContactPerson: string | null;
+  websiteAddress: string | null;
   inTaxRefNo: string | null;
   cusAudRefNo: string | null;
   preRegNo: string | null;
@@ -152,8 +172,22 @@ export interface TempSstInfo {
   directors: TempDirectorOwner[];
   premises: TempPremises[];
   tariffCodes: TempSstTariffCode[];
+  serviceCategories: TempSstServiceCategory[];
   contactPersons: TempSstContactPerson[];
   supportingDocuments: TempSstSupportingDocument[];
+  tourismTaxTriggered: boolean;
+  tourismTaxCaseId: number | null;
+  tourismTaxCaseRefNo: string | null;
+  dsTypeSoftwareAppsGame: boolean;
+  dsTypeMusicEbookFilm: boolean;
+  dsTypeAdOnlinePlatform: boolean;
+  dsTypeSearchEngineSocialNetwork: boolean;
+  dsTypeDatabaseHosting: boolean;
+  dsTypeInternetBasedTelecom: boolean;
+  dsTypeOnlineTraining: boolean;
+  dsTypeOthers: boolean;
+  achievingValueOfDsDate: string | null;
+  dsTotalValue: number | null;
 }
 
 export interface TempSstSupportingDocument {
@@ -169,6 +203,10 @@ export interface TempSstSupportingDocument {
 export interface UpsertSstInfoRequest {
   tradeName?: string;
   tourTaxRegNo?: string;
+  motacRegNo?: string;
+  labuan?: boolean;
+  form1ContactPerson?: string;
+  websiteAddress?: string;
   inTaxRefNo?: string;
   cusAudRefNo?: string;
   preRegNo?: string;
@@ -191,6 +229,16 @@ export interface UpsertSstInfoRequest {
   designation?: string;
   applicantEmail?: string;
   applicantTelNo?: string;
+  dsTypeSoftwareAppsGame?: boolean;
+  dsTypeMusicEbookFilm?: boolean;
+  dsTypeAdOnlinePlatform?: boolean;
+  dsTypeSearchEngineSocialNetwork?: boolean;
+  dsTypeDatabaseHosting?: boolean;
+  dsTypeInternetBasedTelecom?: boolean;
+  dsTypeOnlineTraining?: boolean;
+  dsTypeOthers?: boolean;
+  achievingValueOfDsDate?: string;
+  dsTotalValue?: number;
 }
 
 export interface CreateContactPersonRequest {
@@ -204,6 +252,7 @@ export interface CreateDirectorRequest {
   identificationNo: string;
   email?: string;
   designation?: string;
+  telephoneNo?: string;
 }
 
 export interface CreatePremisesRequest {
@@ -228,6 +277,7 @@ export interface TaxPayerDirectorProfile {
   identificationNo: string;
   email: string | null;
   designation: string | null;
+  telephoneNo?: string | null;
 }
 
 export interface TaxPayerPremisesProfile {
@@ -330,4 +380,44 @@ export interface CreateEmployeeRequest {
   employeeName: string;
   identificationNo: string;
   employmentStartDate: string;
+}
+
+export interface DiscontinueTaxSearchResult {
+  employerId: number;
+  employerName: string;
+  registrationNo: string;
+  smkRegNo: string | null;
+  sstInfoId: number;
+  taxTypeId: number;
+  taxTypeLabel: string;
+}
+
+export interface DiscontinueTaxInfo {
+  caseId: number;
+  sstInfoId: number;
+  taxTypeId: number;
+  taxTypeLabel: string;
+  currentSstStatusId: number | null;
+  currentSstStatusLabel: string | null;
+  newSstStatusId: number | null;
+  cessationTaxEffectiveFrom: string | null;
+}
+
+export interface UpsertDiscontinueTaxInfoRequest {
+  newSstStatusId?: number | null;
+  cessationTaxEffectiveFrom?: string | null;
+}
+
+export interface TaxPayerUpdateSearchResult {
+  employerId: number;
+  employerName: string;
+  registrationNo: string;
+  smkRegNo: string;
+  sectionId: number;
+}
+
+export interface TaxUpdateChangedField {
+  fieldLabel: string;
+  oldValue: string | null;
+  newValue: string | null;
 }

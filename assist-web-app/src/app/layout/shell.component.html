@@ -4,15 +4,31 @@
     <nav>
       <a routerLink="/employers" routerLinkActive="active">Employers</a>
       <div class="nav-group">
+        <span class="nav-group-label">Base</span>
+        <a routerLink="/portal-id-registration" routerLinkActive="active">Portal ID registration</a>
+      </div>
+      <div class="nav-group">
         <span class="nav-group-label">Registration</span>
         <a routerLink="/registration" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
           SOCSO new registration
         </a>
         <a routerLink="/registration/sales-tax" routerLinkActive="active">Sales tax registration</a>
+        <a routerLink="/registration/tourism-tax" routerLinkActive="active">Tourism tax registration</a>
+        <a routerLink="/registration/dpsp-tax" routerLinkActive="active">DPSP tax registration</a>
+        <a routerLink="/registration/service-tax" routerLinkActive="active">Service tax registration</a>
+        <a routerLink="/registration/digital-tax" routerLinkActive="active">Digital tax registration</a>
+        <a routerLink="/registration/update-tax-payer" routerLinkActive="active">Update tax payer</a>
+        <a routerLink="/registration/discontinue-tax" routerLinkActive="active">Discontinue tax</a>
         @if (isOfficer) {
           <a routerLink="/registration/inbox" routerLinkActive="active">Officer inbox</a>
         }
       </div>
+      @if (isAdmin) {
+        <div class="nav-group">
+          <span class="nav-group-label">Administration</span>
+          <a routerLink="/admin/staff-users" routerLinkActive="active">Staff users</a>
+        </div>
+      }
     </nav>
     <div class="sidebar-footer">
       @if (session(); as user) {

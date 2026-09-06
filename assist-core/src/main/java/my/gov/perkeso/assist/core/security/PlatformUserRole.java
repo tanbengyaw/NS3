@@ -4,5 +4,7 @@ public enum PlatformUserRole {
     EMPLOYER,
     OFFICER,
     RO,
+    UO,
+    PKR_BO,
     ADMIN
 }

@@ -60,6 +60,8 @@ class RegistrationCaseWritePlatformServiceRoAutoApproveTest {
     @Mock
     private SstInfoPromotionService sstInfoPromotionService;
     @Mock
+    private PostcodeBranchRoutingService postcodeBranchRoutingService;
+    @Mock
     private PlatformUserContext platformUserContext;
 
     @InjectMocks
@@ -77,7 +79,7 @@ class RegistrationCaseWritePlatformServiceRoAutoApproveTest {
         when(regGeneralInfoRepository.findById(1L)).thenReturn(Optional.of(regCase));
         when(platformUserContext.getCurrentUser()).thenReturn(roUser());
         when(registrationSpecialCaseService.checkOnSubmit(regCase)).thenReturn(List.of());
-        when(registrationCaseSubmitRouter.resolveSubmitStatus(any(), any(), any())).thenReturn(AppStatus.APPROVED);
+        when(registrationCaseSubmitRouter.resolveSubmitStatus(any(), any(), any(), any())).thenReturn(AppStatus.APPROVED);
         when(registrationCaseSubmitRouter.isIncompleteSubmit(any())).thenReturn(false);
         when(employerCodeGenerator.promoteFromTempEmployer(regCase.getTempEmployer(), regCase)).thenReturn(employer);
         when(employerRepository.save(employer)).thenReturn(employer);
@@ -100,7 +102,7 @@ class RegistrationCaseWritePlatformServiceRoAutoApproveTest {
         when(regGeneralInfoRepository.findById(1L)).thenReturn(Optional.of(regCase));
         when(platformUserContext.getCurrentUser()).thenReturn(roUser());
         when(registrationSpecialCaseService.checkOnSubmit(regCase)).thenReturn(List.of());
-        when(registrationCaseSubmitRouter.resolveSubmitStatus(any(), any(), any())).thenReturn(AppStatus.APPROVED);
+        when(registrationCaseSubmitRouter.resolveSubmitStatus(any(), any(), any(), any())).thenReturn(AppStatus.APPROVED);
         when(registrationCaseSubmitRouter.isIncompleteSubmit(any())).thenReturn(false);
         when(employerCodeGenerator.promoteFromTempEmployer(regCase.getTempEmployer(), regCase))
                 .thenThrow(new RegistrationBrnDuplicateException("201901234567"));

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0034-tourism-form1-fields" author="ns3">
+        <addColumn tableName="temp_sst_info" schemaName="registration">
+            <column name="motac_reg_no" type="VARCHAR(50)"/>
+            <column name="is_labuan" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="form1_contact_person" type="VARCHAR(100)"/>
+        </addColumn>
+        <addColumn tableName="sst_info" schemaName="registration">
+            <column name="motac_reg_no" type="VARCHAR(50)"/>
+            <column name="is_labuan" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="form1_contact_person" type="VARCHAR(100)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

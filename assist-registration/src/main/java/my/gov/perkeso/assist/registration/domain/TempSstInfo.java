@@ -31,6 +31,18 @@ public class TempSstInfo {
     @Column(name = "tour_tax_reg_no", length = 50)
     private String tourTaxRegNo;
 
+    @Column(name = "motac_reg_no", length = 50)
+    private String motacRegNo;
+
+    @Column(name = "is_labuan", nullable = false)
+    private boolean labuan;
+
+    @Column(name = "form1_contact_person", length = 100)
+    private String form1ContactPerson;
+
+    @Column(name = "website_address", length = 255)
+    private String websiteAddress;
+
     @Column(name = "in_tax_ref_no", length = 50)
     private String inTaxRefNo;
 
@@ -102,4 +114,47 @@ public class TempSstInfo {
 
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
+
+    /**
+     * Mirrors ASSIST NewSstRegCounter: when a Service Tax registration includes an "Accommodation"
+     * service type and annual taxable sales exceed the tourism tax limit, a linked Tourism Tax
+     * registration case is auto-created. These fields make that trigger idempotent and let the UI
+     * surface the linked case to the applicant.
+     */
+    @Column(name = "triggered_tourism_case_id")
+    private Long triggeredTourismCaseId;
+
+    @Column(name = "triggered_tourism_case_ref_no", length = 30)
+    private String triggeredTourismCaseRefNo;
+
+    /** Digital Tax (section 1102) — mirrors ASSIST SstDigitalTaxForm2Dto types of digital service. */
+    @Column(name = "ds_type_software_apps_game", nullable = false)
+    private boolean dsTypeSoftwareAppsGame;
+
+    @Column(name = "ds_type_music_ebook_film", nullable = false)
+    private boolean dsTypeMusicEbookFilm;
+
+    @Column(name = "ds_type_ad_online_platform", nullable = false)
+    private boolean dsTypeAdOnlinePlatform;
+
+    @Column(name = "ds_type_search_engine_social_network", nullable = false)
+    private boolean dsTypeSearchEngineSocialNetwork;
+
+    @Column(name = "ds_type_database_hosting", nullable = false)
+    private boolean dsTypeDatabaseHosting;
+
+    @Column(name = "ds_type_internet_based_telecom", nullable = false)
+    private boolean dsTypeInternetBasedTelecom;
+
+    @Column(name = "ds_type_online_training", nullable = false)
+    private boolean dsTypeOnlineTraining;
+
+    @Column(name = "ds_type_others", nullable = false)
+    private boolean dsTypeOthers;
+
+    @Column(name = "achieving_value_of_ds_date")
+    private LocalDate achievingValueOfDsDate;
+
+    @Column(name = "ds_total_value", precision = 18, scale = 2)
+    private BigDecimal dsTotalValue;
 }

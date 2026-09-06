@@ -2,8 +2,11 @@ package my.gov.perkeso.assist.registration.service;
 
 import lombok.Builder;
 import lombok.Getter;
+import my.gov.perkeso.assist.registration.data.RefOptionData;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class BranchReferenceReadPlatformService {
@@ -12,6 +15,17 @@ public class BranchReferenceReadPlatformService {
 
     public BranchReferenceReadPlatformService(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public List<RefOptionData> retrieveAllBranches() {
+        return jdbcTemplate.query("""
+                SELECT id, name
+                FROM reference.ref_branch
+                ORDER BY sort_order, name
+                """, (rs, rowNum) -> RefOptionData.builder()
+                .id(rs.getLong("id"))
+                .label(rs.getString("name"))
+                .build());
     }
 
     public BranchLetterData retrieveBranchForLetter(final Long branchId) {

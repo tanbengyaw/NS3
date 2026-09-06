@@ -41,6 +41,17 @@
   }
 }
 
+.section-filters {
+  align-items: center;
+
+  .filter-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #5f6368;
+    margin-right: 0.25rem;
+  }
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -90,6 +101,27 @@ table {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
+
+  a {
+    color: #1a73e8;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.875rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.case-ref-link {
+  color: #1a73e8;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .officer-note {

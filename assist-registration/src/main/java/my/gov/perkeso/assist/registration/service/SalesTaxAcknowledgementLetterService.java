@@ -4,8 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException;
-import my.gov.perkeso.assist.registration.constant.RegistrationSection;
-import my.gov.perkeso.assist.registration.domain.AppStatus;
+import my.gov.perkeso.assist.registration.constant.RegistrationSectionRouting;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfo;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfoRepository;
 import my.gov.perkeso.assist.registration.domain.SstInfo;
@@ -39,7 +38,7 @@ public class SalesTaxAcknowledgementLetterService {
     @Transactional(readOnly = true)
     public SalesTaxAcknowledgementLetter generateLetter(final Long caseId, final SalesTaxLetterType letterType,
             final SalesTaxAcknowledgementLetterFormat format) {
-        final RegGeneralInfo regCase = loadSalesTaxCase(caseId);
+        final RegGeneralInfo regCase = loadSstNewRegCase(caseId);
         assertLetterStatus(regCase, letterType);
 
         final Map<String, String> attributes = buildAttributes(regCase, letterType);
@@ -52,20 +51,17 @@ public class SalesTaxAcknowledgementLetterService {
         return new SalesTaxAcknowledgementLetter(fileName, format.contentType(), content);
     }
 
-    private RegGeneralInfo loadSalesTaxCase(final Long caseId) {
+    private RegGeneralInfo loadSstNewRegCase(final Long caseId) {
         final RegGeneralInfo regCase = regGeneralInfoRepository.findById(caseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration case not found: " + caseId));
-        assertSalesTaxSection(regCase);
+        assertSstCaseSection(regCase);
         return regCase;
     }
 
     private Map<String, String> buildAttributes(final RegGeneralInfo regCase, final SalesTaxLetterType letterType) {
         return switch (letterType) {
             case ACKNOWLEDGEMENT -> {
-                final SstInfo sstInfo = sstInfoRepository.findByRegGeneralInfoIdAndDeletedFalse(regCase.getId()).stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException(
-                                "Approved sales tax case has no promoted SST info: " + regCase.getId()));
+                final SstInfo sstInfo = findPromotedSstInfo(regCase);
                 yield acknowledgementAttributeBuilder.buildAttributes(regCase, sstInfo);
             }
             case INQUIRY -> inquiryAttributeBuilder.buildAttributes(regCase);
@@ -89,10 +85,31 @@ public class SalesTaxAcknowledgementLetterService {
         }
     }
 
-    private static void assertSalesTaxSection(final RegGeneralInfo regCase) {
-        if (regCase.getSectionId() != RegistrationSection.REG_NEW_REG_SST_SALES_TAX.getAssistSectionId()) {
+    /**
+     * For an update-tax-payer case, the promoted {@code SstInfo} keeps the {@code regGeneralInfoId}
+     * of the original new-registration case (it's updated in place, not re-created) — so it must be
+     * looked up by the case's linked employer instead of by the case id itself.
+     */
+    private SstInfo findPromotedSstInfo(final RegGeneralInfo regCase) {
+        if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())) {
+            final Long employerId = regCase.getEmployerId();
+            if (employerId == null) {
+                throw new IllegalStateException("Update case has no linked employer: " + regCase.getId());
+            }
+            return sstInfoRepository.findFirstByEmployerIdAndDeletedFalseOrderByIdDesc(employerId)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "No active SST info found for updated employer: " + employerId));
+        }
+        return sstInfoRepository.findByRegGeneralInfoIdAndDeletedFalse(regCase.getId()).stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Approved SST case has no promoted SST info: " + regCase.getId()));
+    }
+
+    private static void assertSstCaseSection(final RegGeneralInfo regCase) {
+        if (!RegistrationSectionRouting.isSstCaseSection(regCase.getSectionId())) {
             throw new IllegalArgumentException(
-                    "Sales tax letters are only available for sales tax new registration (1100)");
+                    "SST letters are only available for SST registration cases (1100-1105, 1200-1204)");
         }
     }
 

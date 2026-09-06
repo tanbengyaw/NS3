@@ -19,6 +19,8 @@ public class RegistrationCaseSummaryData {
     private final String salesTaxSmkRegNo;
     private final String queryRemark;
     private final String appStatusReason;
+    private final Long processingPksBranchId;
+    private final String processingBranchName;
     private final LocalDateTime submissionDate;
     private final LocalDateTime createdDate;
     private final String processingPksBranchName;

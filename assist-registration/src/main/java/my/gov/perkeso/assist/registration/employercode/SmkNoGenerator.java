@@ -43,7 +43,7 @@ public class SmkNoGenerator {
             return "";
         }
         return switch (section) {
-            case REG_NEW_REG, REG_INCOMPLETE_TAX_PAYER_SERVICE_TAX -> "-CP-";
+            case REG_NEW_REG, REG_SST_SERVICE_TAX, REG_INCOMPLETE_TAX_PAYER_SERVICE_TAX -> "-CP-";
             case REG_NEW_REG_SST_SALES_TAX, REG_INCOMPLETE_TAX_PAYER_SALES_TAX -> "-CJ-";
             case REG_SST_TOURISM_TAX, REG_INCOMPLETE_TAX_PAYER_TOURISM_TAX -> "-CO-";
             case REG_SST_DIGITAL_TAX, REG_INCOMPLETE_TAX_PAYER_DIGITAL_TAX -> "-CD-";

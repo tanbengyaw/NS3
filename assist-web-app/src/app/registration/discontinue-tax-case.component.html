@@ -1,0 +1,139 @@
+<section class="page">
+  <header>
+    <p class="module-label">Registration</p>
+    <h1>Discontinue tax</h1>
+    @if (caseRefNo()) {
+      <p>
+        Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>1103</strong> · Status:
+        <strong>{{ appStatus() }}</strong>
+      </p>
+    }
+  </header>
+
+  @if (error()) {
+    <p class="error banner" tabindex="-1">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message">{{ message() }}</p>
+  }
+
+  <assist-registration-case-status
+    [appStatus]="appStatus()"
+    [queryRemark]="queryRemark()"
+    [appStatusReason]="appStatusReason()"
+    [sectionId]="1103"
+  />
+
+  <section class="form-section">
+    <h2 class="section-withbg">Tax payer info</h2>
+    <div class="section-body">
+      <dl class="info-grid">
+        <dt>Employer name</dt><dd>{{ employerName() || '—' }}</dd>
+        <dt>BRN</dt><dd>{{ registrationNo() || '—' }}</dd>
+        <dt>Address</dt><dd>{{ addressLine1() || '—' }}</dd>
+        <dt>Tax type</dt><dd>{{ discontinueInfo()?.taxTypeLabel || '—' }}</dd>
+        <dt>Current status</dt><dd>{{ discontinueInfo()?.currentSstStatusLabel || '—' }}</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="section-withbg">Tax status change request</h2>
+    <div class="section-body">
+      <form class="form-grid" [formGroup]="form">
+        <label>
+          Change tax status to <span class="req">*</span>
+          <select formControlName="newSstStatusId" [disabled]="!isEditable()">
+            @for (option of statusOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        @if (showCessationDate()) {
+          <label>
+            Cessation tax effective from <span class="req">*</span>
+            <input type="date" formControlName="cessationTaxEffectiveFrom" [disabled]="!isEditable()" />
+          </label>
+        }
+      </form>
+      <div class="actions inline-actions">
+        <button type="button" class="primary" [disabled]="loading() || !isEditable()" (click)="save()">
+          Save
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="section-withbg">Supporting documents <span class="hint">(optional)</span></h2>
+    <div class="section-body">
+      <div class="upload-bar">
+        <select [value]="selectedDocumentTypeId()" (change)="selectedDocumentTypeId.set(+($any($event.target).value))" [disabled]="!isEditable()">
+          @for (type of supportingDocumentTypes(); track type.id) {
+            <option [value]="type.id">{{ type.label }}</option>
+          }
+        </select>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" [disabled]="!isEditable()" (change)="onSupportingDocumentFileSelected($event)" />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>File name</th><th>Type</th><th>Size</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (doc of supportingDocuments(); track doc.id) {
+              <tr>
+                <td><a href="javascript:void(0)" (click)="downloadSupportingDocument(doc)">{{ doc.fileName }}</a></td>
+                <td>{{ doc.documentTypeLabel }}</td>
+                <td>{{ formatFileSize(doc.fileSize) }}</td>
+                <td>
+                  @if (isEditable()) {
+                    <button type="button" class="link-btn remove" (click)="requestDeleteSupportingDocument(doc.id)">Remove</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="empty">No supporting documents yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  @if (previewIssues().length > 0) {
+    <div class="error banner">
+      <strong>Before you submit:</strong>
+      <ul>
+        @for (issue of previewIssues(); track issue) {
+          <li>{{ issue }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="actions">
+    <button type="button" class="primary" [disabled]="loading() || !canSubmit()" (click)="submitCase()">
+      Submit
+    </button>
+  </div>
+
+  <assist-registration-officer-actions
+    [caseId]="caseId()"
+    [appStatus]="appStatus()"
+    [sectionId]="1103"
+    [busy]="loading()"
+    (workflowStarted)="onOfficerWorkflowStarted()"
+    (workflowCompleted)="onOfficerWorkflowCompleted($event)"
+    (workflowFailed)="onOfficerWorkflowFailed($event)"
+  />
+
+  <assist-confirm-dialog
+    [open]="pendingDeleteDocumentId() !== null"
+    title="Remove document"
+    message="Remove this supporting document?"
+    [busy]="loading()"
+    (confirmed)="confirmDeleteSupportingDocument()"
+    (cancelled)="cancelDeleteSupportingDocument()"
+  />
+</section>

@@ -1,17 +1,19 @@
 <section class="page" id="sales-tax-wizard-top">
   <header>
     <p class="module-label">Registration</p>
-    <h1>Sales tax new registration</h1>
+    <h1>{{ isUpdateMode() ? 'Update tax payer' : config.pageTitle }}</h1>
     @if (caseRefNo()) {
       <p>
-        Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>1100</strong> · Status:
+        Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>{{ sectionId() ?? config.sectionId }}</strong> · Status:
         <strong>{{ appStatus() }}</strong>
         @if (routedToLabel()) {
           · Routed to: <strong>{{ routedToLabel() }}</strong>
         }
       </p>
+    } @else if (isUpdateMode()) {
+      <p>Update tax payer — edit the existing {{ config.smkLabel }} details, then submit for UO approval.</p>
     } @else {
-      <p>New sales tax registration — mirrors ASSIST Form 1 → Form 2 → Preview</p>
+      <p>{{ config.pageSubtitle }}</p>
     }
   </header>
 
@@ -23,6 +25,13 @@
     }
   </nav>
 
+  @if (linkedFromCase()) {
+    <p class="info-banner">
+      This case was auto-created from case {{ linkedFromCase()!.caseRefNo }}
+      (accommodation service type + annual taxable sales over RM 500,000).
+      <a [routerLink]="['/registration/review', linkedFromCase()!.caseId]">View originating case &rarr;</a>
+    </p>
+  }
   @if (error()) {
     <p class="error banner" tabindex="-1">{{ error() }}</p>
   }
@@ -33,7 +42,7 @@
     <p class="success">
       Employer code: <strong>{{ employerCode() }}</strong>
       @if (salesTaxSmkRegNo()) {
-        · Sales tax SMK: <strong>{{ salesTaxSmkRegNo() }}</strong>
+        · {{ config.smkLabel }}: <strong>{{ salesTaxSmkRegNo() }}</strong>
       }
       — <a routerLink="/employers">View employers</a>
     </p>
@@ -75,7 +84,14 @@
         <p class="hint search-lock-hint">Search is disabled — <strong>New Tax Payer Registration</strong> is selected. Fill in the form below instead.</p>
       }
       @if (searchedEmployerCode()) {
-        <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft — directors and premises from the employer appear in the tables further down.</p>
+        <p class="hint">Loaded from existing employer {{ searchedEmployerCode() }}. Review details below, then create draft.
+          @if (config.requiresDirectors) {
+            Directors from the employer appear in the table further down.
+          }
+          @if (config.premisesOnForm1) {
+            Premises from the employer appear in the table further down.
+          }
+        </p>
       }
       @if (caseId()) {
         <p class="hint">Draft created — search is read-only. Use Save Form 1 below to update details.</p>
@@ -85,7 +101,7 @@
 
     <div class="step1-content" [formGroup]="form1">
       <section class="form-section">
-        <h2 class="section-withbg">Business registration</h2>
+        <h2 class="section-withbg">{{ config.partATitle }}</h2>
         <div class="section-body form-grid">
       <label class="checkbox full new-tax-payer-check">
         <input type="checkbox" formControlName="newRegisterTax" />
@@ -100,8 +116,34 @@
       @if (form1EntryAllowed && form1.controls.newRegisterTax.value && !caseId()) {
         <p class="hint full form-entry-hint enabled">New tax payer — fill in all details below.</p>
       }
+      @if (config.showTourismPartA) {
+      <label [class.field-invalid]="showFieldError(form1.controls.businessEntityTypeId)">
+        Business type <span class="req">*</span>
+        <select formControlName="businessEntityTypeId">
+          @if (businessEntityTypes().length === 0) {
+            <option [ngValue]="form1.controls.businessEntityTypeId.value">
+              {{ businessEntityLabel(form1.controls.businessEntityTypeId.value) || 'Loading…' }}
+            </option>
+          }
+          @for (e of businessEntityTypes(); track e.id) {
+            <option [ngValue]="e.id">{{ e.label }}</option>
+          }
+        </select>
+      </label>
+      @if (showLabuanCheckbox) {
+        <label class="checkbox full">
+          <input type="checkbox" formControlName="labuan" />
+          <strong>{{ labuanCheckboxLabel }}</strong>
+        </label>
+      }
+      @if (showExistingSstRegNo) {
+        <label>
+          SST Registration No
+          <input [value]="existingSstRegNo" readonly />
+        </label>
+      }
       <label [class.field-invalid]="showFieldError(form1.controls.registrationNo)">
-        BRN (business registration no) <span class="req">*</span>
+        {{ form1RegistrationNoLabel }} <span class="req">*</span>
         <input formControlName="registrationNo" class="field-readonly-when-locked" [readonly]="brnReadonly" />
         @if (brnReadonly && !caseId()) {
           <span class="field-hint">Locked after a successful search — uncheck New Tax Payer to search again.</span>
@@ -110,6 +152,22 @@
           <span class="field-error">{{ fieldErrorText(form1.controls.registrationNo) }}</span>
         }
       </label>
+      <label>
+        MOTAC registration no <span class="optional">(optional)</span>
+        <input formControlName="motacRegNo" />
+      </label>
+      } @else {
+      <label [class.field-invalid]="showFieldError(form1.controls.registrationNo)">
+        {{ form1RegistrationNoLabel }} <span class="req">*</span>
+        <input formControlName="registrationNo" class="field-readonly-when-locked" [readonly]="brnReadonly" />
+        @if (brnReadonly && !caseId()) {
+          <span class="field-hint">Locked after a successful search — uncheck New Tax Payer to search again.</span>
+        }
+        @if (showFieldError(form1.controls.registrationNo)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.registrationNo) }}</span>
+        }
+      </label>
+      @if (config.showBusinessEntityType) {
       <label [class.field-invalid]="showFieldError(form1.controls.businessEntityTypeId)">
         Business entity type <span class="req">*</span>
         <select formControlName="businessEntityTypeId">
@@ -123,13 +181,18 @@
           }
         </select>
       </label>
+      }
+      }
+      @if (config.showSalesPartAExtras) {
       <label>
         MSIC / industry code ID
         <input type="number" formControlName="msicId" />
       </label>
+      }
         </div>
       </section>
 
+      @if (config.showSalesPartAExtras) {
       <section class="form-section">
         <h2 class="section-withbg">Tax &amp; customs references <span class="optional">(optional)</span></h2>
         <div class="section-body form-grid">
@@ -154,6 +217,7 @@
       }
         </div>
       </section>
+      }
 
       <section class="form-section">
         <h2 class="section-withbg">Name and registered address of business</h2>
@@ -166,7 +230,7 @@
         }
       </label>
       <label class="full" [class.field-invalid]="showFieldError(form1.controls.addressLine1)">
-        Business correspondence address — line 1 <span class="req">*</span>
+        {{ config.registeredAddressLabel }} <span class="req">*</span>
         <input formControlName="addressLine1" (input)="onBusinessAddressFieldChange()" />
         @if (showFieldError(form1.controls.addressLine1)) {
           <span class="field-error">{{ fieldErrorText(form1.controls.addressLine1) }}</span>
@@ -205,7 +269,9 @@
         }
       </label>
       <input type="hidden" formControlName="cityName" />
+      @if (config.showSalesPartAExtras) {
       <label>Service type ID<input type="number" formControlName="serviceTypeId" /></label>
+      }
       <label>
         PKS branch / office location
         <select formControlName="pksBranchId">
@@ -217,7 +283,9 @@
           }
         </select>
       </label>
+      @if (config.showSalesPartAExtras) {
       <label>Method of contribution payment ID<input type="number" formControlName="methodContributionPaymentId" /></label>
+      }
         </div>
       </section>
 
@@ -233,12 +301,12 @@
       </section>
 
       <section class="form-section">
-        <h2 class="section-withbg">Premise address</h2>
+        <h2 class="section-withbg">{{ config.correspondenceTitle }}</h2>
         <div class="section-body form-grid">
       <div class="same-as-bar full">
         <label class="checkbox">
           <input type="checkbox" formControlName="sameAsBusinessAddr" (change)="toggleSameAsBusinessAddr()" />
-          Premise Address Same As Business Correspondence Address
+          {{ config.sameAsAddressLabel }}
         </label>
       </div>
       @if (!form1.controls.sameAsBusinessAddr.value) {
@@ -280,6 +348,7 @@
       <section class="form-section">
         <h2 class="section-withbg">Contact</h2>
         <div class="section-body">
+      @if (config.requireForm1Email) {
       <div class="form-grid">
       <label class="full" [class.field-invalid]="showFieldError(form1.controls.email)">
         Email address <span class="req">*</span>
@@ -289,6 +358,7 @@
         }
       </label>
       </div>
+      }
 
       <div class="contact-pair" [formGroup]="contactForm">
         <fieldset class="contact-fieldset" formArrayName="phones">
@@ -324,15 +394,56 @@
         </fieldset>
       </div>
 
+      @if (config.showWebsiteAddress) {
+      <div class="form-grid">
+      <label class="full" [class.field-invalid]="showFieldError(form1.controls.websiteAddress)">
+        Website address <span class="req">*</span>
+        <input formControlName="websiteAddress" />
+        @if (showFieldError(form1.controls.websiteAddress)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.websiteAddress) }}</span>
+        }
+      </label>
+      </div>
+      }
+
+      @if (config.requireForm1ContactPerson) {
+      <div class="form-grid">
+      <label class="full" [class.field-invalid]="showFieldError(form1.controls.contactPerson)">
+        Contact person <span class="req">*</span>
+        <input formControlName="contactPerson" />
+        @if (showFieldError(form1.controls.contactPerson)) {
+          <span class="field-error">{{ fieldErrorText(form1.controls.contactPerson) }}</span>
+        }
+      </label>
+      </div>
+      }
+
       <p class="hint">
-        Fields marked <span class="req">*</span> are required. Save Form 1 after creating a draft, then add directors below.
+        Fields marked <span class="req">*</span> are required. Save Form 1 after creating a draft, then
+        @if (config.requiresDirectors) {
+          add directors below.
+        } @else if (config.premisesOnForm2) {
+          continue to Form 2 to add accommodation premises.
+        } @else if (config.requiresPremises) {
+          add accommodation premises below.
+        } @else {
+          continue to Form 2.
+        }
       </p>
         </div>
       </section>
     </div>
 
+    @if (config.premisesOnForm1) {
     <section class="form-section">
-      <h2 class="section-withbg">Other place of manufacturing address <span class="optional">(optional)</span></h2>
+      <h2 class="section-withbg">
+        {{ config.premisesTitle }}
+        @if (config.requiresPremises) {
+          <span class="req">*</span> <span class="hint">(≥1 required to submit)</span>
+        } @else {
+          <span class="optional">(optional)</span>
+        }
+      </h2>
       <div class="section-body">
     @if (!caseId()) {
       @if (pendingImportPremises().length > 0) {
@@ -376,24 +487,33 @@
     </div>
       </div>
     </section>
+    }
 
+    @if (config.requiresDirectors) {
     <section class="form-section">
-      <h2 class="section-withbg">Details of director / owner <span class="req">*</span> <span class="hint">(≥1 required to submit)</span></h2>
+      <h2 class="section-withbg">
+        {{ config.requiresAuthorisedPersonnel ? 'Details of person authorised by company / directors / owner' : 'Details of director / owner' }}
+        <span class="req">*</span> <span class="hint">(≥1 required to submit)</span>
+      </h2>
       <div class="section-body">
     @if (!caseId()) {
       @if (pendingImportDirectors().length > 0) {
         <p class="hint">Showing {{ pendingImportDirectors().length }} director(s) from search — they will be saved when you create draft.</p>
       } @else {
-        <p class="hint">Create draft first to add directors — or fill Form 1 and use Add director (draft is created automatically).</p>
+        <p class="hint">Create draft first to add {{ config.requiresAuthorisedPersonnel ? 'authorised personnel' : 'directors' }} — or fill Form 1 and use Add (draft is created automatically).</p>
       }
     }
     <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable || !form1EntryAllowed" (click)="openDirectorModal()">
-      Add director
+      {{ config.requiresAuthorisedPersonnel ? 'Add authorised personnel' : 'Add director' }}
     </button>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Name</th><th>ID type</th><th>ID no</th><th>Email</th><th>Designation</th><th></th></tr>
+          <tr>
+            <th>Name</th><th>ID type</th><th>ID / passport no</th>
+            @if (config.requiresAuthorisedPersonnel) { <th>Tel no</th> }
+            <th>Email</th><th>Designation</th><th></th>
+          </tr>
         </thead>
         <tbody>
           @for (d of directorTableRows(); track d.rowKey) {
@@ -401,6 +521,7 @@
               <td>{{ d.name }}</td>
               <td>{{ identificationTypeLabel(d.identificationTypeId) }}</td>
               <td>{{ d.identificationNo }}</td>
+              @if (config.requiresAuthorisedPersonnel) { <td>{{ d.telephoneNo }}</td> }
               <td>{{ d.email }}</td>
               <td>{{ d.designation }}</td>
               <td>
@@ -415,13 +536,14 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="6" class="empty">No directors yet.</td></tr>
+            <tr><td [attr.colspan]="config.requiresAuthorisedPersonnel ? 7 : 6" class="empty">No {{ config.requiresAuthorisedPersonnel ? 'authorised personnel' : 'directors' }} yet.</td></tr>
           }
         </tbody>
       </table>
     </div>
       </div>
     </section>
+    }
 
     <div class="actions">
       @if (!caseId()) {
@@ -435,9 +557,10 @@
 
   @if (step() === 2 && caseId()) {
     <section class="form-section">
-      <h2 class="section-withbg">Part B — sales tax particulars</h2>
+      <h2 class="section-withbg">{{ config.partBTitle }}</h2>
       <div class="section-body">
     <form class="form-grid" [formGroup]="form2">
+      @if (config.requiresSalesBreakdown || config.showPartBDates) {
       <label [class.field-invalid]="showFieldError(form2.controls.manComDate)">
         Manufacturing commencement date <span class="req">*</span>
         <input type="date" formControlName="manComDate" />
@@ -446,18 +569,22 @@
         Date sale / value of taxable goods <span class="req">*</span>
         <input type="date" formControlName="dateSaleValTaxGoods" />
       </label>
-      <label [class.field-invalid]="showFieldError(form2.controls.businessComDate)">
-        Business commencement date <span class="req">*</span>
-        <input type="date" formControlName="businessComDate" />
-      </label>
+      }
       <label [class.field-invalid]="showFieldError(form2.controls.finYrEndMon)">
         Financial year end month (1–12) <span class="req">*</span>
         <input type="number" formControlName="finYrEndMon" min="1" max="12" />
       </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.businessComDate)">
+        {{ config.businessComDateLabel }} <span class="req">*</span>
+        <input type="date" formControlName="businessComDate" />
+      </label>
+      @if (config.requiresSalesBreakdown || config.showPartBDates) {
       <label [class.field-invalid]="showFieldError(form2.controls.anTotalTaxSalesVal)">
-        Annual total taxable sales value (RM) <span class="req">*</span>
+        Annual total taxable service value (RM) <span class="req">*</span>
         <input type="number" formControlName="anTotalTaxSalesVal" step="0.01" min="0.01" />
       </label>
+      }
+      @if (config.requiresSalesBreakdown) {
       <label class="checkbox full">
         <input type="checkbox" formControlName="subContractWork" />
         Sub-contract work (requires sub-contract tariff codes on save/submit)
@@ -480,6 +607,50 @@
         Others
         <input type="number" formControlName="othersSales" step="0.01" min="0" />
       </label>
+      }
+      @if (config.requiresDigitalServiceTypes) {
+      <h3 class="subsection-title full">Types of digital services <span class="req">*</span></h3>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeSoftwareAppsGame" />
+        Software, applications, video game
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeMusicEbookFilm" />
+        Music, e-book, film
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeAdOnlinePlatform" />
+        Advertisement on online platform
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeSearchEngineSocialNetwork" />
+        Search engine, social network
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeDatabaseHosting" />
+        Database and hosting
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeInternetBasedTelecom" />
+        Internet based telecommunication
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeOnlineTraining" />
+        Online training
+      </label>
+      <label class="checkbox full">
+        <input type="checkbox" formControlName="dsTypeOthers" />
+        Others
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.achievingValueOfDsDate)">
+        Date achieving value of digital service <span class="req">*</span>
+        <input type="date" formControlName="achievingValueOfDsDate" />
+      </label>
+      <label [class.field-invalid]="showFieldError(form2.controls.dsTotalValue)">
+        Total value of digital service (RM) <span class="req">*</span>
+        <input type="number" formControlName="dsTotalValue" step="0.01" min="0.01" />
+      </label>
+      }
     </form>
 
     <div class="actions inline-actions">
@@ -490,6 +661,7 @@
       </div>
     </section>
 
+    @if (config.requiresTariffs) {
     <section class="form-section">
       <h2 class="section-withbg">Tariff / finished-goods codes <span class="hint">(main contract ≥1 required)</span></h2>
       <div class="section-body">
@@ -526,6 +698,50 @@
     </div>
       </div>
     </section>
+    }
+
+    @if (config.requiresServiceCodes) {
+    <section class="form-section">
+      <h2 class="section-withbg">Service type codes <span class="hint">(at least 1 required)</span></h2>
+      <div class="section-body">
+        <button type="button" class="bar-add-btn full" [disabled]="loading() || !isEditable" (click)="openServiceCodeModal()">
+          Add service type code
+        </button>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Description</th><th>Remark</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (sc of serviceCodes(); track sc.id) {
+                <tr>
+                  <td>{{ sc.serviceCode }}</td>
+                  <td>{{ sc.serviceDescription }}</td>
+                  <td>{{ sc.remark }}</td>
+                  <td>
+                    @if (isEditable) {
+                      <button type="button" class="link-btn remove" (click)="pendingDelete.set({ kind: 'serviceCode', id: sc.id })" title="Remove">Remove</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty">No service type codes yet.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    }
+
+    @if (config.requiresServiceCodes && tourismTaxTrigger()) {
+      <p class="info-banner">
+        This registration includes an accommodation service type with annual taxable sales over
+        RM 500,000 — a Tourism Tax registration has been automatically created
+        (case {{ tourismTaxTrigger()!.caseRefNo }}).
+        <a [routerLink]="['/registration/tourism-tax', tourismTaxTrigger()!.caseId]">Continue the tourism tax registration &rarr;</a>
+      </p>
+    }
 
     <section class="form-section">
       <h2 class="section-withbg">Part C — declarations</h2>
@@ -608,7 +824,7 @@
       <h2 class="section-withbg">Supporting documents</h2>
       <div class="section-body">
         <p class="hint">
-          Upload PDF, JPG, JPEG, or PNG files (max 10 MB). Supporting documents are optional for sales tax registration.
+          Upload PDF, JPG, JPEG, or PNG files (max 10 MB). Supporting documents are optional for this registration.
         </p>
         @if (isEditable) {
           <div class="form-grid upload-grid">
@@ -696,6 +912,7 @@
             [queryRemark]="queryRemark()"
             [appStatusReason]="appStatusReason()"
             [routedToLabel]="routedToLabel()"
+            [sectionId]="sectionId()"
           >
             @if (appStatus() === 'IN_QUERY') {
               <div letter-actions class="letter-actions">
@@ -718,7 +935,7 @@
             @if (employerCode()) {
               Employer code: <strong>{{ employerCode() }}</strong>
               @if (salesTaxSmkRegNo()) {
-                · Sales tax SMK: <strong>{{ salesTaxSmkRegNo() }}</strong>
+                · {{ config.smkLabel }}: <strong>{{ salesTaxSmkRegNo() }}</strong>
               }
             }
             <div class="letter-actions">
@@ -727,33 +944,71 @@
               </button>
             </div>
           </div>
-        } @else {
+        } @else if (!error()) {
           <p class="preview-ready">All required checks passed — you may submit and route this case.</p>
+        }
+
+        @if (isUpdateMode()) {
+          <section class="preview-block">
+            <h3>Changed fields</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Field</th><th>Old value</th><th>New value</th></tr>
+                </thead>
+                <tbody>
+                  @for (f of changedFields(); track f.fieldLabel) {
+                    <tr>
+                      <td>{{ f.fieldLabel }}</td>
+                      <td>{{ previewText(f.oldValue) }}</td>
+                      <td>{{ previewText(f.newValue) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="3" class="empty">No changes detected yet.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
         }
 
         <section class="preview-block">
           <h3>Form 1 — business &amp; address</h3>
           <dl class="preview-dl">
             <dt>Case ref</dt><dd>{{ previewText(caseRefNo()) }}</dd>
-            <dt>BRN</dt><dd>{{ previewText(form1.controls.registrationNo.value) }}</dd>
+            <dt>{{ form1RegistrationNoLabel }}</dt><dd>{{ previewText(form1.controls.registrationNo.value) }}</dd>
             <dt>Business name</dt><dd>{{ previewText(form1.controls.employerName.value) }}</dd>
             <dt>Trade name</dt><dd>{{ previewText(form1.controls.tradeName.value || form1.controls.employerName.value) }}</dd>
+            @if (config.showBusinessEntityType) {
             <dt>Entity type</dt><dd>{{ businessEntityLabel(form1.controls.businessEntityTypeId.value) }}</dd>
+            }
+            @if (config.showTourismPartA) {
+              <dt>Labuan</dt><dd>{{ previewYesNo(form1.controls.labuan.value) }}</dd>
+              <dt>MOTAC registration no</dt><dd>{{ previewText(form1.controls.motacRegNo.value) }}</dd>
+              <dt>Contact person</dt><dd>{{ previewText(form1.controls.contactPerson.value) }}</dd>
+            }
+            @if (config.showSalesPartAExtras) {
             <dt>MSIC</dt><dd>{{ previewText(form1.controls.msicId.value) }}</dd>
+            }
             <dt>PKS branch</dt><dd>{{ officeLocationLabel(form1.controls.pksBranchId.value) }}</dd>
             @if (appStatus() === 'APPROVED') {
               <dt>Employer / SST reg no</dt><dd>{{ previewText(employerCode()) }}</dd>
-              <dt>Sales tax SMK no</dt><dd>{{ previewText(salesTaxSmkRegNo()) }}</dd>
+              <dt>{{ config.smkLabel }} no</dt><dd>{{ previewText(salesTaxSmkRegNo()) }}</dd>
             }
             <dt>Business address</dt><dd>{{ formatBusinessAddressPreview() }}</dd>
-            <dt>Premise address</dt><dd>{{ formatPremiseAddressPreview() }}</dd>
+            <dt>{{ config.correspondenceTitle }}</dt><dd>{{ formatPremiseAddressPreview() }}</dd>
+            @if (config.showWebsiteAddress) {
+              <dt>Website address</dt><dd>{{ previewText(form1.controls.websiteAddress.value) }}</dd>
+            }
+            @if (config.requireForm1Email) {
             <dt>Email</dt><dd>{{ previewText(form1.controls.email.value) }}</dd>
+            }
             <dt>Telephone</dt><dd>{{ formatPhoneLinesPreview('phones') }}</dd>
             <dt>Fax</dt><dd>{{ formatPhoneLinesPreview('faxes') }}</dd>
           </dl>
         </section>
 
-        @if (form1.controls.tourTaxRegNo.value || form1.controls.inTaxRefNo.value || form1.controls.cusAudRefNo.value) {
+        @if (config.showSalesPartAExtras && (form1.controls.tourTaxRegNo.value || form1.controls.inTaxRefNo.value || form1.controls.cusAudRefNo.value)) {
           <section class="preview-block">
             <h3>Tax &amp; customs references</h3>
             <dl class="preview-dl">
@@ -775,6 +1030,7 @@
           </section>
         }
 
+        @if (config.requiresDirectors) {
         <section class="preview-block">
           <h3>Directors / owners ({{ directors().length }})</h3>
           <div class="table-wrap">
@@ -798,9 +1054,11 @@
             </table>
           </div>
         </section>
+        }
 
+        @if (config.premisesOnForm1) {
         <section class="preview-block">
-          <h3>Other manufacturing premises ({{ premises().length }})</h3>
+          <h3>{{ config.premisesTitle }} ({{ premises().length }})</h3>
           <div class="table-wrap">
             <table>
               <thead>
@@ -822,23 +1080,35 @@
             </table>
           </div>
         </section>
+        }
 
         <section class="preview-block">
-          <h3>Part B — sales tax particulars</h3>
+          <h3>{{ config.partBTitle }}</h3>
           <dl class="preview-dl">
+            @if (config.requiresSalesBreakdown || config.showPartBDates) {
             <dt>Manufacturing commencement</dt><dd>{{ previewDate(form2.controls.manComDate.value) }}</dd>
             <dt>Date sale / value taxable goods</dt><dd>{{ previewDate(form2.controls.dateSaleValTaxGoods.value) }}</dd>
-            <dt>Business commencement</dt><dd>{{ previewDate(form2.controls.businessComDate.value) }}</dd>
+            }
+            <dt>{{ config.businessComDateLabel }}</dt><dd>{{ previewDate(form2.controls.businessComDate.value) }}</dd>
             <dt>Financial year end month</dt><dd>{{ previewText(form2.controls.finYrEndMon.value) }}</dd>
-            <dt>Annual taxable sales</dt><dd>{{ previewMoney(form2.controls.anTotalTaxSalesVal.value) }}</dd>
+            @if (config.requiresSalesBreakdown || config.showPartBDates) {
+            <dt>Annual taxable service value</dt><dd>{{ previewMoney(form2.controls.anTotalTaxSalesVal.value) }}</dd>
+            }
+            @if (config.requiresSalesBreakdown) {
             <dt>Sub-contract work</dt><dd>{{ previewYesNo(form2.controls.subContractWork.value) }}</dd>
             <dt>Local sales</dt><dd>{{ previewMoney(form2.controls.localSales.value) }}</dd>
             <dt>Export sales</dt><dd>{{ previewMoney(form2.controls.exportSales.value) }}</dd>
             <dt>Sales to designated area</dt><dd>{{ previewMoney(form2.controls.salesToDesignArea.value) }}</dd>
             <dt>Other sales</dt><dd>{{ previewMoney(form2.controls.othersSales.value) }}</dd>
+            }
+            @if (config.requiresDigitalServiceTypes) {
+            <dt>Date achieving value of digital service</dt><dd>{{ previewDate(form2.controls.achievingValueOfDsDate.value) }}</dd>
+            <dt>Total value of digital service</dt><dd>{{ previewMoney(form2.controls.dsTotalValue.value) }}</dd>
+            }
           </dl>
         </section>
 
+        @if (config.requiresTariffs) {
         <section class="preview-block">
           <h3>Tariff / finished-goods codes ({{ tariffCodes().length }})</h3>
           <div class="table-wrap">
@@ -861,6 +1131,37 @@
             </table>
           </div>
         </section>
+        }
+
+        @if (config.requiresServiceCodes) {
+        <section class="preview-block">
+          <h3>Service type codes ({{ serviceCodes().length }})</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Code</th><th>Description</th><th>Remark</th></tr>
+              </thead>
+              <tbody>
+                @for (sc of serviceCodes(); track sc.id) {
+                  <tr>
+                    <td>{{ sc.serviceCode }}</td>
+                    <td>{{ sc.serviceDescription }}</td>
+                    <td>{{ previewText(sc.remark) }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3" class="empty">None</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (tourismTaxTrigger()) {
+            <p class="info-banner">
+              Accommodation service type + annual taxable sales over RM 500,000 — Tourism Tax case
+              {{ tourismTaxTrigger()!.caseRefNo }} was auto-created for this employer.
+            </p>
+          }
+        </section>
+        }
 
         <section class="preview-block">
           <h3>Part C — declaration</h3>
@@ -920,10 +1221,19 @@
           </div>
         </section>
 
-        <p class="hint summary">
-          Click <strong>Submit &amp; route case</strong> to send this registration into the workflow.
-          RO users auto-approve; others route to <strong>SUBMITTED</strong> for officer approval.
-        </p>
+        <div class="hint summary submit-routing">
+          <p class="submit-hint">{{ submitHint() }}</p>
+          @if (isEditable && canSubmitFromPreview && showIncompleteOption()) {
+            <label class="incomplete-option">
+              <input
+                type="checkbox"
+                [checked]="submitIncomplete()"
+                (change)="submitIncomplete.set($any($event.target).checked)"
+              />
+              Mark as incomplete OTC submission
+            </label>
+          }
+        </div>
       </div>
     </section>
     <div class="actions">
@@ -936,6 +1246,7 @@
       <assist-registration-officer-actions
         [caseId]="caseId()"
         [appStatus]="appStatus()"
+        [sectionId]="sectionId()"
         [busy]="loading()"
         (workflowStarted)="onOfficerWorkflowStarted()"
         (workflowCompleted)="onOfficerWorkflowCompleted($event)"
@@ -962,7 +1273,7 @@
 
 <assist-form-modal
   [open]="directorModalOpen()"
-  [title]="editingDirectorId() ? 'Edit director / owner' : 'Add director / owner'"
+  [title]="(editingDirectorId() ? 'Edit ' : 'Add ') + (config.requiresAuthorisedPersonnel ? 'authorised personnel' : 'director / owner')"
   (closed)="closeDirectorModal()"
 >
   <form class="form-grid director-form" [formGroup]="directorForm">
@@ -984,9 +1295,12 @@
       </select>
     </label>
     <label [class.field-invalid]="showFieldError(directorForm.controls.identificationNo)">
-      ID no <span class="req">*</span>
+      {{ config.requiresAuthorisedPersonnel ? 'Passport no / other identification no' : 'ID no' }} <span class="req">*</span>
       <input formControlName="identificationNo" />
     </label>
+    @if (config.requiresAuthorisedPersonnel) {
+      <label>Tel no<input formControlName="telephoneNo" /></label>
+    }
     <label>Email<input type="email" formControlName="email" /></label>
     <label>Designation<input formControlName="designation" /></label>
   </form>
@@ -1114,6 +1428,52 @@
   <div modal-footer>
     <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeTariffModal()">Close</button>
     <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable" (click)="addTariffCode()">Save</button>
+  </div>
+</assist-form-modal>
+
+<assist-form-modal
+  [open]="serviceCodeModalOpen()"
+  title="Add service type code"
+  (closed)="closeServiceCodeModal()"
+>
+  <form [formGroup]="serviceCodeForm" class="form-grid">
+    <label class="full">
+      Search by code or keyword
+      <div class="search-row">
+        <input formControlName="serviceCodeSearch" placeholder="e.g. A01 or consult" />
+        <button type="button" class="secondary" [disabled]="serviceCodeSearching()" (click)="searchServiceCodes()">Search</button>
+      </div>
+      @if (serviceCodeModalNotice()) {
+        <span class="hint">{{ serviceCodeModalNotice() }}</span>
+      }
+    </label>
+    @if (serviceCodeSearchResults().length > 0) {
+      <div class="search-results full">
+        @for (opt of serviceCodeSearchResults(); track opt.id) {
+          <button type="button" class="search-result-row" (click)="selectServiceCode(opt)">
+            <strong>{{ opt.code }}</strong> — {{ opt.description }}
+          </button>
+        }
+      </div>
+    }
+    @if (serviceCodeForm.controls.sstServiceTypeId.value) {
+      <label>
+        Selected code
+        <input [value]="serviceCodeForm.controls.serviceCode.value" readonly />
+      </label>
+      <label>
+        Description
+        <input [value]="serviceCodeForm.controls.serviceDescription.value" readonly />
+      </label>
+      <label class="full">
+        Remark (optional)
+        <input formControlName="remark" />
+      </label>
+    }
+  </form>
+  <div modal-footer>
+    <button type="button" class="modal-btn cancel" [disabled]="loading()" (click)="closeServiceCodeModal()">Close</button>
+    <button type="button" class="modal-btn save" [disabled]="loading() || !isEditable || !serviceCodeForm.controls.sstServiceTypeId.value" (click)="saveServiceCode()">Add</button>
   </div>
 </assist-form-modal>
 

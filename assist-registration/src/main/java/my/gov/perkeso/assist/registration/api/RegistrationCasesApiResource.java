@@ -12,6 +12,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.core.commands.domain.CommandWrapper;
 import my.gov.perkeso.assist.core.commands.service.CommandProcessingService;
@@ -19,7 +22,9 @@ import my.gov.perkeso.assist.core.commands.service.CommandWrapperBuilder;
 import my.gov.perkeso.assist.core.infrastructure.data.CommandProcessingResult;
 import my.gov.perkeso.assist.registration.data.RegistrationCaseData;
 import my.gov.perkeso.assist.registration.data.RegistrationCaseSummaryData;
+import my.gov.perkeso.assist.registration.data.TaxPayerUpdateDiffData;
 import my.gov.perkeso.assist.registration.service.EmployerReadPlatformService;
+import my.gov.perkeso.assist.registration.service.TaxPayerUpdateCaseService;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -32,6 +37,7 @@ public class RegistrationCasesApiResource {
 
     private final CommandProcessingService commandProcessingService;
     private final EmployerReadPlatformService readService;
+    private final TaxPayerUpdateCaseService taxPayerUpdateCaseService;
 
     @POST
     @Operation(summary = "Create registration case (draft)")
@@ -44,8 +50,21 @@ public class RegistrationCasesApiResource {
     @Operation(summary = "List registration cases (officer inbox)")
     public List<RegistrationCaseSummaryData> listCases(@QueryParam("appStatus") final String appStatus,
             @QueryParam("sectionId") final Long sectionId,
+            @QueryParam("sectionIds") final String sectionIds,
             @QueryParam("limit") final Integer limit) {
-        return readService.retrieveCaseSummaries(appStatus, sectionId, limit != null ? limit : 50);
+        return readService.retrieveCaseSummaries(appStatus, sectionId, parseSectionIds(sectionIds),
+                limit != null ? limit : 50);
+    }
+
+    private static List<Long> parseSectionIds(final String sectionIds) {
+        if (sectionIds == null || sectionIds.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(sectionIds.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
     }
 
     @GET
@@ -60,6 +79,15 @@ public class RegistrationCasesApiResource {
     @Operation(summary = "Get registration case by reference number")
     public RegistrationCaseData retrieveByRefNo(@PathParam("caseRefNo") final String caseRefNo) {
         return readService.retrieveCaseByRefNo(caseRefNo);
+    }
+
+    @GET
+    @Path("{caseId}/tax-update-diff")
+    @Operation(summary = "On-the-fly changed-fields diff for an Update Tax Payer case",
+            description = "Compares the case's current temp draft against the live Employer/SstInfo. "
+                    + "Only meaningful for sections 1200-1204; returns an empty array otherwise.")
+    public List<TaxPayerUpdateDiffData> getTaxUpdateDiff(@PathParam("caseId") final Long caseId) {
+        return taxPayerUpdateCaseService.getUpdateDiff(caseId);
     }
 
     @PUT

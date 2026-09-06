@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import my.gov.perkeso.assist.registration.constant.RegistrationSection;
+import my.gov.perkeso.assist.registration.constant.RegistrationSectionRouting;
 import my.gov.perkeso.assist.registration.data.SupportingDocumentTypeData;
 import my.gov.perkeso.assist.registration.data.TempSstSupportingDocumentData;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfo;
@@ -31,7 +31,7 @@ public class TempSstSupportingDocumentWritePlatformService {
     @Transactional(readOnly = true)
     public List<TempSstSupportingDocumentData> listSupportingDocuments(final Long caseId) {
         final RegGeneralInfo regCase = tempSstInfoWritePlatformService.loadCaseForDocuments(caseId);
-        assertSstSalesSection(regCase);
+        assertSstNewRegSection(regCase);
         try {
             final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
             return listSupportingDocuments(tempSstInfo);
@@ -56,7 +56,7 @@ public class TempSstSupportingDocumentWritePlatformService {
     public TempSstSupportingDocumentData uploadSupportingDocument(final Long caseId, final Long documentTypeId,
             final String originalFileName, final String contentType, final InputStream content) throws IOException {
         final RegGeneralInfo regCase = tempSstInfoWritePlatformService.loadEditableCaseForDocuments(caseId);
-        assertSstSalesSection(regCase);
+        assertSstNewRegSection(regCase);
         final SupportingDocumentTypeData documentType = registrationReferenceReadPlatformService
                 .requireSupportingDocumentType(documentTypeId);
 
@@ -82,7 +82,7 @@ public class TempSstSupportingDocumentWritePlatformService {
     @Transactional
     public void deleteSupportingDocument(final Long caseId, final Long documentId) {
         final RegGeneralInfo regCase = tempSstInfoWritePlatformService.loadEditableCaseForDocuments(caseId);
-        assertSstSalesSection(regCase);
+        assertSstNewRegSection(regCase);
         final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
         final TempSstSupportingDocument document = tempSstSupportingDocumentRepository
                 .findByIdAndTempSstInfoIdAndDeletedFalse(documentId, tempSstInfo.getId())
@@ -97,7 +97,7 @@ public class TempSstSupportingDocumentWritePlatformService {
     @Transactional(readOnly = true)
     public DownloadedRegistrationDocument downloadSupportingDocument(final Long caseId, final Long documentId) {
         final RegGeneralInfo regCase = tempSstInfoWritePlatformService.loadCaseForDocuments(caseId);
-        assertSstSalesSection(regCase);
+        assertSstNewRegSection(regCase);
         final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
         final TempSstSupportingDocument document = tempSstSupportingDocumentRepository
                 .findByIdAndTempSstInfoIdAndDeletedFalse(documentId, tempSstInfo.getId())
@@ -126,10 +126,11 @@ public class TempSstSupportingDocumentWritePlatformService {
                 .build();
     }
 
-    private static void assertSstSalesSection(final RegGeneralInfo regCase) {
-        if (regCase.getSectionId() == null
-                || regCase.getSectionId() != RegistrationSection.REG_NEW_REG_SST_SALES_TAX.getAssistSectionId()) {
-            throw new IllegalArgumentException("SST info API is only available for sales tax new registration (1100)");
+    private static void assertSstNewRegSection(final RegGeneralInfo regCase) {
+        if (!RegistrationSectionRouting.isSstCaseSection(regCase.getSectionId())) {
+            throw new IllegalArgumentException(
+                    "SST info API is only available for SST new registration (1100-1105), "
+                            + "Update Tax Payer (1200-1204), or Discontinue Tax (1103)");
         }
     }
 

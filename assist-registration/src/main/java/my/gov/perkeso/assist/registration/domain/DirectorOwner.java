@@ -38,6 +38,10 @@ public class DirectorOwner {
     @Column(name = "designation", length = 100)
     private String designation;
 
+    /** Digital Tax "authorised personnel" phone number (unused by other SST tax types). */
+    @Column(name = "telephone_no", length = 30)
+    private String telephoneNo;
+
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted;
 

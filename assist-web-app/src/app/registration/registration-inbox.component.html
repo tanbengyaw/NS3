@@ -1,12 +1,12 @@
 <section class="page">
   <header>
     <p class="module-label">Registration</p>
-    <h1>Officer inbox</h1>
-    <p>Cases routed for review after submit (legacy ASSIST workflow queue).</p>
+    <h1>{{ isUo ? 'UO inbox' : 'Officer inbox' }}</h1>
+    <p>{{ inboxDescription() }}</p>
   </header>
 
   @if (!isOfficer) {
-    <p class="error banner">Officer or admin role required to view the inbox.</p>
+    <p class="error banner">Staff role required to view the inbox.</p>
   } @else {
     <div class="filters">
       <button type="button" [class.active]="statusFilter() === 'SUBMITTED'" (click)="setStatusFilter('SUBMITTED')">
@@ -27,6 +27,21 @@
       <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
     </div>
 
+    @if (showSectionFilter) {
+      <div class="filters section-filters">
+        <span class="filter-label">Section</span>
+        @for (option of uoSectionFilters; track option.value) {
+          <button
+            type="button"
+            [class.active]="sectionFilter() === option.value"
+            (click)="setSectionFilter(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    }
+
     @if (message()) {
       <p class="message banner">{{ message() }}</p>
     }
@@ -39,6 +54,7 @@
       <table>
         <thead>
           <tr>
+            <th>Branch</th>
             <th>Case ref</th>
             <th>Status</th>
             <th>Routed to</th>
@@ -46,7 +62,7 @@
             <th>Business</th>
             <th>BRN</th>
             <th>Employer / SST reg</th>
-            <th>Sales tax SMK</th>
+            <th>SST SMK</th>
             <th>Officer note</th>
             <th>Submitted</th>
             <th>Actions</th>
@@ -55,7 +71,12 @@
         <tbody>
           @for (item of cases(); track item.id) {
             <tr>
-              <td class="mono">{{ item.caseRefNo }}</td>
+              <td>{{ item.processingBranchName ?? item.processingPksBranchId ?? '—' }}</td>
+              <td class="mono">
+                <a class="case-ref-link" [routerLink]="caseLink(item)" [queryParams]="caseLinkQueryParams()">{{
+                  item.caseRefNo
+                }}</a>
+              </td>
               <td>
                 <span class="status-badge" [class]="statusClass(item.appStatus)">{{ item.appStatus }}</span>
               </td>
@@ -75,9 +96,9 @@
               <td class="mono codes">
                 @if (item.salesTaxSmkRegNo) {
                   {{ item.salesTaxSmkRegNo }}
-                } @else if (isSalesTax(item) && item.appStatus === 'APPROVED') {
+                } @else if (isSstNewReg(item) && item.appStatus === 'APPROVED') {
                   <span class="muted">Not issued</span>
-                } @else if (isSalesTax(item)) {
+                } @else if (isSstNewReg(item)) {
                   <span class="muted">On approve</span>
                 } @else {
                   <span class="muted">—</span>
@@ -86,18 +107,7 @@
               <td class="officer-note">{{ statusHint(item) ?? '—' }}</td>
               <td>{{ formatWhen(item.submissionDate) }}</td>
               <td class="row-actions">
-                <a [routerLink]="caseLink(item)">Open →</a>
-                @if (item.appStatus === 'SUBMITTED') {
-                  <assist-registration-officer-actions
-                    layout="inline"
-                    [caseId]="item.id"
-                    [appStatus]="item.appStatus"
-                    [busy]="rowBusy(item.id)"
-                    (workflowStarted)="onWorkflowStarted(item.id)"
-                    (workflowCompleted)="onWorkflowCompleted($event)"
-                    (workflowFailed)="onWorkflowFailed($event)"
-                  />
-                }
+                <a [routerLink]="caseLink(item)" [queryParams]="caseLinkQueryParams()">Review →</a>
               </td>
             </tr>
           } @empty {
@@ -106,7 +116,9 @@
                 @if (loading()) {
                   Loading…
                 } @else {
-                  No cases with status {{ statusFilter() }}.
+                  No cases with status {{ statusFilter() }}@if (showSectionFilter && sectionFilter() !== 'ALL') {
+                    for this section filter
+                  }.
                 }
               </td>
             </tr>

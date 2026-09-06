@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0029-registration-doc-section" author="ns3">
+        <insert tableName="ref_doc_section" schemaName="base">
+            <column name="id" valueNumeric="2"/>
+            <column name="code" value="REGISTRATION_SALES_TAX"/>
+            <column name="label" value="Sales tax registration"/>
+            <column name="module_code" value="REGISTRATION"/>
+            <column name="sort_order" valueNumeric="2"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0029-registration-doc-types" author="ns3">
+        <insert tableName="ref_doc_type" schemaName="base">
+            <column name="id" valueNumeric="10"/>
+            <column name="code" value="MANUFACTURING_LIC"/>
+            <column name="label" value="Manufacturing / business licence"/>
+            <column name="doc_section_id" valueNumeric="2"/>
+            <column name="module_code" value="REGISTRATION"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="3"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_type" schemaName="base">
+            <column name="id" valueNumeric="11"/>
+            <column name="code" value="OTHER"/>
+            <column name="label" value="Other supporting document"/>
+            <column name="doc_section_id" valueNumeric="2"/>
+            <column name="module_code" value="REGISTRATION"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="99"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0029-ref-doc-section-reg" author="ns3">
+        <createTable tableName="ref_doc_section_reg" schemaName="base">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="business_entity_type_id" type="BIGINT"/>
+            <column name="business_ownership_type_id" type="BIGINT"/>
+            <column name="doc_type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reg_with_ssm_after_feb_2017" type="BOOLEAN"/>
+            <column name="is_required" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_ref_doc_section_reg_lookup" tableName="ref_doc_section_reg" schemaName="base">
+            <column name="business_entity_type_id"/>
+            <column name="doc_type_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0029-seed-doc-section-reg-sales-tax" author="ns3">
+        <insert tableName="ref_doc_section_reg" schemaName="base">
+            <column name="doc_type_id" valueNumeric="2"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="1"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_section_reg" schemaName="base">
+            <column name="doc_type_id" valueNumeric="1"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="2"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_section_reg" schemaName="base">
+            <column name="doc_type_id" valueNumeric="10"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="3"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="ref_doc_section_reg" schemaName="base">
+            <column name="doc_type_id" valueNumeric="11"/>
+            <column name="is_required" valueBoolean="false"/>
+            <column name="sort_order" valueNumeric="99"/>
+            <column name="is_deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0029-remap-sst-document-type-ids" author="ns3">
+        <sql>
+            UPDATE registration.temp_sst_supporting_document
+            SET document_type_id = CASE document_type_id
+                WHEN 1 THEN 2
+                WHEN 2 THEN 1
+                WHEN 3 THEN 10
+                WHEN 4 THEN 11
+                ELSE document_type_id
+            END;
+
+            UPDATE registration.sst_supporting_document
+            SET document_type_id = CASE document_type_id
+                WHEN 1 THEN 2
+                WHEN 2 THEN 1
+                WHEN 3 THEN 10
+                WHEN 4 THEN 11
+                ELSE document_type_id
+            END;
+        </sql>
+        <dropTable tableName="ref_supporting_document_type" schemaName="reference"/>
+    </changeSet>
+
+</databaseChangeLog>

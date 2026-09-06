@@ -33,9 +33,6 @@ public class PortalEnrollmentReadPlatformService {
     }
 
     private static PortalUserData toData(final PortalUser portalUser) {
-        return PortalUserData.builder().id(portalUser.getId()).username(portalUser.getUsername())
-                .email(portalUser.getEmail()).applicationType(portalUser.getApplicationType())
-                .employerId(portalUser.getEmployerId()).employerCode(portalUser.getEmployerCode())
-                .enrolledDate(portalUser.getEnrolledDate()).linkedDate(portalUser.getLinkedDate()).build();
+        return PortalUserMapper.toData(portalUser);
     }
 }

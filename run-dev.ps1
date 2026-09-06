@@ -75,10 +75,11 @@ $env:Path = "$jdk\bin;" + ($env:Path -split ';' | Where-Object {
 }) -join ';'
 $env:SPRING_PROFILES_ACTIVE = "dev"
 
-Write-Host "NS3 ASSIST - dev profile (H2 in-memory)" -ForegroundColor Cyan
+Write-Host "NS3 ASSIST - dev profile (file-backed H2)" -ForegroundColor Cyan
 Write-Host "JAVA_HOME = $env:JAVA_HOME"
 Write-Host (Get-JavaVersionText -JavaExe (Join-Path $jdk "bin\java.exe"))
 Write-Host ""
+Write-Host "DB file:  ./data/ns3_assist.mv.db (DBeaver - see README)" -ForegroundColor DarkGray
 Write-Host "API:      http://localhost:8081/assist-provider/api/v1/employers"
 Write-Host "Swagger:  http://localhost:8081/assist-provider/swagger-ui/index.html"
 Write-Host "Login:    admin / password"

@@ -32,6 +32,60 @@ public class PortalUser {
     @Column(name = "employer_code", length = 30)
     private String employerCode;
 
+    @Column(name = "employer_name", length = 200)
+    private String employerName;
+
+    @Column(name = "registration_type_id")
+    private Long registrationTypeId;
+
+    @Column(name = "registration_no", length = 50)
+    private String registrationNo;
+
+    @Column(name = "address_line1", length = 200)
+    private String addressLine1;
+
+    @Column(name = "address_line2", length = 200)
+    private String addressLine2;
+
+    @Column(name = "address_line3", length = 200)
+    private String addressLine3;
+
+    @Column(name = "state_id")
+    private Long stateId;
+
+    @Column(name = "city_id")
+    private Long cityId;
+
+    @Column(name = "city_name", length = 100)
+    private String cityName;
+
+    @Column(name = "post_code", length = 10)
+    private String postCode;
+
+    @Column(name = "full_name", length = 150)
+    private String fullName;
+
+    @Column(name = "identification_type_id")
+    private Long identificationTypeId;
+
+    @Column(name = "identification_no", length = 50)
+    private String identificationNo;
+
+    @Column(name = "phone_calling_code", length = 10)
+    private String phoneCallingCode;
+
+    @Column(name = "phone_number", length = 30)
+    private String phoneNumber;
+
+    @Column(name = "security_phrase", length = 100)
+    private String securityPhrase;
+
+    @Column(name = "enrollment_status", length = 30)
+    private String enrollmentStatus;
+
+    @Column(name = "query_remark", length = 500)
+    private String queryRemark;
+
     @Column(name = "linked_date")
     private LocalDateTime linkedDate;
 
@@ -40,4 +94,7 @@ public class PortalUser {
 
     @Column(name = "enrolled_date")
     private LocalDateTime enrolledDate;
+
+    @Column(name = "user_employer_id")
+    private Long userEmployerId;
 }

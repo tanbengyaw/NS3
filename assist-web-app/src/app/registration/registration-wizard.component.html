@@ -98,10 +98,17 @@
       [queryRemark]="queryRemark()"
       [appStatusReason]="appStatusReason()"
       [routedToLabel]="routedToLabel()"
+      [sectionId]="sectionId()"
     />
     <div class="summary">
       <p>Employees: {{ employees().length }}</p>
-      <p>When you submit, portal users go to <strong>SUBMITTED</strong>; RO auto-approves.</p>
+      <p class="submit-hint">{{ submitHint() }}</p>
+      @if (showIncompleteOption()) {
+        <label class="incomplete-option">
+          <input type="checkbox" [checked]="submitIncomplete()" (change)="submitIncomplete.set($any($event.target).checked)" />
+          Mark as incomplete OTC submission
+        </label>
+      }
     </div>
     <div class="actions">
       <button type="button" (click)="goToStep(2)">← Back</button>
@@ -111,6 +118,7 @@
       <assist-registration-officer-actions
         [caseId]="caseId()"
         [appStatus]="appStatus()"
+        [sectionId]="sectionId()"
         [busy]="loading()"
         (workflowStarted)="onOfficerWorkflowStarted()"
         (workflowCompleted)="onOfficerWorkflowCompleted($event)"

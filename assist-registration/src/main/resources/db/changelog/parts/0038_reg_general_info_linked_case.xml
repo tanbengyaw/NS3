@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Backward link so a case that was auto-created from another case (e.g. a Tourism Tax
+        registration auto-triggered from Service Tax — see 0037_tourism_tax_auto_trigger.xml)
+        can be traced back to the originating case in the UI.
+    -->
+    <changeSet id="0038-reg-general-info-linked-case" author="ns3">
+        <addColumn tableName="reg_general_info" schemaName="registration">
+            <column name="linked_case_id" type="BIGINT"/>
+            <column name="linked_case_ref_no" type="VARCHAR(30)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

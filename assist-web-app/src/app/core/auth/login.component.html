@@ -18,7 +18,9 @@
         <p class="error">{{ errorMessage }}</p>
       }
 
-      <button type="submit" [disabled]="form.invalid">Sign in</button>
+      <button type="submit" [disabled]="form.invalid || submitting">
+        {{ submitting ? 'Signing in…' : 'Sign in' }}
+      </button>
     </form>
 
     <p class="hint">Dev users: admin, ro, employer — password: <code>password</code></p>

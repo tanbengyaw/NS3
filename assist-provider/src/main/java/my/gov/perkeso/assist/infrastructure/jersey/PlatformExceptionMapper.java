@@ -1,34 +1,67 @@
 package my.gov.perkeso.assist.infrastructure.jersey;
 
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import my.gov.perkeso.assist.core.infrastructure.data.ApiGlobalErrorResponse;
 import my.gov.perkeso.assist.core.infrastructure.exception.AbstractPlatformDomainRuleException;
-import my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 @Component
 @Provider
-public class PlatformExceptionMapper implements ExceptionMapper<RuntimeException> {
+public class PlatformExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
-    public Response toResponse(final RuntimeException exception) {
-        if (exception instanceof ResourceNotFoundException) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ApiError("error.msg.resource.not.found", exception.getMessage())).build();
-        }
-        if (exception instanceof AbstractPlatformDomainRuleException) {
+    public Response toResponse(final Exception exception) {
+        if (exception instanceof AbstractPlatformDomainRuleException domainException) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ApiError("validation.msg.domain.rule.violation", exception.getMessage())).build();
+                    .entity(ApiGlobalErrorResponse.badRequest("validation.msg.domain.rule.violation",
+                            domainException.getMessage()))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
         }
         if (exception instanceof IllegalArgumentException) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ApiError("validation.msg.invalid.argument", exception.getMessage())).build();
+                    .entity(ApiGlobalErrorResponse.badRequest("validation.msg.invalid.argument", exception.getMessage()))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+        if (exception instanceof SecurityException) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(ApiGlobalErrorResponse.forbidden(exception.getMessage()))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+        if (exception instanceof DataIntegrityViolationException integrityException) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiGlobalErrorResponse.badRequest("validation.msg.duplicate",
+                            resolveIntegrityMessage(integrityException)))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
         }
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ApiError("error.msg.internal", exception.getMessage())).build();
+                .entity(ApiGlobalErrorResponse.internalError(exception.getMessage()))
+                .type(MediaType.APPLICATION_JSON)
+                .build();
     }
 
-    public record ApiError(String userMessageGlobalisationCode, String defaultUserMessage) {
+    private static String resolveIntegrityMessage(final DataIntegrityViolationException exception) {
+        final String message = exception.getMostSpecificCause().getMessage();
+        if (message == null) {
+            return "Duplicate or invalid value.";
+        }
+        final String lower = message.toLowerCase();
+        if (lower.contains("staff_user") && lower.contains("username")) {
+            return "Username is already in use.";
+        }
+        if (lower.contains("staff_user") && lower.contains("email")) {
+            return "Email is already in use.";
+        }
+        if (lower.contains("primary key") || lower.contains("23505")) {
+            return "Could not save staff user due to a database conflict. Restart the backend after upgrading.";
+        }
+        return "Duplicate or invalid value.";
     }
 }

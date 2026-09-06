@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.registration.constant.RegistrationSection;
+import my.gov.perkeso.assist.registration.constant.RegistrationSectionRouting;
 import my.gov.perkeso.assist.registration.constant.SstContractType;
 import my.gov.perkeso.assist.registration.constant.SstStatus;
 import my.gov.perkeso.assist.registration.constant.TaxType;
@@ -21,11 +22,14 @@ import my.gov.perkeso.assist.registration.domain.SstStatusInfo;
 import my.gov.perkeso.assist.registration.domain.SstStatusInfoRepository;
 import my.gov.perkeso.assist.registration.domain.SstSupportingDocument;
 import my.gov.perkeso.assist.registration.domain.SstSupportingDocumentRepository;
+import my.gov.perkeso.assist.registration.domain.SstServiceCategory;
+import my.gov.perkeso.assist.registration.domain.SstServiceCategoryRepository;
 import my.gov.perkeso.assist.registration.domain.SstTariffCode;
 import my.gov.perkeso.assist.registration.domain.SstTariffCodeRepository;
 import my.gov.perkeso.assist.registration.domain.TempDirectorOwner;
 import my.gov.perkeso.assist.registration.domain.TempPremises;
 import my.gov.perkeso.assist.registration.domain.TempSstInfo;
+import my.gov.perkeso.assist.registration.domain.TempSstServiceCategory;
 import my.gov.perkeso.assist.registration.domain.TempSstSupportingDocument;
 import my.gov.perkeso.assist.registration.domain.TempSstTariffCode;
 import my.gov.perkeso.assist.registration.employercode.EmployerCodeContext;
@@ -41,6 +45,7 @@ public class SstInfoPromotionService {
     private final SstInfoRepository sstInfoRepository;
     private final SstStatusInfoRepository sstStatusInfoRepository;
     private final SstTariffCodeRepository sstTariffCodeRepository;
+    private final SstServiceCategoryRepository sstServiceCategoryRepository;
     private final SstSupportingDocumentRepository sstSupportingDocumentRepository;
     private final DirectorOwnerRepository directorOwnerRepository;
     private final PremisesRepository premisesRepository;
@@ -48,8 +53,8 @@ public class SstInfoPromotionService {
     private final RegistrationDocumentStorageService registrationDocumentStorageService;
 
     @Transactional
-    public SstInfo promoteSalesTaxOnApprove(final RegGeneralInfo regCase, final Employer employer) {
-        if (regCase.getSectionId() != RegistrationSection.REG_NEW_REG_SST_SALES_TAX.getAssistSectionId()) {
+    public SstInfo promoteSstOnApprove(final RegGeneralInfo regCase, final Employer employer) {
+        if (!RegistrationSectionRouting.isSstNewRegSection(regCase.getSectionId())) {
             return null;
         }
 
@@ -64,6 +69,8 @@ public class SstInfoPromotionService {
         final List<TempPremises> premises = tempSstInfoWritePlatformService.listPremisesForCase(regCase.getId());
         final List<TempSstTariffCode> tariffCodes = tempSstInfoWritePlatformService
                 .listTariffCodesForCase(tempSstInfo);
+        final List<TempSstServiceCategory> serviceCategories = tempSstInfoWritePlatformService
+                .listServiceCategoriesForCase(tempSstInfo);
         final List<TempSstSupportingDocument> supportingDocuments = tempSstInfoWritePlatformService
                 .listSupportingDocumentEntitiesForCase(tempSstInfo);
 
@@ -71,30 +78,66 @@ public class SstInfoPromotionService {
                 .branchId(regCase.getTempEmployer().getPksBranchId())
                 .postCode(regCase.getTempEmployer().getPostCode())
                 .build();
-        final String smkNo = employerCodeGeneratorFactory.generateSmkNo(RegistrationSection.REG_NEW_REG_SST_SALES_TAX,
-                context);
+        final RegistrationSection section = RegistrationSection.fromAssistSectionId(regCase.getSectionId());
+        final TaxType taxType = RegistrationSectionRouting.taxTypeForSstNewReg(regCase.getSectionId());
+        final String smkNo = employerCodeGeneratorFactory.generateSmkNo(section, context);
 
-        final SstInfo sstInfo = mapSstInfo(tempSstInfo, employer.getId(), regCase.getId(), smkNo);
+        final SstInfo sstInfo = mapSstInfo(tempSstInfo, employer.getId(), regCase.getId(), smkNo, taxType);
         final SstInfo savedSstInfo = sstInfoRepository.save(sstInfo);
 
         promoteDirectors(employer.getId(), directors);
         promotePremises(employer.getId(), premises);
         promoteTariffCodes(employer.getId(), savedSstInfo.getId(), tariffCodes);
+        promoteServiceCategories(employer.getId(), savedSstInfo.getId(), serviceCategories);
         promoteSupportingDocuments(regCase.getId(), employer.getId(), savedSstInfo.getId(), supportingDocuments);
-        createActiveStatus(savedSstInfo.getId());
+        createActiveStatus(savedSstInfo.getId(), taxType);
 
         return savedSstInfo;
     }
 
-    private static SstInfo mapSstInfo(final TempSstInfo temp, final Long employerId, final Long caseId,
-            final String smkNo) {
-        final SstInfo sstInfo = new SstInfo();
-        sstInfo.setEmployerId(employerId);
-        sstInfo.setRegGeneralInfoId(caseId);
-        sstInfo.setSmkRegNo(smkNo);
-        sstInfo.setSalesTaxSmkRegNo(smkNo);
+    /**
+     * Update Tax Payer promotion (sections 1200-1204): updates the employer's EXISTING SstInfo
+     * (same id, same SMK columns) in place from the case's temp draft, then replaces (soft-delete +
+     * recreate) directors/premises/tariff codes/service categories with the temp draft's rows.
+     * Does not call {@link #createActiveStatus}: the tax type is already active, and no new SMK
+     * number is generated.
+     */
+    @Transactional
+    public SstInfo promoteSstOnUpdateApprove(final RegGeneralInfo regCase, final Employer employer) {
+        final SstInfo sstInfo = sstInfoRepository.findFirstByEmployerIdAndDeletedFalseOrderByIdDesc(employer.getId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Cannot update tax payer: no active SST record found for employer " + employer.getId()));
+
+        final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
+        applyUpdateFields(sstInfo, tempSstInfo);
+        final SstInfo savedSstInfo = sstInfoRepository.save(sstInfo);
+
+        final List<TempDirectorOwner> directors = tempSstInfoWritePlatformService
+                .listDirectorsForCase(regCase.getId());
+        final List<TempPremises> premises = tempSstInfoWritePlatformService.listPremisesForCase(regCase.getId());
+        final List<TempSstTariffCode> tariffCodes = tempSstInfoWritePlatformService
+                .listTariffCodesForCase(tempSstInfo);
+        final List<TempSstServiceCategory> serviceCategories = tempSstInfoWritePlatformService
+                .listServiceCategoriesForCase(tempSstInfo);
+        final List<TempSstSupportingDocument> supportingDocuments = tempSstInfoWritePlatformService
+                .listSupportingDocumentEntitiesForCase(tempSstInfo);
+
+        replaceDirectors(employer.getId(), directors);
+        replacePremises(employer.getId(), premises);
+        replaceTariffCodes(employer.getId(), savedSstInfo.getId(), tariffCodes);
+        replaceServiceCategories(employer.getId(), savedSstInfo.getId(), serviceCategories);
+        promoteSupportingDocuments(regCase.getId(), employer.getId(), savedSstInfo.getId(), supportingDocuments);
+
+        return savedSstInfo;
+    }
+
+    private static void applyUpdateFields(final SstInfo sstInfo, final TempSstInfo temp) {
         sstInfo.setTradeName(temp.getTradeName());
         sstInfo.setTourTaxRegNo(temp.getTourTaxRegNo());
+        sstInfo.setMotacRegNo(temp.getMotacRegNo());
+        sstInfo.setLabuan(temp.isLabuan());
+        sstInfo.setForm1ContactPerson(temp.getForm1ContactPerson());
+        sstInfo.setWebsiteAddress(temp.getWebsiteAddress());
         sstInfo.setInTaxRefNo(temp.getInTaxRefNo());
         sstInfo.setCusAudRefNo(temp.getCusAudRefNo());
         sstInfo.setPreRegNo(temp.getPreRegNo());
@@ -117,6 +160,96 @@ public class SstInfoPromotionService {
         sstInfo.setDesignation(temp.getDesignation());
         sstInfo.setApplicantEmail(temp.getApplicantEmail());
         sstInfo.setApplicantTelNo(temp.getApplicantTelNo());
+        sstInfo.setDsTypeSoftwareAppsGame(temp.isDsTypeSoftwareAppsGame());
+        sstInfo.setDsTypeMusicEbookFilm(temp.isDsTypeMusicEbookFilm());
+        sstInfo.setDsTypeAdOnlinePlatform(temp.isDsTypeAdOnlinePlatform());
+        sstInfo.setDsTypeSearchEngineSocialNetwork(temp.isDsTypeSearchEngineSocialNetwork());
+        sstInfo.setDsTypeDatabaseHosting(temp.isDsTypeDatabaseHosting());
+        sstInfo.setDsTypeInternetBasedTelecom(temp.isDsTypeInternetBasedTelecom());
+        sstInfo.setDsTypeOnlineTraining(temp.isDsTypeOnlineTraining());
+        sstInfo.setDsTypeOthers(temp.isDsTypeOthers());
+        sstInfo.setAchievingValueOfDsDate(temp.getAchievingValueOfDsDate());
+        sstInfo.setDsTotalValue(temp.getDsTotalValue());
+    }
+
+    private void replaceDirectors(final Long employerId, final List<TempDirectorOwner> directors) {
+        directorOwnerRepository.findByEmployerIdAndDeletedFalseOrderByIdAsc(employerId).forEach(existing -> {
+            existing.setDeleted(true);
+            directorOwnerRepository.save(existing);
+        });
+        promoteDirectors(employerId, directors);
+    }
+
+    private void replacePremises(final Long employerId, final List<TempPremises> premises) {
+        premisesRepository.findByEmployerIdAndDeletedFalseOrderByIdAsc(employerId).forEach(existing -> {
+            existing.setDeleted(true);
+            premisesRepository.save(existing);
+        });
+        promotePremises(employerId, premises);
+    }
+
+    private void replaceTariffCodes(final Long employerId, final Long sstInfoId,
+            final List<TempSstTariffCode> tariffCodes) {
+        sstTariffCodeRepository.findByEmployerIdAndDeletedFalseOrderByIdAsc(employerId).forEach(existing -> {
+            existing.setDeleted(true);
+            sstTariffCodeRepository.save(existing);
+        });
+        promoteTariffCodes(employerId, sstInfoId, tariffCodes);
+    }
+
+    private void replaceServiceCategories(final Long employerId, final Long sstInfoId,
+            final List<TempSstServiceCategory> serviceCategories) {
+        sstServiceCategoryRepository.findByEmployerIdAndDeletedFalseOrderByIdAsc(employerId).forEach(existing -> {
+            existing.setDeleted(true);
+            sstServiceCategoryRepository.save(existing);
+        });
+        promoteServiceCategories(employerId, sstInfoId, serviceCategories);
+    }
+
+    private static SstInfo mapSstInfo(final TempSstInfo temp, final Long employerId, final Long caseId,
+            final String smkNo, final TaxType taxType) {
+        final SstInfo sstInfo = new SstInfo();
+        sstInfo.setEmployerId(employerId);
+        sstInfo.setRegGeneralInfoId(caseId);
+        sstInfo.applyTaxSpecificSmk(taxType, smkNo);
+        sstInfo.setTradeName(temp.getTradeName());
+        sstInfo.setTourTaxRegNo(temp.getTourTaxRegNo());
+        sstInfo.setMotacRegNo(temp.getMotacRegNo());
+        sstInfo.setLabuan(temp.isLabuan());
+        sstInfo.setForm1ContactPerson(temp.getForm1ContactPerson());
+        sstInfo.setWebsiteAddress(temp.getWebsiteAddress());
+        sstInfo.setInTaxRefNo(temp.getInTaxRefNo());
+        sstInfo.setCusAudRefNo(temp.getCusAudRefNo());
+        sstInfo.setPreRegNo(temp.getPreRegNo());
+        sstInfo.setPreRegName(temp.getPreRegName());
+        sstInfo.setDateOfReplacement(temp.getDateOfReplacement());
+        sstInfo.setManComDate(temp.getManComDate());
+        sstInfo.setDateSaleValTaxGoods(temp.getDateSaleValTaxGoods());
+        sstInfo.setFinYrEndMon(temp.getFinYrEndMon());
+        sstInfo.setAnTotalTaxSalesVal(temp.getAnTotalTaxSalesVal());
+        sstInfo.setBusinessComDate(temp.getBusinessComDate());
+        sstInfo.setLocalSales(temp.getLocalSales());
+        sstInfo.setExportSales(temp.getExportSales());
+        sstInfo.setSalesToDesignArea(temp.getSalesToDesignArea());
+        sstInfo.setOthersSales(temp.getOthersSales());
+        sstInfo.setSubContractWork(temp.isSubContractWork());
+        sstInfo.setDeclareTrue(temp.isDeclareTrue());
+        sstInfo.setDeclareDate(temp.getDeclareDate());
+        sstInfo.setApplicantName(temp.getApplicantName());
+        sstInfo.setIdentityCard(temp.getIdentityCard());
+        sstInfo.setDesignation(temp.getDesignation());
+        sstInfo.setApplicantEmail(temp.getApplicantEmail());
+        sstInfo.setApplicantTelNo(temp.getApplicantTelNo());
+        sstInfo.setDsTypeSoftwareAppsGame(temp.isDsTypeSoftwareAppsGame());
+        sstInfo.setDsTypeMusicEbookFilm(temp.isDsTypeMusicEbookFilm());
+        sstInfo.setDsTypeAdOnlinePlatform(temp.isDsTypeAdOnlinePlatform());
+        sstInfo.setDsTypeSearchEngineSocialNetwork(temp.isDsTypeSearchEngineSocialNetwork());
+        sstInfo.setDsTypeDatabaseHosting(temp.isDsTypeDatabaseHosting());
+        sstInfo.setDsTypeInternetBasedTelecom(temp.isDsTypeInternetBasedTelecom());
+        sstInfo.setDsTypeOnlineTraining(temp.isDsTypeOnlineTraining());
+        sstInfo.setDsTypeOthers(temp.isDsTypeOthers());
+        sstInfo.setAchievingValueOfDsDate(temp.getAchievingValueOfDsDate());
+        sstInfo.setDsTotalValue(temp.getDsTotalValue());
         sstInfo.setAutoRegistration(false);
         sstInfo.setDeleted(false);
         sstInfo.setCreatedDate(LocalDateTime.now());
@@ -132,6 +265,7 @@ public class SstInfoPromotionService {
             director.setIdentificationNo(temp.getIdentificationNo());
             director.setEmail(temp.getEmail());
             director.setDesignation(temp.getDesignation());
+            director.setTelephoneNo(temp.getTelephoneNo());
             director.setDeleted(false);
             director.setCreatedDate(LocalDateTime.now());
             directorOwnerRepository.save(director);
@@ -170,6 +304,20 @@ public class SstInfoPromotionService {
         }
     }
 
+    private void promoteServiceCategories(final Long employerId, final Long sstInfoId,
+            final List<TempSstServiceCategory> serviceCategories) {
+        for (final TempSstServiceCategory temp : serviceCategories) {
+            final SstServiceCategory category = new SstServiceCategory();
+            category.setSstInfoId(sstInfoId);
+            category.setEmployerId(employerId);
+            category.setSstServiceTypeId(temp.getSstServiceTypeId());
+            category.setRemark(temp.getRemark());
+            category.setDeleted(false);
+            category.setCreatedDate(LocalDateTime.now());
+            sstServiceCategoryRepository.save(category);
+        }
+    }
+
     private void promoteSupportingDocuments(final Long caseId, final Long employerId, final Long sstInfoId,
             final List<TempSstSupportingDocument> supportingDocuments) {
         for (final TempSstSupportingDocument temp : supportingDocuments) {
@@ -195,10 +343,10 @@ public class SstInfoPromotionService {
         }
     }
 
-    private void createActiveStatus(final Long sstInfoId) {
+    private void createActiveStatus(final Long sstInfoId, final TaxType taxType) {
         final SstStatusInfo statusInfo = new SstStatusInfo();
         statusInfo.setSstInfoId(sstInfoId);
-        statusInfo.setTaxTypeId(TaxType.SALES_TAX.getAssistId());
+        statusInfo.setTaxTypeId(taxType.getAssistId());
         statusInfo.setSstStatusId(SstStatus.ACTIVE.getAssistId());
         statusInfo.setStartDate(LocalDate.now());
         statusInfo.setCurrent(true);

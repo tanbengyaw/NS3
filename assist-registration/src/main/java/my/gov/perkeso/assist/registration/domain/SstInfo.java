@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
+import my.gov.perkeso.assist.registration.constant.TaxType;
 
 @Entity
 @Table(name = "sst_info", schema = "registration")
@@ -51,6 +52,18 @@ public class SstInfo {
 
     @Column(name = "tour_tax_reg_no", length = 50)
     private String tourTaxRegNo;
+
+    @Column(name = "motac_reg_no", length = 50)
+    private String motacRegNo;
+
+    @Column(name = "is_labuan", nullable = false)
+    private boolean labuan;
+
+    @Column(name = "form1_contact_person", length = 100)
+    private String form1ContactPerson;
+
+    @Column(name = "website_address", length = 255)
+    private String websiteAddress;
 
     @Column(name = "in_tax_ref_no", length = 50)
     private String inTaxRefNo;
@@ -126,4 +139,65 @@ public class SstInfo {
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
+
+    /** Digital Tax (section 1102) — mirrors ASSIST SstDigitalTaxForm2Dto types of digital service. */
+    @Column(name = "ds_type_software_apps_game", nullable = false)
+    private boolean dsTypeSoftwareAppsGame;
+
+    @Column(name = "ds_type_music_ebook_film", nullable = false)
+    private boolean dsTypeMusicEbookFilm;
+
+    @Column(name = "ds_type_ad_online_platform", nullable = false)
+    private boolean dsTypeAdOnlinePlatform;
+
+    @Column(name = "ds_type_search_engine_social_network", nullable = false)
+    private boolean dsTypeSearchEngineSocialNetwork;
+
+    @Column(name = "ds_type_database_hosting", nullable = false)
+    private boolean dsTypeDatabaseHosting;
+
+    @Column(name = "ds_type_internet_based_telecom", nullable = false)
+    private boolean dsTypeInternetBasedTelecom;
+
+    @Column(name = "ds_type_online_training", nullable = false)
+    private boolean dsTypeOnlineTraining;
+
+    @Column(name = "ds_type_others", nullable = false)
+    private boolean dsTypeOthers;
+
+    @Column(name = "achieving_value_of_ds_date")
+    private LocalDate achievingValueOfDsDate;
+
+    @Column(name = "ds_total_value", precision = 18, scale = 2)
+    private BigDecimal dsTotalValue;
+
+    public String taxSpecificSmkRegNo() {
+        if (salesTaxSmkRegNo != null && !salesTaxSmkRegNo.isBlank()) {
+            return salesTaxSmkRegNo;
+        }
+        if (tourismTaxSmkRegNo != null && !tourismTaxSmkRegNo.isBlank()) {
+            return tourismTaxSmkRegNo;
+        }
+        if (digitalTaxSmkRegNo != null && !digitalTaxSmkRegNo.isBlank()) {
+            return digitalTaxSmkRegNo;
+        }
+        if (dpspTaxSmkRegNo != null && !dpspTaxSmkRegNo.isBlank()) {
+            return dpspTaxSmkRegNo;
+        }
+        if (serviceTaxSmkRegNo != null && !serviceTaxSmkRegNo.isBlank()) {
+            return serviceTaxSmkRegNo;
+        }
+        return smkRegNo;
+    }
+
+    public void applyTaxSpecificSmk(final TaxType taxType, final String smkNo) {
+        setSmkRegNo(smkNo);
+        switch (taxType) {
+            case TOURISM_TAX -> setTourismTaxSmkRegNo(smkNo);
+            case DIGITAL_TAX -> setDigitalTaxSmkRegNo(smkNo);
+            case DPSP_TAX -> setDpspTaxSmkRegNo(smkNo);
+            case SERVICE_TAX -> setServiceTaxSmkRegNo(smkNo);
+            default -> setSalesTaxSmkRegNo(smkNo);
+        }
+    }
 }

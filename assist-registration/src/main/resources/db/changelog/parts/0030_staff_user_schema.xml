@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0030-create-identity-schema" author="ns3">
+        <sql>CREATE SCHEMA IF NOT EXISTS identity;</sql>
+    </changeSet>
+
+    <changeSet id="0030-staff-user" author="ns3">
+        <createTable tableName="staff_user" schemaName="identity">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="email" type="VARCHAR(150)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="branch_id" type="BIGINT"/>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="0030-staff-user-role" author="ns3">
+        <createTable tableName="staff_user_role" schemaName="identity">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="staff_user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_staff_user_role_staff_user"
+                             references="identity.staff_user(id)"/>
+            </column>
+            <column name="role_code" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="staff_user_role" schemaName="identity"
+                             columnNames="staff_user_id, role_code"
+                             constraintName="uk_staff_user_role"/>
+    </changeSet>
+
+    <!-- BCrypt hash for dev password "password" (Spring DelegatingPasswordEncoder {bcrypt} prefix) -->
+    <changeSet id="0030-staff-user-dev-seed" author="ns3">
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="1"/>
+            <column name="username" value="admin"/>
+            <column name="email" value="officer@perkeso.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="2"/>
+            <column name="username" value="ro"/>
+            <column name="email" value="ro.sa@perkeso.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="branch_id" valueNumeric="2"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="3"/>
+            <column name="username" value="uo_jb"/>
+            <column name="email" value="uo.jb@perkeso.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="branch_id" valueNumeric="4"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="4"/>
+            <column name="username" value="pkrbo_kl"/>
+            <column name="email" value="pkrbo.kl@perkeso.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="branch_id" valueNumeric="1"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="5"/>
+            <column name="username" value="officer_pj"/>
+            <column name="email" value="officer.pj@perkeso.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="branch_id" valueNumeric="3"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+        <insert tableName="staff_user" schemaName="identity">
+            <column name="id" valueNumeric="6"/>
+            <column name="username" value="employer"/>
+            <column name="email" value="hr@acme.example"/>
+            <column name="password_hash" value="{bcrypt}$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="created_date" valueDate="2026-01-01T00:00:00"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0030-staff-user-role-dev-seed" author="ns3">
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="1"/><column name="role_code" value="ADMIN"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="1"/><column name="role_code" value="OFFICER"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="2"/><column name="role_code" value="RO"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="3"/><column name="role_code" value="UO"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="4"/><column name="role_code" value="PKR_BO"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="5"/><column name="role_code" value="OFFICER"/></insert>
+        <insert tableName="staff_user_role" schemaName="identity"><column name="staff_user_id" valueNumeric="6"/><column name="role_code" value="EMPLOYER"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

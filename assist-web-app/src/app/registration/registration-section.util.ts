@@ -7,6 +7,9 @@ const SECTION_LABELS: Record<number, string> = {
   1104: 'DPSP tax registration',
   1200: 'Update service tax',
   1201: 'Update sales tax',
+  1202: 'Update tourism tax',
+  1203: 'Update digital tax',
+  1204: 'Update DPSP tax',
   1206: 'Incomplete sales tax',
 };
 

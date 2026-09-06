@@ -1,0 +1,86 @@
+<section class="page">
+  <header>
+    <p class="module-label">Registration</p>
+    <h1>Discontinue tax</h1>
+    <p>Search a currently-active tax registration to start a discontinue case (routes to the UO queue for approval).</p>
+  </header>
+
+  <section class="form-section search-panel">
+    <h2 class="section-withbg">Search active tax payer</h2>
+    <div class="section-body">
+      <form class="search-bar" [formGroup]="form" (ngSubmit)="search()">
+        <label>
+          Tax type
+          <select formControlName="taxType">
+            @for (option of taxTypes; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="grow">
+          Search (employer name / BRN / SMK reg no)
+          <input type="search" formControlName="search" placeholder="Search…" />
+        </label>
+        <button type="submit" class="primary" [disabled]="loading()">Search</button>
+      </form>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message banner">{{ message() }}</p>
+  }
+
+  <section class="form-section">
+    <h2 class="section-withbg">Results</h2>
+    <div class="section-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employer name</th>
+              <th>BRN</th>
+              <th>Tax type</th>
+              <th>SMK reg no</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of results(); track row.sstInfoId) {
+              <tr>
+                <td>{{ row.employerName }}</td>
+                <td class="mono">{{ row.registrationNo }}</td>
+                <td>{{ row.taxTypeLabel }}</td>
+                <td class="mono">{{ row.smkRegNo }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="link-btn"
+                    [disabled]="starting() === row.sstInfoId"
+                    (click)="startDiscontinue(row)"
+                  >
+                    {{ starting() === row.sstInfoId ? 'Starting…' : 'Discontinue' }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">
+                  @if (loading()) {
+                    Searching…
+                  } @else if (searched()) {
+                    No active tax registrations found for this search.
+                  } @else {
+                    Enter a search term and click Search.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</section>

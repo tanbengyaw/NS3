@@ -4,6 +4,8 @@
     <button type="button" class="query" [disabled]="busy" (click)="openQueryModal()">{{ queryLabel }}</button>
     <button type="button" class="reject" [disabled]="busy" (click)="openRejectModal()">{{ rejectLabel }}</button>
   </div>
+} @else if (isOfficer && appStatus === 'SUBMITTED' && isUoOnlySection) {
+  <p class="uo-only-note">Only a UO user may approve, send to query, or reject this case.</p>
 }
 
 <assist-form-modal [open]="queryModalOpen()" title="Send case to query" (closed)="closeQueryModal()">

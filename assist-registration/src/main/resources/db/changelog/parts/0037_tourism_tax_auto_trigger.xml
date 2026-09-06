@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Mirrors ASSIST RegUtility#checkAccomodationServiceAnnualTaxSaleLimit / NewSstRegCounter:
+        a Service Tax registration whose service type includes "Accommodation" and whose annual
+        taxable sales exceed RM 500,000 must also auto-trigger a Tourism Tax registration.
+    -->
+    <changeSet id="0037-ref-sst-service-type-accommodation-flag" author="ns3">
+        <addColumn tableName="ref_sst_service_type" schemaName="reference">
+            <column name="is_accommodation" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Seed the "Accommodation" service type used to trigger tourism tax (legacy group id 1000). -->
+    <changeSet id="0037-seed-sst-service-type-accommodation" author="ns3">
+        <insert tableName="ref_sst_service_type" schemaName="reference">
+            <column name="id" valueNumeric="16"/>
+            <column name="code" value="ACM01"/>
+            <column name="description" value="Accommodation (hotel, inn, lodging house, service apartment, homestay)"/>
+            <column name="is_deleted" valueBoolean="false"/>
+            <column name="is_accommodation" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0037-temp-sst-info-tourism-trigger" author="ns3">
+        <addColumn tableName="temp_sst_info" schemaName="registration">
+            <column name="triggered_tourism_case_id" type="BIGINT"/>
+            <column name="triggered_tourism_case_ref_no" type="VARCHAR(30)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

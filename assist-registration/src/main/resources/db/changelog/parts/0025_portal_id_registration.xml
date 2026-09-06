@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0025-ref-reg-no-type" author="ns3">
+        <createTable tableName="ref_reg_no_type" schemaName="reference">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Legacy RegNoTypeEnum: BRN (1), PTJ (2), Identity number of owner (3) -->
+    <changeSet id="0025-seed-reg-no-types" author="ns3">
+        <insert tableName="ref_reg_no_type" schemaName="reference">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="BRN"/>
+            <column name="sort_order" valueNumeric="1"/>
+        </insert>
+        <insert tableName="ref_reg_no_type" schemaName="reference">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="PTJ"/>
+            <column name="sort_order" valueNumeric="2"/>
+        </insert>
+        <insert tableName="ref_reg_no_type" schemaName="reference">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="Identity number of owner"/>
+            <column name="sort_order" valueNumeric="3"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="0025-portal-id-type-eligible" author="ns3">
+        <addColumn tableName="ref_identification_type" schemaName="reference">
+            <column name="portal_form_eligible" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="ref_identification_type" schemaName="reference">
+            <column name="portal_form_eligible" valueBoolean="true"/>
+            <where>id IN (2, 4)</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="0025-portal-user-profile" author="ns3">
+        <addColumn tableName="portal_user" schemaName="registration">
+            <column name="employer_name" type="VARCHAR(200)"/>
+            <column name="registration_type_id" type="BIGINT"/>
+            <column name="registration_no" type="VARCHAR(50)"/>
+            <column name="address_line1" type="VARCHAR(200)"/>
+            <column name="address_line2" type="VARCHAR(200)"/>
+            <column name="address_line3" type="VARCHAR(200)"/>
+            <column name="state_id" type="BIGINT"/>
+            <column name="city_id" type="BIGINT"/>
+            <column name="city_name" type="VARCHAR(100)"/>
+            <column name="post_code" type="VARCHAR(10)"/>
+            <column name="full_name" type="VARCHAR(150)"/>
+            <column name="identification_type_id" type="BIGINT"/>
+            <column name="identification_no" type="VARCHAR(50)"/>
+            <column name="phone_calling_code" type="VARCHAR(10)"/>
+            <column name="phone_number" type="VARCHAR(30)"/>
+            <column name="security_phrase" type="VARCHAR(100)"/>
+            <column name="enrollment_status" type="VARCHAR(30)" defaultValue="SUBMITTED"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

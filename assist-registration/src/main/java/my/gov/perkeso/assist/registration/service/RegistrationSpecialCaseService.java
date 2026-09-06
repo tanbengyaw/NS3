@@ -2,7 +2,7 @@ package my.gov.perkeso.assist.registration.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import my.gov.perkeso.assist.registration.constant.RegistrationSection;
+import my.gov.perkeso.assist.registration.constant.RegistrationSectionRouting;
 import my.gov.perkeso.assist.registration.constant.RegistrationSpecialCaseType;
 import my.gov.perkeso.assist.registration.data.RegistrationSpecialCase;
 import my.gov.perkeso.assist.registration.domain.RegGeneralInfo;
@@ -28,8 +28,15 @@ public class RegistrationSpecialCaseService {
             return specialCases;
         }
 
-        if (regCase.getSectionId() != null
-                && regCase.getSectionId() == RegistrationSection.REG_NEW_REG_SST_SALES_TAX.getAssistSectionId()) {
+        if (RegistrationSectionRouting.isSstNewRegSection(regCase.getSectionId())) {
+            return specialCases;
+        }
+
+        if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())
+                || RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())) {
+            // The temp employer's BRN legitimately matches the very employer being updated/
+            // discontinued — duplicate-BRN detection is meaningless (and always a false positive)
+            // for these cases.
             return specialCases;
         }
 
