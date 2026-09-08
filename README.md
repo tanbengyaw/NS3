@@ -119,7 +119,8 @@ Phase 1 vertical slice: **employer registration** (search, registration cases, a
 | Later | **Full national postcode master** | Dev seeds cover all wizard postcodes + area codes (0024). Production: export legacy ASSIST → CSV → Liquibase. See [docs/reference-data-load.md](./docs/reference-data-load.md). |
 | Later | PostgreSQL hardening | Dev uses H2; prod profile already defined |
 | Later | Directors, premises, documents | Additional Form 1 / attachments |
-| Later | jBPM / full ASSIST workflow parity | Out of Phase 1 scope |
+| Later | jBPM / full ASSIST workflow parity | Out of Phase 1 scope — see [docs/legacy-bpm-parity-plan.md](./docs/legacy-bpm-parity-plan.md) |
+| **Phase 1** | **Admin / staff menu scope** | NS3 sidebar only — legacy BASE menus (My Task, Workflow, Maintenance, Quartz, etc.) not required; see [docs/admin-menu-scope.md](./docs/admin-menu-scope.md) |
 | Later | **Remaining SST tax flows** (service / digital) | Sales (1100), tourism (1101), and DPSP (1104) new-reg are done. Workshop: [docs/sst-discovery-workshop.md](./docs/sst-discovery-workshop.md) · Question bank: [docs/sst-discovery-questions.md](./docs/sst-discovery-questions.md) |
 | Later | **Portal submit → branch routing** | Done — `PostcodeBranchRoutingService` on portal submit |
 | Later | **Role-based submit routing** | Done — `RegistrationCaseSubmitRouter` + `RegistrationSectionRouting` (RO / UO / PKR_BO / section-aware) |

@@ -25,6 +25,9 @@
       <p class="success-lead">
         Portal ID <strong>{{ result.username }}</strong> was created for
         {{ applicationTypeLabel(result.applicationType) }} enrollment.
+        @if (!result.loginActive) {
+          An officer must approve the enrollment and set an initial password before the user can sign in.
+        }
       </p>
       <dl class="result-grid">
         <div>
@@ -90,6 +93,26 @@
           }
 
           @if (user.enrollmentStatus === 'SUBMITTED') {
+            <div class="approve-form">
+              <label>
+                Initial password (for portal login)
+                <input
+                  type="password"
+                  autocomplete="new-password"
+                  [value]="approvePassword()"
+                  (input)="approvePassword.set($any($event.target).value)"
+                  placeholder="Set password for applicant sign-in"
+                />
+              </label>
+              <div class="action-row">
+                <button type="button" class="primary" [disabled]="loading()" (click)="approveEnrollment()">
+                  Approve &amp; activate login
+                </button>
+                <button type="button" class="danger" [disabled]="loading()" (click)="rejectEnrollment()">
+                  Reject
+                </button>
+              </div>
+            </div>
             <div class="query-form">
               <label>
                 Query remark
@@ -104,6 +127,10 @@
                 Send to query
               </button>
             </div>
+          }
+
+          @if (user.enrollmentStatus === 'APPROVED') {
+            <p class="message">Login active since {{ formatDate(user.approvedDate) }}. User can sign in with their portal username.</p>
           }
         </section>
       }

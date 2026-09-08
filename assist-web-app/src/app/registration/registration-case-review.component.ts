@@ -32,6 +32,7 @@ export class RegistrationCaseReviewComponent {
   readonly branchLabels = signal<Map<number, string>>(new Map());
 
   readonly fromInbox = this.route.snapshot.queryParamMap.get('from') === 'inbox';
+  readonly fromBase = this.route.snapshot.queryParamMap.get('from') === 'base';
 
   constructor() {
     this.referenceData.listBranches().subscribe({

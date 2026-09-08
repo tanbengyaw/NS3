@@ -23,6 +23,10 @@ export class ShellComponent {
     return this.auth.hasRole('ADMIN');
   }
 
+  get isPortalEmployer(): boolean {
+    return this.auth.isPortalEmployer();
+  }
+
   logout(): void {
     this.auth.logout();
     void this.router.navigate(['/login']);

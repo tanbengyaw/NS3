@@ -34,4 +34,6 @@ public class PortalUserData {
     private final String queryRemark;
     private final LocalDateTime enrolledDate;
     private final LocalDateTime linkedDate;
+    private final boolean loginActive;
+    private final LocalDateTime approvedDate;
 }

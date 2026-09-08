@@ -43,6 +43,7 @@ export class PortalIdRegistrationComponent implements OnInit {
   readonly loadedUser = signal<PortalUser | null>(null);
   readonly lookupUsername = signal('');
   readonly queryRemark = signal('');
+  readonly approvePassword = signal('');
 
   readonly form = this.fb.nonNullable.group({
     applicationType: ['NEW_EMPLOYER' as PortalApplicationType, Validators.required],
@@ -152,6 +153,7 @@ export class PortalIdRegistrationComponent implements OnInit {
     this.loadedUser.set(null);
     this.lookupUsername.set('');
     this.queryRemark.set('');
+    this.approvePassword.set('');
     if (mode === 'new') {
       this.resetEnrollmentForm();
     }
@@ -206,6 +208,59 @@ export class PortalIdRegistrationComponent implements OnInit {
       error: err => {
         this.loading.set(false);
         this.error.set(this.httpErrorMessage(err, 'Failed to send enrollment to query.'));
+      },
+    });
+  }
+
+  approveEnrollment(): void {
+    const user = this.loadedUser();
+    const password = this.approvePassword().trim();
+    if (!user) {
+      return;
+    }
+    if (!password) {
+      this.error.set('Enter an initial password for the portal user.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+    this.portalEnrollment.approveEnrollment(user.username, password).subscribe({
+      next: updated => {
+        this.loading.set(false);
+        this.loadedUser.set(updated);
+        this.approvePassword.set('');
+        this.message.set(
+          `Portal ID ${updated.username} approved. They can sign in with that username and the initial password.`,
+        );
+      },
+      error: err => {
+        this.loading.set(false);
+        this.error.set(this.httpErrorMessage(err, 'Failed to approve enrollment.'));
+      },
+    });
+  }
+
+  rejectEnrollment(): void {
+    const user = this.loadedUser();
+    if (!user) {
+      return;
+    }
+    if (!window.confirm(`Reject portal enrollment for ${user.username}?`)) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+    this.portalEnrollment.rejectEnrollment(user.username).subscribe({
+      next: updated => {
+        this.loading.set(false);
+        this.loadedUser.set(updated);
+        this.message.set(`Enrollment rejected for ${updated.username}.`);
+      },
+      error: err => {
+        this.loading.set(false);
+        this.error.set(this.httpErrorMessage(err, 'Failed to reject enrollment.'));
       },
     });
   }
@@ -426,6 +481,7 @@ export class PortalIdRegistrationComponent implements OnInit {
     this.loadedUser.set(null);
     this.lookupUsername.set('');
     this.queryRemark.set('');
+    this.approvePassword.set('');
     this.enrollmentResult.set(null);
     this.submittedUsername.set(null);
     this.message.set(null);

@@ -265,6 +265,14 @@ public class RegistrationApiClient {
         return exchangeJson(HttpMethod.POST, "/portal-users/" + username + "/query", json);
     }
 
+    public JsonNode approvePortalEnrollment(final String username, final String json) {
+        return exchangeJson(HttpMethod.POST, "/portal-users/" + username + "/approve", json);
+    }
+
+    public JsonNode rejectPortalEnrollment(final String username) {
+        return exchangeJson(HttpMethod.POST, "/portal-users/" + username + "/reject", "{}");
+    }
+
     public JsonNode resubmitPortalEnrollment(final String username, final String json) {
         return exchangeJson(HttpMethod.PUT, "/portal-enrollments/" + username + "/resubmit", json);
     }

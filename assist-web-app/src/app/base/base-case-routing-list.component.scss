@@ -1,0 +1,171 @@
+.page header {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0 0 0.25rem;
+  }
+
+  .module-label {
+    margin: 0 0 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #1a73e8;
+  }
+
+  p {
+    margin: 0;
+    color: #5f6368;
+    max-width: 42rem;
+  }
+}
+
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #5f6368;
+    min-width: 18rem;
+  }
+
+  input {
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  button {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+
+    &.secondary {
+      color: #5f6368;
+    }
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  button {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+
+    &.active {
+      border-color: #1a73e8;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.55rem 0.65rem;
+    border-bottom: 1px solid #e8eaed;
+    text-align: left;
+    font-size: 0.875rem;
+  }
+
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+  }
+}
+
+.routed-to {
+  font-weight: 600;
+  color: #174ea6;
+  max-width: 16rem;
+}
+
+.empty {
+  color: #5f6368;
+  text-align: center;
+}
+
+.error.banner {
+  padding: 0.75rem 1rem;
+  background: #fce8e6;
+  border: 1px solid #ea4335;
+  border-radius: 4px;
+  color: #c5221f;
+  margin-bottom: 1rem;
+}
+
+.row-actions a,
+.case-ref-link {
+  color: #1a73e8;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.mono {
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.8125rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-submitted {
+  background: #e8f0fe;
+  color: #1967d2;
+}
+
+.status-in-progress {
+  background: #fef7e0;
+  color: #b06000;
+}
+
+.status-in-query {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+.status-rejected {
+  background: #fce8e6;
+  color: #a50e0e;
+}
+
+.status-approved {
+  background: #e6f4ea;
+  color: #137333;
+}

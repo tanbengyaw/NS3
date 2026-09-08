@@ -1,7 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PortalUser } from '../models/portal.model';
 
 const STORAGE_KEY = 'assist.auth';
 
@@ -44,9 +45,20 @@ export class AuthService {
       map((profile) => {
         this.updateSessionProfile(profile.roles ?? [], profile.branchId ?? null);
       }),
-      catchError((err) => {
-        this.logout();
-        return throwError(() => err);
+      catchError((staffErr: HttpErrorResponse) => {
+        if (staffErr.status !== 404) {
+          this.logout();
+          return throwError(() => staffErr);
+        }
+        return this.http.get<PortalUser>(`${environment.apiBaseUrl}/portal-users/me`).pipe(
+          map(() => {
+            this.updateSessionProfile(['EMPLOYER'], null);
+          }),
+          catchError((portalErr) => {
+            this.logout();
+            return throwError(() => portalErr);
+          }),
+        );
       }),
     );
   }
@@ -66,6 +78,10 @@ export class AuthService {
 
   hasStaffAccess(): boolean {
     return this.hasAnyRole('ADMIN', 'OFFICER', 'RO', 'UO', 'PKR_BO');
+  }
+
+  isPortalEmployer(): boolean {
+    return this.hasRole('EMPLOYER') && !this.hasStaffAccess();
   }
 
   hasAnyRole(...roles: string[]): boolean {

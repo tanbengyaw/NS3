@@ -27,6 +27,14 @@ export class PortalEnrollmentService {
     return this.http.post<PortalUser>(`${this.usersBase}/${encodeURIComponent(username)}/query`, { remark });
   }
 
+  approveEnrollment(username: string, password: string): Observable<PortalUser> {
+    return this.http.post<PortalUser>(`${this.usersBase}/${encodeURIComponent(username)}/approve`, { password });
+  }
+
+  rejectEnrollment(username: string): Observable<PortalUser> {
+    return this.http.post<PortalUser>(`${this.usersBase}/${encodeURIComponent(username)}/reject`, {});
+  }
+
   resubmitEnrollment(username: string, body: PortalEnrollmentResubmitRequest): Observable<PortalUser> {
     return this.http.put<PortalUser>(
       `${this.enrollmentsBase}/${encodeURIComponent(username)}/resubmit`,

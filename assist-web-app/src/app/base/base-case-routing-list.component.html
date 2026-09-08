@@ -1,0 +1,109 @@
+<section class="page">
+  <header>
+    <p class="module-label">Base</p>
+    <h1>Case routing listing</h1>
+    <p>
+      Check which role or officer queue currently owns a registration case. Listing follows branch rules
+      (admin sees all branches; other staff see their processing branch).
+    </p>
+  </header>
+
+  @if (!isStaff) {
+    <p class="error banner">Staff role required to view case routing.</p>
+  } @else {
+    <form class="search-bar" [formGroup]="searchForm" (ngSubmit)="searchByRef()">
+      <label>
+        Case ref no
+        <input formControlName="caseRefNo" placeholder="e.g. CUN092026C200000002" />
+      </label>
+      <button type="submit" [disabled]="loading()">Search</button>
+      @if (searchedCase() || searchForm.controls.caseRefNo.value.trim()) {
+        <button type="button" class="secondary" [disabled]="loading()" (click)="clearSearch()">Clear</button>
+      }
+    </form>
+
+    @if (!searchedCase()) {
+      <div class="filters">
+        <button type="button" [class.active]="statusFilter() === 'ACTIVE'" (click)="setStatusFilter('ACTIVE')">
+          Active workflow
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'SUBMITTED'" (click)="setStatusFilter('SUBMITTED')">
+          Submitted
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'IN_PROGRESS'" (click)="setStatusFilter('IN_PROGRESS')">
+          In progress
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'IN_QUERY'" (click)="setStatusFilter('IN_QUERY')">
+          In query
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'REJECTED'" (click)="setStatusFilter('REJECTED')">
+          Rejected
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'APPROVED'" (click)="setStatusFilter('APPROVED')">
+          Approved
+        </button>
+        <button type="button" [class.active]="statusFilter() === 'ALL'" (click)="setStatusFilter('ALL')">
+          All
+        </button>
+        <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="error banner">{{ error() }}</p>
+    }
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Case ref</th>
+            <th>Status</th>
+            <th>Routed to</th>
+            <th>Section</th>
+            <th>Branch</th>
+            <th>Business</th>
+            <th>BRN</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of displayedCases(); track item.id) {
+            <tr>
+              <td class="mono">
+                <a class="case-ref-link" [routerLink]="caseLink(item)" [queryParams]="caseLinkQueryParams()">{{
+                  item.caseRefNo
+                }}</a>
+              </td>
+              <td>
+                <span class="status-badge" [class]="statusClass(item.appStatus)">{{ item.appStatus }}</span>
+              </td>
+              <td class="routed-to">{{ routedTo(item) }}</td>
+              <td>{{ sectionLabel(item) }}</td>
+              <td>{{ item.processingBranchName ?? item.processingPksBranchId ?? '—' }}</td>
+              <td>{{ item.employerName }}</td>
+              <td class="mono">{{ item.registrationNo }}</td>
+              <td>{{ formatWhen(item.submissionDate) }}</td>
+              <td class="row-actions">
+                <a [routerLink]="caseLink(item)" [queryParams]="caseLinkQueryParams()">View →</a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="empty">
+                @if (loading()) {
+                  Loading…
+                } @else if (searchedCase()) {
+                  No case matched the search.
+                } @else {
+                  No cases for this filter.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -45,6 +45,7 @@ public class RegistrationCaseWritePlatformService {
     private final PostcodeBranchRoutingService postcodeBranchRoutingService;
     private final PlatformUserContext platformUserContext;
     private final DiscontinueTaxCaseService discontinueTaxCaseService;
+    private final SstNotificationWriteService sstNotificationWriteService;
 
     @Transactional
     public CommandProcessingResult createCase(final JsonCommand command) {
@@ -126,8 +127,20 @@ public class RegistrationCaseWritePlatformService {
 
         regCase.setAppStatus(submitStatus);
         regGeneralInfoRepository.save(regCase);
+        notifyRegistrationSubmitted(currentUser, submitStatus);
         return CommandProcessingResult.withChanges(regCase.getId(), regCase.getCaseRefNo(),
                 submitChanges(submitStatus, specialCases));
+    }
+
+    private void notifyRegistrationSubmitted(final PlatformUser currentUser, final AppStatus submitStatus) {
+        if (currentUser.isEmployer() && submitStatus == AppStatus.SUBMITTED) {
+            sstNotificationWriteService.notifyPortalUserByUsername(currentUser.username(),
+                    SstNotificationWriteService.REG_SUBMITTED);
+        }
+    }
+
+    private void notifyRegistrationApproved(final Long employerId) {
+        sstNotificationWriteService.notifyEmployerPortalUsers(employerId, SstNotificationWriteService.REG_APPROVED);
     }
 
     private static Map<String, Object> submitChanges(final AppStatus appStatus,
@@ -197,6 +210,7 @@ public class RegistrationCaseWritePlatformService {
         regCase.setEmployerId(employer.getId());
         regCase.setUpdatedDate(LocalDateTime.now());
         regGeneralInfoRepository.save(regCase);
+        notifyRegistrationApproved(employer.getId());
 
         final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
                 "employerCode", employer.getEmployerCode(), "appStatus", AppStatus.APPROVED.name()));

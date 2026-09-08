@@ -51,6 +51,8 @@ export interface PortalUser {
   queryRemark: string | null;
   enrolledDate: string | null;
   linkedDate: string | null;
+  loginActive: boolean;
+  approvedDate: string | null;
 }
 
 export type PortalPageMode = 'new' | 'manage';

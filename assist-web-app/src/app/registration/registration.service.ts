@@ -37,6 +37,10 @@ export class RegistrationService {
     return this.http.get<RegistrationCase>(`${this.base}/id/${caseId}`);
   }
 
+  getCaseByRefNo(caseRefNo: string): Observable<RegistrationCase> {
+    return this.http.get<RegistrationCase>(`${this.base}/${encodeURIComponent(caseRefNo.trim())}`);
+  }
+
   listCases(params?: {
     appStatus?: string;
     sectionId?: number;

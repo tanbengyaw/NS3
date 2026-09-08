@@ -10,6 +10,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
+import my.gov.perkeso.assist.identity.data.PortalEnrollmentApproveRequest;
 import my.gov.perkeso.assist.identity.data.PortalEnrollmentQueryRequest;
 import my.gov.perkeso.assist.identity.data.PortalUserData;
 import my.gov.perkeso.assist.identity.service.PortalEnrollmentReadPlatformService;
@@ -50,9 +51,31 @@ public class PortalUsersApiResource {
         return writeService.queryEnrollment(username, parseQueryRequest(json).getRemark());
     }
 
+    @POST
+    @Path("{username}/approve")
+    @Operation(summary = "Approve portal enrollment and activate login")
+    public PortalUserData approveEnrollment(@PathParam("username") final String username, final String json) {
+        return writeService.approveEnrollment(username, parseApproveRequest(json).getPassword());
+    }
+
+    @POST
+    @Path("{username}/reject")
+    @Operation(summary = "Reject a submitted portal enrollment")
+    public PortalUserData rejectEnrollment(@PathParam("username") final String username) {
+        return writeService.rejectEnrollment(username);
+    }
+
     private PortalEnrollmentQueryRequest parseQueryRequest(final String json) {
         try {
             return objectMapper.readValue(json, PortalEnrollmentQueryRequest.class);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid JSON payload", ex);
+        }
+    }
+
+    private PortalEnrollmentApproveRequest parseApproveRequest(final String json) {
+        try {
+            return objectMapper.readValue(json, PortalEnrollmentApproveRequest.class);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Invalid JSON payload", ex);
         }

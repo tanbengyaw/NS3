@@ -17,8 +17,11 @@ import { UpdateTaxPayerSearchComponent } from './registration/update-tax-payer-s
 import { DiscontinueTaxSearchComponent } from './registration/discontinue-tax-search.component';
 import { DiscontinueTaxCaseComponent } from './registration/discontinue-tax-case.component';
 import { PortalIdRegistrationComponent } from './portal/portal-id-registration.component';
+import { BaseCaseRoutingListComponent } from './base/base-case-routing-list.component';
+import { TaxRegistrant360Component } from './base/tax-registrant-360.component';
 import { StaffUsersListComponent } from './admin/staff-users-list.component';
 import { adminGuard } from './core/auth/admin.guard';
+import { RoleHomeRedirectComponent } from './core/auth/role-home-redirect.component';
 
 
 
@@ -36,7 +39,7 @@ export const routes: Routes = [
 
     children: [
 
-      { path: '', pathMatch: 'full', redirectTo: 'employers' },
+      { path: '', pathMatch: 'full', component: RoleHomeRedirectComponent },
 
       { path: 'employers', component: EmployersListComponent },
       { path: 'employers/:employerId', component: EmployerDetailComponent },
@@ -73,6 +76,9 @@ export const routes: Routes = [
       { path: 'registration/discontinue-tax/:caseId', component: DiscontinueTaxCaseComponent },
 
       { path: 'portal-id-registration', component: PortalIdRegistrationComponent },
+
+      { path: 'base/case-routing', component: BaseCaseRoutingListComponent },
+      { path: 'base/tax-registrant', component: TaxRegistrant360Component },
 
       { path: 'admin/staff-users', component: StaffUsersListComponent, canActivate: [adminGuard] },
 

@@ -36,6 +36,8 @@ final class PortalUserMapper {
                 .queryRemark(portalUser.getQueryRemark())
                 .enrolledDate(portalUser.getEnrolledDate())
                 .linkedDate(portalUser.getLinkedDate())
+                .loginActive(portalUser.isLoginEnabled())
+                .approvedDate(portalUser.getApprovedDate())
                 .build();
     }
 }

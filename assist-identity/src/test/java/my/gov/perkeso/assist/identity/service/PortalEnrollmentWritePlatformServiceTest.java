@@ -13,18 +13,21 @@ import my.gov.perkeso.assist.core.security.PlatformUserContext;
 import my.gov.perkeso.assist.core.security.PlatformUserRole;
 import my.gov.perkeso.assist.identity.constant.PortalApplicationType;
 import my.gov.perkeso.assist.identity.data.PortalEnrollmentRequest;
+import my.gov.perkeso.assist.identity.domain.StaffUserRepository;
 import my.gov.perkeso.assist.registration.domain.Employer;
 import my.gov.perkeso.assist.registration.domain.EmployerRepository;
 import my.gov.perkeso.assist.registration.domain.PortalUser;
 import my.gov.perkeso.assist.registration.domain.PortalUserRepository;
 import my.gov.perkeso.assist.registration.domain.base.UserEmployer;
 import my.gov.perkeso.assist.registration.service.BaseUserEmployerEnrollmentService;
+import my.gov.perkeso.assist.registration.service.SstNotificationWriteService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class PortalEnrollmentWritePlatformServiceTest {
@@ -41,11 +44,21 @@ class PortalEnrollmentWritePlatformServiceTest {
     @Mock
     private PlatformUserContext platformUserContext;
 
+    @Mock
+    private StaffUserRepository staffUserRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private SstNotificationWriteService sstNotificationWriteService;
+
     @InjectMocks
     private PortalEnrollmentWritePlatformService writeService;
 
     @Test
     void enrollsNewEmployerPortalUser() {
+        when(staffUserRepository.findByUsernameIgnoreCase("portal1")).thenReturn(Optional.empty());
         when(portalUserRepository.findByUsernameIgnoreCase("portal1")).thenReturn(Optional.empty());
         when(portalUserRepository.findByEmailIgnoreCase("portal1@example.com")).thenReturn(Optional.empty());
         when(portalUserRepository.save(any(PortalUser.class))).thenAnswer(invocation -> {
@@ -81,6 +94,7 @@ class PortalEnrollmentWritePlatformServiceTest {
         employer.setId(99L);
         employer.setEmployerCode("A3700000001F");
 
+        when(staffUserRepository.findByUsernameIgnoreCase("hr1")).thenReturn(Optional.empty());
         when(portalUserRepository.findByUsernameIgnoreCase("hr1")).thenReturn(Optional.empty());
         when(portalUserRepository.findByEmailIgnoreCase("hr1@example.com")).thenReturn(Optional.empty());
         when(employerRepository.findByEmployerCodeAndDeletedFalse("A3700000001F")).thenReturn(Optional.of(employer));
@@ -110,6 +124,29 @@ class PortalEnrollmentWritePlatformServiceTest {
         verify(portalUserRepository, times(2)).save(captor.capture());
         assertThat(captor.getAllValues().get(1).getEmployerCode()).isEqualTo("A3700000001F");
         assertThat(captor.getAllValues().get(1).getUserEmployerId()).isEqualTo(101L);
+    }
+
+    @Test
+    void approvesSubmittedPortalEnrollment() {
+        final PortalUser portalUser = new PortalUser();
+        portalUser.setId(20L);
+        portalUser.setUsername("portal1");
+        portalUser.setEmail("portal1@example.com");
+        portalUser.setEnrollmentStatus("SUBMITTED");
+
+        when(platformUserContext.getCurrentUser()).thenReturn(officerUser());
+        when(portalUserRepository.findByUsernameIgnoreCase("portal1")).thenReturn(Optional.of(portalUser));
+        when(staffUserRepository.findByUsernameIgnoreCase("portal1")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("Secret123")).thenReturn("{bcrypt}hash");
+        when(portalUserRepository.save(any(PortalUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        final var result = writeService.approveEnrollment("portal1", "Secret123");
+
+        assertThat(result.getEnrollmentStatus()).isEqualTo("APPROVED");
+        assertThat(result.isLoginActive()).isTrue();
+        assertThat(portalUser.getPasswordHash()).isEqualTo("{bcrypt}hash");
+        assertThat(portalUser.isActive()).isTrue();
+        assertThat(portalUser.getApprovedDate()).isNotNull();
     }
 
     private static PortalEnrollmentRequest sampleRequest(final String username, final String email,

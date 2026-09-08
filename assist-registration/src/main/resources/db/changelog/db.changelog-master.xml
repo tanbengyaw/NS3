@@ -46,5 +46,7 @@
     <include file="db/changelog/parts/0039_digital_tax_fields.xml"/>
     <include file="db/changelog/parts/0040_uo_shah_alam_seed.xml"/>
     <include file="db/changelog/parts/0041_discontinue_tax.xml"/>
+    <include file="db/changelog/parts/0042_portal_user_login.xml"/>
+    <include file="db/changelog/parts/0043_sst_notification.xml"/>
 
 </databaseChangeLog>

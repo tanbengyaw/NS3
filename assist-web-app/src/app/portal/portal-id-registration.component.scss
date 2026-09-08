@@ -238,6 +238,45 @@ select {
   }
 }
 
+.approve-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #f8f9fa;
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  input {
+    display: block;
+    width: 100%;
+    max-width: 20rem;
+    margin-top: 0.35rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  button.danger {
+    background: #c5221f;
+    color: #fff;
+    border: none;
+  }
+}
+
 .success {
   color: #137333;
   margin: 0 0 1rem;

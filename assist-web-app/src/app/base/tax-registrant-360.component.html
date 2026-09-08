@@ -1,0 +1,135 @@
+<section class="page tax-registrant">
+  <header class="page-header">
+    <p class="module-label">Base</p>
+    <h1>Tax Registrant 360</h1>
+  </header>
+
+  @if (loading()) {
+    <p class="status">Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else {
+    @if (summary(); as header) {
+      <aside class="taxpayer-banner">
+        <div>
+          <span class="label">Taxpayer Name</span>
+          <strong>{{ header.taxpayerName }}</strong>
+        </div>
+        <div>
+          <span class="label">SST Registration No.</span>
+          <strong>{{ header.sstRegistrationNo }}</strong>
+        </div>
+      </aside>
+    }
+
+    <nav class="tab-bar">
+      <button type="button" [class.active]="activeTab() === 'notifications'" (click)="setTab('notifications')">
+        Notification
+      </button>
+      <button
+        type="button"
+        [class.active]="activeTab() === 'registration-info'"
+        (click)="setTab('registration-info')"
+      >
+        Registration Information
+      </button>
+    </nav>
+
+    @if (activeTab() === 'notifications') {
+      <section class="panel">
+        <h2 class="section-title">Notification Listing</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Details</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of notifications(); track item.id; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ item.details }}</td>
+                  <td>{{ formatDate(item.createdDate) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="empty">No notifications yet.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="table-footer">{{ notifications().length }} result(s)</p>
+      </section>
+    }
+
+    @if (activeTab() === 'registration-info') {
+      <section class="panel">
+        @if (registrationInfo(); as info) {
+          <div class="accordion">
+            <button type="button" class="accordion-header" (click)="toggleCompanyExpanded()">
+              <span class="icon">{{ companyExpanded() ? '−' : '+' }}</span>
+              Company Info
+            </button>
+            @if (companyExpanded()) {
+              <div class="accordion-body preview-grid">
+                <div><span class="field-label">Business type</span><span>{{ info.companyInfo.businessType }}</span></div>
+                <div><span class="field-label">Business registration no.</span><span>{{ info.companyInfo.businessRegistrationNo }}</span></div>
+                <div><span class="field-label">Registered business name</span><span>{{ info.companyInfo.registeredBusinessName }}</span></div>
+                <div><span class="field-label">Trade name</span><span>{{ info.companyInfo.tradeName }}</span></div>
+                <div class="full"><span class="field-label">Premise address</span><span>{{ info.companyInfo.premiseAddressLine1 }}</span></div>
+                @if (info.companyInfo.premiseAddressLine2) {
+                  <div class="full"><span>{{ info.companyInfo.premiseAddressLine2 }}</span></div>
+                }
+                @if (info.companyInfo.premiseAddressLine3) {
+                  <div class="full"><span>{{ info.companyInfo.premiseAddressLine3 }}</span></div>
+                }
+                <div><span class="field-label">Tel no.</span><span>{{ info.companyInfo.telNo }}</span></div>
+              </div>
+            }
+          </div>
+
+          <div class="accordion">
+            <button type="button" class="accordion-header" (click)="toggleRegistrationTypeExpanded()">
+              <span class="icon">{{ registrationTypeExpanded() ? '−' : '+' }}</span>
+              Registration Type
+            </button>
+            @if (registrationTypeExpanded()) {
+              <div class="accordion-body">
+                @if (info.registrationTypes.length === 0) {
+                  <p class="empty">No SST registrations linked yet. Complete a registration case to see tax types here.</p>
+                } @else {
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Tax type</th>
+                          <th>SST registration no.</th>
+                          <th>Registered date</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of info.registrationTypes; track row.sstRegistrationNo + row.taxType) {
+                          <tr>
+                            <td>{{ row.taxType }}</td>
+                            <td class="mono">{{ row.sstRegistrationNo }}</td>
+                            <td>{{ formatDate(row.registeredDate) }}</td>
+                            <td>{{ row.status }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+</section>

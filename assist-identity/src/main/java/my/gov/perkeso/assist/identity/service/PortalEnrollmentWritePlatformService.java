@@ -9,6 +9,7 @@ import my.gov.perkeso.assist.identity.constant.PortalApplicationType;
 import my.gov.perkeso.assist.identity.constant.PortalEnrollmentStatus;
 import my.gov.perkeso.assist.identity.data.PortalEnrollmentRequest;
 import my.gov.perkeso.assist.identity.data.PortalUserData;
+import my.gov.perkeso.assist.identity.domain.StaffUserRepository;
 import my.gov.perkeso.assist.registration.domain.Employer;
 import my.gov.perkeso.assist.registration.domain.EmployerRepository;
 import my.gov.perkeso.assist.registration.domain.PortalUser;
@@ -17,6 +18,8 @@ import my.gov.perkeso.assist.registration.domain.base.BaseReferenceIds;
 import my.gov.perkeso.assist.registration.domain.base.UserEmployer;
 import my.gov.perkeso.assist.registration.service.BaseUserEmployerEnrollmentCommand;
 import my.gov.perkeso.assist.registration.service.BaseUserEmployerEnrollmentService;
+import my.gov.perkeso.assist.registration.service.SstNotificationWriteService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +29,11 @@ public class PortalEnrollmentWritePlatformService {
 
     private final PortalUserRepository portalUserRepository;
     private final EmployerRepository employerRepository;
+    private final StaffUserRepository staffUserRepository;
     private final BaseUserEmployerEnrollmentService baseUserEmployerEnrollmentService;
     private final PlatformUserContext platformUserContext;
+    private final PasswordEncoder passwordEncoder;
+    private final SstNotificationWriteService sstNotificationWriteService;
 
     @Transactional
     public PortalUserData enroll(final PortalEnrollmentRequest request) {
@@ -43,6 +49,7 @@ public class PortalEnrollmentWritePlatformService {
         portalUserRepository.findByEmailIgnoreCase(email).ifPresent(existing -> {
             throw new IllegalArgumentException("Portal email already exists: " + email);
         });
+        assertUsernameAvailableForPortalLogin(username);
 
         final PortalApplicationType applicationType = PortalApplicationType.fromValue(request.getApplicationType());
         final PortalUser portalUser = buildPortalUser(request, username, email, applicationType);
@@ -50,6 +57,8 @@ public class PortalEnrollmentWritePlatformService {
 
         final PortalUser savedPortalUser = portalUserRepository.save(portalUser);
         linkUserEmployer(savedPortalUser, request, applicationType, registrationEmployerId);
+        sstNotificationWriteService.notifyPortalUser(savedPortalUser.getId(),
+                SstNotificationWriteService.PORTAL_ENROLLMENT_SUBMITTED);
 
         return PortalUserMapper.toData(savedPortalUser);
     }
@@ -92,6 +101,42 @@ public class PortalEnrollmentWritePlatformService {
 
         baseUserEmployerEnrollmentService.updateEnrollmentProfile(portalUser.getUserEmployerId(),
                 toEnrollmentCommand(portalUser.getId(), request, applicationType, registrationEmployerId));
+
+        return PortalUserMapper.toData(portalUser);
+    }
+
+    @Transactional
+    public PortalUserData approveEnrollment(final String username, final String password) {
+        assertOfficerAction();
+        requireNonBlank(password, "password");
+
+        final PortalUser portalUser = loadPortalUser(username.trim());
+        assertEnrollmentStatus(portalUser, PortalEnrollmentStatus.SUBMITTED);
+        assertUsernameAvailableForPortalLogin(portalUser.getUsername());
+
+        portalUser.setEnrollmentStatus(PortalEnrollmentStatus.APPROVED.name());
+        portalUser.setQueryRemark(null);
+        portalUser.setPasswordHash(passwordEncoder.encode(password));
+        portalUser.setActive(true);
+        portalUser.setApprovedDate(LocalDateTime.now());
+        portalUserRepository.save(portalUser);
+        sstNotificationWriteService.notifyPortalUser(portalUser.getId(),
+                SstNotificationWriteService.PORTAL_ENROLLMENT_APPROVED);
+
+        return PortalUserMapper.toData(portalUser);
+    }
+
+    @Transactional
+    public PortalUserData rejectEnrollment(final String username) {
+        assertOfficerAction();
+
+        final PortalUser portalUser = loadPortalUser(username.trim());
+        assertEnrollmentStatus(portalUser, PortalEnrollmentStatus.SUBMITTED);
+
+        portalUser.setEnrollmentStatus(PortalEnrollmentStatus.REJECTED.name());
+        portalUser.setActive(false);
+        portalUser.setPasswordHash(null);
+        portalUserRepository.save(portalUser);
 
         return PortalUserMapper.toData(portalUser);
     }
@@ -217,8 +262,14 @@ public class PortalEnrollmentWritePlatformService {
     private void assertOfficerAction() {
         final PlatformUser currentUser = platformUserContext.getCurrentUser();
         if (currentUser.isEmployer()) {
-            throw new IllegalArgumentException("Only officers can send a portal enrollment to query");
+            throw new IllegalArgumentException("Only staff can manage portal enrollments");
         }
+    }
+
+    private void assertUsernameAvailableForPortalLogin(final String username) {
+        staffUserRepository.findByUsernameIgnoreCase(username).ifPresent(existing -> {
+            throw new IllegalArgumentException("Username already used by a staff account: " + username);
+        });
     }
 
     private static PortalUser buildPortalUser(final PortalEnrollmentRequest request, final String username,

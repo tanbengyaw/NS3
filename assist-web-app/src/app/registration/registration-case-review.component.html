@@ -1,7 +1,9 @@
 <section class="page">
   <header>
     <p class="back-link">
-      @if (fromInbox) {
+      @if (fromBase) {
+        <a routerLink="/base/case-routing">← Back to case routing listing</a>
+      } @else if (fromInbox) {
         <a routerLink="/registration/inbox">← Back to inbox</a>
       } @else {
         <a routerLink="/registration/inbox">← Officer inbox</a>
@@ -37,6 +39,7 @@
       [appStatusReason]="item.appStatusReason"
       [showInboxLink]="false"
       [sectionId]="item.sectionId"
+      [routedToLabel]="item.routedToLabel"
     />
 
     <div class="detail-card">

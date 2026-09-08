@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException;
 import my.gov.perkeso.assist.core.security.PlatformUserContext;
+import my.gov.perkeso.assist.identity.constant.PortalEnrollmentStatus;
 import my.gov.perkeso.assist.identity.data.PortalUserData;
 import my.gov.perkeso.assist.registration.domain.PortalUser;
 import my.gov.perkeso.assist.registration.domain.PortalUserRepository;
@@ -22,6 +23,7 @@ public class PortalEnrollmentReadPlatformService {
         final String username = platformUserContext.getCurrentUser().username();
         final PortalUser portalUser = portalUserRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Portal user not found: " + username));
+        assertPortalLoginEnabled(portalUser);
         return toData(portalUser);
     }
 
@@ -34,5 +36,12 @@ public class PortalEnrollmentReadPlatformService {
 
     private static PortalUserData toData(final PortalUser portalUser) {
         return PortalUserMapper.toData(portalUser);
+    }
+
+    private static void assertPortalLoginEnabled(final PortalUser portalUser) {
+        if (!PortalEnrollmentStatus.APPROVED.name().equals(portalUser.getEnrollmentStatus())
+                || !portalUser.isLoginEnabled()) {
+            throw new ResourceNotFoundException("Portal login is not active for user: " + portalUser.getUsername());
+        }
     }
 }

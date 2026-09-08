@@ -97,4 +97,17 @@ public class PortalUser {
 
     @Column(name = "user_employer_id")
     private Long userEmployerId;
+
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = false;
+
+    @Column(name = "approved_date")
+    private LocalDateTime approvedDate;
+
+    public boolean isLoginEnabled() {
+        return active && passwordHash != null && !passwordHash.isBlank();
+    }
 }
