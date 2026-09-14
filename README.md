@@ -121,6 +121,7 @@ Phase 1 vertical slice: **employer registration** (search, registration cases, a
 | Later | Directors, premises, documents | Additional Form 1 / attachments |
 | Later | jBPM / full ASSIST workflow parity | Out of Phase 1 scope — see [docs/legacy-bpm-parity-plan.md](./docs/legacy-bpm-parity-plan.md) |
 | **Phase 1** | **Admin / staff menu scope** | NS3 sidebar only — legacy BASE menus (My Task, Workflow, Maintenance, Quartz, etc.) not required; see [docs/admin-menu-scope.md](./docs/admin-menu-scope.md) |
+| **Phase 1** | **Incomplete auto-reg (1205–1209)** | Audit ingest API + staff listing/complete — see [docs/incomplete-auto-reg.md](./docs/incomplete-auto-reg.md) |
 | Later | **Remaining SST tax flows** (service / digital) | Sales (1100), tourism (1101), and DPSP (1104) new-reg are done. Workshop: [docs/sst-discovery-workshop.md](./docs/sst-discovery-workshop.md) · Question bank: [docs/sst-discovery-questions.md](./docs/sst-discovery-questions.md) |
 | Later | **Portal submit → branch routing** | Done — `PostcodeBranchRoutingService` on portal submit |
 | Later | **Role-based submit routing** | Done — `RegistrationCaseSubmitRouter` + `RegistrationSectionRouting` (RO / UO / PKR_BO / section-aware) |

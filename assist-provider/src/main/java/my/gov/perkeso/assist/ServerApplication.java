@@ -1,5 +1,6 @@
 package my.gov.perkeso.assist;
 
+import my.gov.perkeso.assist.audit.starter.AuditConfiguration;
 import my.gov.perkeso.assist.identity.starter.IdentityConfiguration;
 import my.gov.perkeso.assist.registration.starter.RegistrationConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -8,7 +9,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(scanBasePackages = "my.gov.perkeso.assist")
-@Import({ RegistrationConfiguration.class, IdentityConfiguration.class })
+@Import({ RegistrationConfiguration.class, IdentityConfiguration.class, AuditConfiguration.class })
 @EnableTransactionManagement
 public class ServerApplication {
 

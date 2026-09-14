@@ -14,7 +14,7 @@ import { RegistrationService } from './registration.service';
 import { resolveRoutedToLabel } from './case-routing.util';
 import { RegistrationWorkflowResult } from './registration-workflow.model';
 import { resolveSstNewRegConfig } from './sst-new-reg.config';
-import { canMarkIncompleteSubmit, submitStatusHint } from './submit-routing.util';
+import { canMarkIncompleteSubmit, isIncompleteTaxSection, isUpdateTaxSection, submitStatusHint } from './submit-routing.util';
 
 /** SstContractType.MAIN_CONTRACT */
 const MAIN_CONTRACT = 1;
@@ -88,19 +88,21 @@ export class SalesTaxWizardComponent {
 
   readonly submitHint = computed(() => {
     const session = this.auth.currentSession();
-    return submitStatusHint(session?.roles ?? [], this.config.sectionId, this.submitIncomplete());
+    return submitStatusHint(session?.roles ?? [], this.sectionId() ?? this.config.sectionId, this.submitIncomplete());
   });
 
   readonly showIncompleteOption = computed(() => {
+    if (this.isUpdateMode() || this.isIncompleteMode()) {
+      return false;
+    }
     const session = this.auth.currentSession();
     return session ? canMarkIncompleteSubmit(session.roles) : false;
   });
 
   /** Update-tax-payer cases reuse this wizard as-is; detected from the loaded case's REG_UPDATE_TAX_PAYER_* sectionId (1200-1204). */
-  readonly isUpdateMode = computed(() => {
-    const id = this.sectionId();
-    return id != null && id >= 1200 && id <= 1204;
-  });
+  readonly isUpdateMode = computed(() => isUpdateTaxSection(this.sectionId()));
+
+  readonly isIncompleteMode = computed(() => isIncompleteTaxSection(this.sectionId()));
 
   readonly showPreRegBlock = signal(false);
   readonly taxPayerSearchFound = signal<boolean | null>(null);

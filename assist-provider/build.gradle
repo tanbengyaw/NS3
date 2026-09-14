@@ -6,6 +6,7 @@ dependencies {
     implementation project(':assist-core')
     implementation project(':assist-registration')
     implementation project(':assist-identity')
+    implementation project(':assist-audit')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jersey'

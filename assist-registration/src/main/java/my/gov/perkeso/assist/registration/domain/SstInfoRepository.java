@@ -11,4 +11,7 @@ public interface SstInfoRepository extends JpaRepository<SstInfo, Long> {
     Optional<SstInfo> findFirstByEmployerIdAndDeletedFalseOrderByIdDesc(Long employerId);
 
     List<SstInfo> findByRegGeneralInfoIdAndDeletedFalse(Long regGeneralInfoId);
+
+    List<SstInfo> findByEmployerIdAndTaxTypeAndAutoRegistrationTrueAndDeletedFalseOrderByIdAsc(Long employerId,
+            String taxType);
 }

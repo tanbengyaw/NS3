@@ -136,6 +136,14 @@ export class RegistrationService {
     return this.http.post<CommandProcessingResult>(`${this.base}/tax-updates`, { employerId, sectionId });
   }
 
+  ingestSstAutoRegistration(body: Record<string, unknown>): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${environment.apiBaseUrl}/sst-auto-registrations`, body);
+  }
+
+  startIncompleteAutoReg(sstInfoId: number): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/incomplete-auto-regs`, { sstInfoId });
+  }
+
   getTaxUpdateDiff(caseId: number): Observable<TaxUpdateChangedField[]> {
     return this.http.get<TaxUpdateChangedField[]>(`${this.base}/${caseId}/tax-update-diff`);
   }

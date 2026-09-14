@@ -416,6 +416,20 @@ export interface TaxPayerUpdateSearchResult {
   sectionId: number;
 }
 
+export interface IncompleteAutoRegSearchResult {
+  sstInfoId: number;
+  employerId: number;
+  employerName: string;
+  registrationNo: string;
+  taxType: string;
+  sectionId: number;
+  cusAudRefNo: string | null;
+  businessComDate: string | null;
+  createdDate: string | null;
+  openCaseId: number | null;
+  openCaseRefNo: string | null;
+}
+
 export interface TaxUpdateChangedField {
   fieldLabel: string;
   oldValue: string | null;

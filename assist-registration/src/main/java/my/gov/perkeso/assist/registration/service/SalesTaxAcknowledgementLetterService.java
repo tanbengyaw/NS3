@@ -91,14 +91,21 @@ public class SalesTaxAcknowledgementLetterService {
      * looked up by the case's linked employer instead of by the case id itself.
      */
     private SstInfo findPromotedSstInfo(final RegGeneralInfo regCase) {
-        if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())) {
+        if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())
+                || RegistrationSectionRouting.isIncompleteTaxSection(regCase.getSectionId())) {
+            if (RegistrationSectionRouting.isIncompleteTaxSection(regCase.getSectionId())
+                    && regCase.getSourceSstInfoId() != null) {
+                return sstInfoRepository.findById(regCase.getSourceSstInfoId())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Source SST info not found for incomplete case: " + regCase.getId()));
+            }
             final Long employerId = regCase.getEmployerId();
             if (employerId == null) {
-                throw new IllegalStateException("Update case has no linked employer: " + regCase.getId());
+                throw new IllegalStateException("Update/incomplete case has no linked employer: " + regCase.getId());
             }
             return sstInfoRepository.findFirstByEmployerIdAndDeletedFalseOrderByIdDesc(employerId)
                     .orElseThrow(() -> new IllegalStateException(
-                            "No active SST info found for updated employer: " + employerId));
+                            "No active SST info found for employer: " + employerId));
         }
         return sstInfoRepository.findByRegGeneralInfoIdAndDeletedFalse(regCase.getId()).stream()
                 .findFirst()
@@ -109,7 +116,7 @@ public class SalesTaxAcknowledgementLetterService {
     private static void assertSstCaseSection(final RegGeneralInfo regCase) {
         if (!RegistrationSectionRouting.isSstCaseSection(regCase.getSectionId())) {
             throw new IllegalArgumentException(
-                    "SST letters are only available for SST registration cases (1100-1105, 1200-1204)");
+                    "SST letters are only available for SST registration cases (1100-1105, 1200-1209)");
         }
     }
 

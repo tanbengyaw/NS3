@@ -178,6 +178,10 @@ public class RegistrationCaseWritePlatformService {
         if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())) {
             return approveAndPromoteUpdate(regCase);
         }
+        if (RegistrationSectionRouting.isIncompleteTaxSection(regCase.getSectionId())
+                && regCase.getSourceSstInfoId() != null && regCase.getEmployerId() != null) {
+            return approveAndPromoteIncomplete(regCase);
+        }
         if (RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())) {
             return approveAndPromoteDiscontinue(regCase);
         }
@@ -260,6 +264,50 @@ public class RegistrationCaseWritePlatformService {
         regCase.setAppStatus(AppStatus.APPROVED);
         regCase.setUpdatedDate(LocalDateTime.now());
         regGeneralInfoRepository.save(regCase);
+
+        final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
+                "employerCode", employer.getEmployerCode(), "appStatus", AppStatus.APPROVED.name()));
+        if (sstInfo != null) {
+            final String smk = sstInfo.taxSpecificSmkRegNo();
+            changes.put("sstSmkRegNo", smk);
+            changes.put("salesTaxSmkRegNo", smk);
+            if (sstInfo.getTourismTaxSmkRegNo() != null) {
+                changes.put("tourismTaxSmkRegNo", sstInfo.getTourismTaxSmkRegNo());
+            }
+            if (sstInfo.getDigitalTaxSmkRegNo() != null) {
+                changes.put("digitalTaxSmkRegNo", sstInfo.getDigitalTaxSmkRegNo());
+            }
+            if (sstInfo.getDpspTaxSmkRegNo() != null) {
+                changes.put("dpspTaxSmkRegNo", sstInfo.getDpspTaxSmkRegNo());
+            }
+            if (sstInfo.getServiceTaxSmkRegNo() != null) {
+                changes.put("serviceTaxSmkRegNo", sstInfo.getServiceTaxSmkRegNo());
+            }
+            changes.put("sstInfoId", sstInfo.getId());
+        }
+        return CommandProcessingResult.withChanges(employer.getId(), employer.getEmployerCode(), changes);
+    }
+
+    /**
+     * Incomplete auto-reg completion (1205–1209) with a linked live {@code SstInfo}: apply temp
+     * employer edits onto the existing employer and promote the ingested SST row in place
+     * (SMK assigned if missing; auto-registration flag kept).
+     */
+    private CommandProcessingResult approveAndPromoteIncomplete(final RegGeneralInfo regCase) {
+        final Long employerId = regCase.getEmployerId();
+        final Employer employer = employerRepository.findById(employerId)
+                .orElseThrow(() -> new my.gov.perkeso.assist.core.infrastructure.exception.ResourceNotFoundException(
+                        "Employer not found: " + employerId));
+
+        applyTempEmployerToExistingEmployer(employer, regCase.getTempEmployer());
+        employerRepository.save(employer);
+
+        final SstInfo sstInfo = sstInfoPromotionService.promoteSstOnIncompleteApprove(regCase, employer);
+
+        regCase.setAppStatus(AppStatus.APPROVED);
+        regCase.setUpdatedDate(LocalDateTime.now());
+        regGeneralInfoRepository.save(regCase);
+        notifyRegistrationApproved(employer.getId());
 
         final Map<String, Object> changes = new java.util.HashMap<>(Map.of("caseRefNo", regCase.getCaseRefNo(),
                 "employerCode", employer.getEmployerCode(), "appStatus", AppStatus.APPROVED.name()));

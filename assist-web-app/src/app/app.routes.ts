@@ -13,6 +13,9 @@ import { RegistrationWizardComponent } from './registration/registration-wizard.
 import { SalesTaxWizardComponent } from './registration/sales-tax-wizard.component';
 import { RegistrationCaseReviewComponent } from './registration/registration-case-review.component';
 import { RegistrationInboxComponent } from './registration/registration-inbox.component';
+import { IncompleteAutoRegSearchComponent } from './registration/incomplete-auto-reg-search.component';
+import { AuditCaseListComponent } from './audit/audit-case-list.component';
+import { AuditCaseFormComponent } from './audit/audit-case-form.component';
 import { UpdateTaxPayerSearchComponent } from './registration/update-tax-payer-search.component';
 import { DiscontinueTaxSearchComponent } from './registration/discontinue-tax-search.component';
 import { DiscontinueTaxCaseComponent } from './registration/discontinue-tax-case.component';
@@ -70,6 +73,11 @@ export const routes: Routes = [
       { path: 'registration/digital-tax/:caseId', component: SalesTaxWizardComponent, data: { sstTax: 'digital' } },
 
       { path: 'registration/update-tax-payer', component: UpdateTaxPayerSearchComponent },
+
+      { path: 'registration/incomplete-auto-reg', component: IncompleteAutoRegSearchComponent },
+
+      { path: 'audit', component: AuditCaseListComponent },
+      { path: 'audit/:caseId', component: AuditCaseFormComponent },
 
       { path: 'registration/discontinue-tax', component: DiscontinueTaxSearchComponent },
 

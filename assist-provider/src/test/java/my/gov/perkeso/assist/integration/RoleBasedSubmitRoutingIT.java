@@ -145,6 +145,38 @@ class RoleBasedSubmitRoutingIT {
                   "addressLine1": "No 4 Jalan Incomplete Tax"
                 }
                 """);
+        officer.upsertSstInfo(caseId, """
+                {
+                  "anTotalTaxSalesVal": 100000.00,
+                  "dateSaleValTaxGoods": "2024-06-01",
+                  "manComDate": "2024-01-15",
+                  "finYrEndMon": 12,
+                  "businessComDate": "2024-01-01",
+                  "localSales": 100000.00,
+                  "exportSales": 0,
+                  "salesToDesignArea": 0,
+                  "othersSales": 0,
+                  "subContractWork": false,
+                  "declareTrue": true,
+                  "declareDate": "2024-06-15",
+                  "applicantName": "Incomplete Officer"
+                }
+                """);
+        officer.createDirector(caseId, """
+                {
+                  "name": "Incomplete Officer",
+                  "identificationTypeId": 2,
+                  "identificationNo": "800101015432",
+                  "designation": "Director"
+                }
+                """);
+        officer.createTariffCode(caseId, """
+                {
+                  "tariffCodeSalesTypeId": 101,
+                  "contractTypeId": 1,
+                  "finishedGoods": "Goods"
+                }
+                """);
 
         final JsonNode submitted = officer.submitCase(caseId, "{}");
         assertThat(submitted.get("changes").get("appStatus").asText()).isEqualTo("APPROVED");

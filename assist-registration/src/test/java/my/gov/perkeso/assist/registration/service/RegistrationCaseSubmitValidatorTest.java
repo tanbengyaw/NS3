@@ -21,11 +21,14 @@ class RegistrationCaseSubmitValidatorTest {
     @Mock
     private TempSstInfoWritePlatformService tempSstInfoWritePlatformService;
 
+    @Mock
+    private DiscontinueTaxCaseService discontinueTaxCaseService;
+
     private RegistrationCaseSubmitValidator validator;
 
     @BeforeEach
     void setUp() {
-        validator = new RegistrationCaseSubmitValidator(tempSstInfoWritePlatformService);
+        validator = new RegistrationCaseSubmitValidator(tempSstInfoWritePlatformService, discontinueTaxCaseService);
     }
 
     @Test

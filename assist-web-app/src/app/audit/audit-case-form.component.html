@@ -1,0 +1,198 @@
+<section class="page">
+  <header>
+    <p class="module-label">Audit</p>
+    <h1>Create audit case</h1>
+    <p>
+      @if (detail(); as caseDetail) {
+        {{ caseDetail.caseRefNo || 'Draft' }} — {{ caseDetail.taskStatusLabel }}
+      } @else {
+        Officer Create Case. Unregistered BRN triggers incomplete auto-reg.
+      }
+    </p>
+    <p><a routerLink="/audit">Back to listing</a></p>
+  </header>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message banner">
+      {{ message() }}
+      @if (submitted) {
+        <a routerLink="/registration/incomplete-auto-reg">Open Incomplete auto-reg</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else {
+    <form [formGroup]="form">
+      <section class="form-section">
+        <h2 class="section-withbg">Case information</h2>
+        <div class="section-body grid">
+          <label>
+            Case source
+            <select formControlName="refCaseSourceId">
+              @for (option of caseSources; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Risk level
+            <select formControlName="refRiskLevelId">
+              @for (option of riskLevels; track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Estimated tax exposure (RM)
+            <input type="number" formControlName="extimatedTaxExposureRm" />
+          </label>
+          <label>
+            Period from
+            <input type="date" formControlName="periodFrom" />
+          </label>
+          <label>
+            Period to
+            <input type="date" formControlName="periodTo" />
+          </label>
+          <label>
+            Audit ref
+            <input type="text" formControlName="cusAudRefNo" placeholder="AUD-001" />
+          </label>
+          <label class="wide">
+            Objective
+            <input type="text" formControlName="objective" />
+          </label>
+          <label class="wide">
+            Exclusions
+            <input type="text" formControlName="exclusions" />
+          </label>
+          <label class="check">
+            <input type="checkbox" formControlName="preAuditSkip" />
+            Skip pre-audit
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Taxpayer</h2>
+        <div class="section-body grid">
+          <label>
+            Taxpayer name
+            <input type="text" formControlName="taxPayerName" />
+          </label>
+          <label>
+            BRN
+            <input type="text" formControlName="businessRegNo" />
+          </label>
+          <label>
+            Postcode
+            <input type="text" formControlName="postcode" />
+          </label>
+          <label>
+            Branch id
+            <input type="number" formControlName="ns3BranchId" />
+          </label>
+          <label class="wide">
+            Address line 1
+            <input type="text" formControlName="addressLine1" />
+          </label>
+          <label>
+            Address line 2
+            <input type="text" formControlName="addressLine2" />
+          </label>
+          <label>
+            Address line 3
+            <input type="text" formControlName="addressLine3" />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Tax type (audit popup fields)</h2>
+        <div class="section-body grid">
+          <label>
+            Tax type
+            <select formControlName="taxType">
+              @for (option of taxTypeOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Business commencement
+            <input type="date" formControlName="businessComDate" />
+          </label>
+          @if (salesOrService) {
+            <label>
+              Manufacturing / service commencement
+              <input type="date" formControlName="manSerComDate" />
+            </label>
+            <label>
+              Annual taxable sales / service value
+              <input type="number" formControlName="annualTtlTaxSalSerVal" />
+            </label>
+          }
+          <label>
+            Financial year end month
+            <select formControlName="finYrEndMon">
+              @for (month of months; track month) {
+                <option [ngValue]="month">{{ month }}</option>
+              }
+            </select>
+          </label>
+          <label class="check">
+            <input type="checkbox" formControlName="selectedAudit" />
+            Selected for audit
+          </label>
+        </div>
+        <p class="hint">
+          Create Case does not send date of sale value taxable — that is why the row stays incomplete.
+        </p>
+      </section>
+
+      <section class="form-section">
+        <h2 class="section-withbg">Risk / focus / limitation</h2>
+        <div class="section-body checks">
+          <label><input type="checkbox" formControlName="checkedRegAnomaly" /> Registration anomaly</label>
+          <label><input type="checkbox" formControlName="checkedFilingBehaviour" /> Filing behaviour</label>
+          <label><input type="checkbox" formControlName="checkedPaymentBehaviour" /> Payment behaviour</label>
+          <label><input type="checkbox" formControlName="checkedReturnTax" /> Return tax</label>
+          <label><input type="checkbox" formControlName="checkedFinancialAnomaly" /> Financial anomaly</label>
+          <label><input type="checkbox" formControlName="checkedThirdPartyMismatch" /> Third-party mismatch</label>
+          <label><input type="checkbox" formControlName="checkedHisComplianceIssue" /> Historical compliance</label>
+          <label><input type="checkbox" formControlName="checkedIntelligenceBased" /> Intelligence based</label>
+          <label class="wide">
+            Risk assessment
+            <input type="text" formControlName="riskAssessmentDetails" />
+          </label>
+          <label><input type="checkbox" formControlName="checkedOutputTax" /> Output tax</label>
+          <label><input type="checkbox" formControlName="checkedInputTaxEligility" /> Input tax eligibility</label>
+          <label><input type="checkbox" formControlName="checkedRefund" /> Refund</label>
+          <label><input type="checkbox" formControlName="checkedClassification" /> Classification</label>
+          <label><input type="checkbox" formControlName="checkedExemption" /> Exemption</label>
+          <label><input type="checkbox" formControlName="checkedImportReconciliation" /> Import reconciliation</label>
+          <label><input type="checkbox" formControlName="checkedRevenueReconciliation" /> Revenue reconciliation</label>
+          <label><input type="checkbox" formControlName="checkedDataIncomplete" /> Data incomplete</label>
+          <label><input type="checkbox" formControlName="checkedAccessLimitation" /> Access limitation</label>
+          <label><input type="checkbox" formControlName="checkedPreliminaryAssumptions" /> Preliminary assumptions</label>
+        </div>
+      </section>
+
+      @if (!submitted) {
+        <div class="actions">
+          <button type="button" (click)="save()" [disabled]="saving() || submitting()">
+            {{ saving() ? 'Saving…' : 'Save draft' }}
+          </button>
+          <button type="button" class="primary" (click)="createCase()" [disabled]="saving() || submitting()">
+            {{ submitting() ? 'Creating…' : 'Create case' }}
+          </button>
+        </div>
+      }
+    </form>
+  }
+</section>

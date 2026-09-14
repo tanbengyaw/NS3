@@ -131,6 +131,66 @@ public class SstInfoPromotionService {
         return savedSstInfo;
     }
 
+    /**
+     * Incomplete auto-reg completion (1205–1209): updates the ingested {@code SstInfo} in place,
+     * assigns an SMK if missing, keeps {@code is_auto_registration=true}, and creates an ACTIVE
+     * status row when none exists.
+     */
+    @Transactional
+    public SstInfo promoteSstOnIncompleteApprove(final RegGeneralInfo regCase, final Employer employer) {
+        if (regCase.getSourceSstInfoId() == null) {
+            throw new IllegalArgumentException(
+                    "Incomplete auto-reg case " + regCase.getCaseRefNo() + " has no sourceSstInfoId");
+        }
+        final SstInfo sstInfo = sstInfoRepository.findById(regCase.getSourceSstInfoId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Source SST info not found: " + regCase.getSourceSstInfoId()));
+
+        final TempSstInfo tempSstInfo = tempSstInfoWritePlatformService.requireTempSstInfoForCase(regCase);
+        applyUpdateFields(sstInfo, tempSstInfo);
+        sstInfo.setAutoRegistration(true);
+        if (sstInfo.getTaxType() == null || sstInfo.getTaxType().isBlank()) {
+            sstInfo.setTaxType(RegistrationSectionRouting.taxTypeForIncompleteSection(regCase.getSectionId()).name());
+        }
+
+        final TaxType taxType = RegistrationSectionRouting.taxTypeForIncompleteSection(regCase.getSectionId());
+        if (isBlank(sstInfo.taxSpecificSmkRegNo())) {
+            final EmployerCodeContext context = EmployerCodeContext.builder()
+                    .branchId(regCase.getTempEmployer().getPksBranchId())
+                    .postCode(regCase.getTempEmployer().getPostCode())
+                    .build();
+            final RegistrationSection section = RegistrationSection.fromAssistSectionId(regCase.getSectionId());
+            sstInfo.applyTaxSpecificSmk(taxType, employerCodeGeneratorFactory.generateSmkNo(section, context));
+        }
+        sstInfo.setRegGeneralInfoId(regCase.getId());
+        final SstInfo savedSstInfo = sstInfoRepository.save(sstInfo);
+
+        final List<TempDirectorOwner> directors = tempSstInfoWritePlatformService
+                .listDirectorsForCase(regCase.getId());
+        final List<TempPremises> premises = tempSstInfoWritePlatformService.listPremisesForCase(regCase.getId());
+        final List<TempSstTariffCode> tariffCodes = tempSstInfoWritePlatformService
+                .listTariffCodesForCase(tempSstInfo);
+        final List<TempSstServiceCategory> serviceCategories = tempSstInfoWritePlatformService
+                .listServiceCategoriesForCase(tempSstInfo);
+        final List<TempSstSupportingDocument> supportingDocuments = tempSstInfoWritePlatformService
+                .listSupportingDocumentEntitiesForCase(tempSstInfo);
+
+        replaceDirectors(employer.getId(), directors);
+        replacePremises(employer.getId(), premises);
+        replaceTariffCodes(employer.getId(), savedSstInfo.getId(), tariffCodes);
+        replaceServiceCategories(employer.getId(), savedSstInfo.getId(), serviceCategories);
+        promoteSupportingDocuments(regCase.getId(), employer.getId(), savedSstInfo.getId(), supportingDocuments);
+
+        if (sstStatusInfoRepository.findBySstInfoIdAndDeletedFalse(savedSstInfo.getId()).isEmpty()) {
+            createActiveStatus(savedSstInfo.getId(), taxType);
+        }
+        return savedSstInfo;
+    }
+
+    private static boolean isBlank(final String value) {
+        return value == null || value.isBlank();
+    }
+
     private static void applyUpdateFields(final SstInfo sstInfo, final TempSstInfo temp) {
         sstInfo.setTradeName(temp.getTradeName());
         sstInfo.setTourTaxRegNo(temp.getTourTaxRegNo());

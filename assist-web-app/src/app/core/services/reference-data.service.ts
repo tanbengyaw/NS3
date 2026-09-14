@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PostcodeOption, PortalDocTypeOption, RefOption, SstServiceTypeOption, SupportingDocumentTypeOption, TariffCodeSalesTypeOption } from '../models/reference.model';
-import { DiscontinueTaxSearchResult, TaxPayerUpdateSearchResult } from '../models/registration.model';
+import { DiscontinueTaxSearchResult, IncompleteAutoRegSearchResult, TaxPayerUpdateSearchResult } from '../models/registration.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceDataService {
@@ -95,6 +95,14 @@ export class ReferenceDataService {
     const params = new HttpParams().set('taxType', taxType).set('search', search.trim());
     return this.http.get<TaxPayerUpdateSearchResult[]>(
       `${environment.apiBaseUrl}/reference/tax-payer-updates`,
+      { params },
+    );
+  }
+
+  searchIncompleteAutoRegs(taxType: string, search: string): Observable<IncompleteAutoRegSearchResult[]> {
+    const params = new HttpParams().set('taxType', taxType).set('search', search.trim());
+    return this.http.get<IncompleteAutoRegSearchResult[]>(
+      `${environment.apiBaseUrl}/reference/incomplete-auto-regs`,
       { params },
     );
   }

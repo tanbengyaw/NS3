@@ -33,7 +33,8 @@ public class RegistrationSpecialCaseService {
         }
 
         if (RegistrationSectionRouting.isUpdateTaxSection(regCase.getSectionId())
-                || RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())) {
+                || RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())
+                || RegistrationSectionRouting.isIncompleteTaxSection(regCase.getSectionId())) {
             // The temp employer's BRN legitimately matches the very employer being updated/
             // discontinued — duplicate-BRN detection is meaningless (and always a false positive)
             // for these cases.

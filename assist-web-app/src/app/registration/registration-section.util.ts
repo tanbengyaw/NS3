@@ -10,7 +10,11 @@ const SECTION_LABELS: Record<number, string> = {
   1202: 'Update tourism tax',
   1203: 'Update digital tax',
   1204: 'Update DPSP tax',
+  1205: 'Incomplete service tax',
   1206: 'Incomplete sales tax',
+  1207: 'Incomplete tourism tax',
+  1208: 'Incomplete digital tax',
+  1209: 'Incomplete DPSP tax',
 };
 
 export function registrationSectionLabel(sectionId: number | null, sectionCode: string | null): string {

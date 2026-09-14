@@ -134,6 +134,16 @@ public class SstInfo {
     @Column(name = "is_auto_registration", nullable = false)
     private boolean autoRegistration;
 
+    /** TaxType enum name (SALES_TAX, …). Set on audit auto-reg ingest; optional on older rows. */
+    @Column(name = "tax_type", length = 30)
+    private String taxType;
+
+    @Column(name = "auto_registration_source", length = 30)
+    private String autoRegistrationSource;
+
+    @Column(name = "ingest_temp_employer_id")
+    private Long ingestTempEmployerId;
+
     @Column(name = "is_deleted", nullable = false)
     private boolean deleted;
 

@@ -9,6 +9,11 @@ const SECTION_UPDATE_SALES_TAX = 1201;
 const SECTION_UPDATE_TOURISM_TAX = 1202;
 const SECTION_UPDATE_DIGITAL_TAX = 1203;
 const SECTION_UPDATE_DPSP_TAX = 1204;
+const SECTION_INCOMPLETE_SERVICE_TAX = 1205;
+const SECTION_INCOMPLETE_SALES_TAX = 1206;
+const SECTION_INCOMPLETE_TOURISM_TAX = 1207;
+const SECTION_INCOMPLETE_DIGITAL_TAX = 1208;
+const SECTION_INCOMPLETE_DPSP_TAX = 1209;
 
 export function registrationCaseReviewLink(caseId: number): string[] {
   return ['/registration/review', String(caseId)];
@@ -43,6 +48,21 @@ export function registrationCaseWizardLink(sectionId: number | null, caseId: num
     return ['/registration/service-tax', String(caseId)];
   }
   if (sectionId === SECTION_UPDATE_DIGITAL_TAX) {
+    return ['/registration/digital-tax', String(caseId)];
+  }
+  if (sectionId === SECTION_INCOMPLETE_SALES_TAX) {
+    return ['/registration/sales-tax', String(caseId)];
+  }
+  if (sectionId === SECTION_INCOMPLETE_TOURISM_TAX) {
+    return ['/registration/tourism-tax', String(caseId)];
+  }
+  if (sectionId === SECTION_INCOMPLETE_DPSP_TAX) {
+    return ['/registration/dpsp-tax', String(caseId)];
+  }
+  if (sectionId === SECTION_INCOMPLETE_SERVICE_TAX) {
+    return ['/registration/service-tax', String(caseId)];
+  }
+  if (sectionId === SECTION_INCOMPLETE_DIGITAL_TAX) {
     return ['/registration/digital-tax', String(caseId)];
   }
   if (sectionId === SECTION_SOCSO || sectionId == null) {
@@ -81,6 +101,21 @@ export function registrationCaseWizardLabel(sectionId: number | null): string | 
   }
   if (sectionId === SECTION_UPDATE_DIGITAL_TAX) {
     return 'Open digital tax update wizard';
+  }
+  if (sectionId === SECTION_INCOMPLETE_SALES_TAX) {
+    return 'Open incomplete sales tax wizard';
+  }
+  if (sectionId === SECTION_INCOMPLETE_TOURISM_TAX) {
+    return 'Open incomplete tourism tax wizard';
+  }
+  if (sectionId === SECTION_INCOMPLETE_DPSP_TAX) {
+    return 'Open incomplete DPSP tax wizard';
+  }
+  if (sectionId === SECTION_INCOMPLETE_SERVICE_TAX) {
+    return 'Open incomplete service tax wizard';
+  }
+  if (sectionId === SECTION_INCOMPLETE_DIGITAL_TAX) {
+    return 'Open incomplete digital tax wizard';
   }
   if (sectionId === SECTION_SOCSO || sectionId == null) {
     return 'Open SOCSO registration wizard';

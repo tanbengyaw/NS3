@@ -104,4 +104,11 @@ public class RegGeneralInfo {
 
     @Column(name = "linked_case_ref_no", length = 30)
     private String linkedCaseRefNo;
+
+    /**
+     * Live {@code sst_info} row this incomplete auto-reg completion case is finishing
+     * (sections 1205–1209).
+     */
+    @Column(name = "source_sst_info_id")
+    private Long sourceSstInfoId;
 }

@@ -51,7 +51,7 @@ public class JerseyConfig extends ResourceConfig {
 
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().openAPI(openAPI)
                 .resourcePackages(Set.of("my.gov.perkeso.assist.registration.api",
-                        "my.gov.perkeso.assist.identity.api"));
+                        "my.gov.perkeso.assist.identity.api", "my.gov.perkeso.assist.audit.api"));
 
         final OpenApiResource openApiResource = new OpenApiResource();
         openApiResource.setOpenApiConfiguration(swaggerConfiguration);

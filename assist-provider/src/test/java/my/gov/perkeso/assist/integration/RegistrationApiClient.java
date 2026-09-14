@@ -323,6 +323,49 @@ public class RegistrationApiClient {
         }
     }
 
+    public JsonNode ingestSstAutoRegistration(final String json) {
+        return exchangeJson(HttpMethod.POST, "/sst-auto-registrations", json);
+    }
+
+    public JsonNode createAuditDraft() {
+        return exchangeJson(HttpMethod.POST, "/audit-cases", "{}");
+    }
+
+    public JsonNode saveAuditCase(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId, json);
+    }
+
+    public JsonNode submitAuditCase(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.POST, "/audit-cases/" + caseId + "?command=submit", json);
+    }
+
+    public JsonNode getAuditCase(final long caseId) {
+        return exchangeJson(HttpMethod.GET, "/audit-cases/" + caseId, null);
+    }
+
+    public List<JsonNode> searchIncompleteAutoRegs(final String taxType, final String search) {
+        final ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/reference/incomplete-auto-regs?taxType=" + taxType + "&search=" + search,
+                HttpMethod.GET,
+                authEntity(null),
+                String.class);
+        assert2xx(response);
+        try {
+            return objectMapper.readValue(response.getBody(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to parse incomplete auto-reg search results", ex);
+        }
+    }
+
+    public JsonNode startIncompleteAutoReg(final long sstInfoId) {
+        return exchangeJson(HttpMethod.POST, "/registration-cases/incomplete-auto-regs", """
+                {
+                  "sstInfoId": %d
+                }
+                """.formatted(sstInfoId));
+    }
+
     private HttpEntity<String> authEntity(final String json) {
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

@@ -71,7 +71,8 @@ public final class RegistrationSectionRouting {
      * categories, supporting documents, letters).
      */
     public static boolean isSstCaseSection(final Long sectionId) {
-        return isSstNewRegSection(sectionId) || isUpdateTaxSection(sectionId) || isDiscontinueTaxSection(sectionId);
+        return isSstNewRegSection(sectionId) || isUpdateTaxSection(sectionId) || isDiscontinueTaxSection(sectionId)
+                || isIncompleteTaxSection(sectionId);
     }
 
     /** Update Tax Payer sections: 1200=service, 1201=sales, 1202=tourism, 1203=digital, 1204=dpsp. */
@@ -96,6 +97,34 @@ public final class RegistrationSectionRouting {
         final long id = effectiveSectionId(sectionId);
         return id >= RegistrationSection.REG_INCOMPLETE_TAX_PAYER_SERVICE_TAX.getAssistSectionId()
                 && id <= RegistrationSection.REG_INCOMPLETE_TAX_PAYER_DPSP_TAX.getAssistSectionId();
+    }
+
+    /** Incomplete auto-reg: 1205=service, 1206=sales, 1207=tourism, 1208=digital, 1209=dpsp. */
+    public static TaxType taxTypeForIncompleteSection(final Long sectionId) {
+        final long id = effectiveSectionId(sectionId);
+        if (id == RegistrationSection.REG_INCOMPLETE_TAX_PAYER_SALES_TAX.getAssistSectionId()) {
+            return TaxType.SALES_TAX;
+        }
+        if (id == RegistrationSection.REG_INCOMPLETE_TAX_PAYER_TOURISM_TAX.getAssistSectionId()) {
+            return TaxType.TOURISM_TAX;
+        }
+        if (id == RegistrationSection.REG_INCOMPLETE_TAX_PAYER_DIGITAL_TAX.getAssistSectionId()) {
+            return TaxType.DIGITAL_TAX;
+        }
+        if (id == RegistrationSection.REG_INCOMPLETE_TAX_PAYER_DPSP_TAX.getAssistSectionId()) {
+            return TaxType.DPSP_TAX;
+        }
+        return TaxType.SERVICE_TAX;
+    }
+
+    public static long incompleteSectionIdFor(final TaxType taxType) {
+        return switch (taxType) {
+            case SERVICE_TAX -> RegistrationSection.REG_INCOMPLETE_TAX_PAYER_SERVICE_TAX.getAssistSectionId();
+            case SALES_TAX -> RegistrationSection.REG_INCOMPLETE_TAX_PAYER_SALES_TAX.getAssistSectionId();
+            case TOURISM_TAX -> RegistrationSection.REG_INCOMPLETE_TAX_PAYER_TOURISM_TAX.getAssistSectionId();
+            case DIGITAL_TAX -> RegistrationSection.REG_INCOMPLETE_TAX_PAYER_DIGITAL_TAX.getAssistSectionId();
+            case DPSP_TAX -> RegistrationSection.REG_INCOMPLETE_TAX_PAYER_DPSP_TAX.getAssistSectionId();
+        };
     }
 
     public static boolean isDiscontinueTaxSection(final Long sectionId) {

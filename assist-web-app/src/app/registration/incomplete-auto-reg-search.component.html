@@ -1,0 +1,134 @@
+<section class="page">
+  <header>
+    <p class="module-label">Registration</p>
+    <h1>Incomplete auto-registration</h1>
+    <p>
+      These records are planted by Audit Create Case (or the simulate ingest below). Staff complete
+      missing SST details — this is not a blank “new registration”.
+    </p>
+  </header>
+
+  <section class="form-section search-panel">
+    <h2 class="section-withbg">Search incomplete auto-reg</h2>
+    <div class="section-body">
+      <form class="search-bar" [formGroup]="form" (ngSubmit)="search()">
+        <label>
+          Tax type
+          <select formControlName="taxType">
+            @for (option of taxTypes; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="grow">
+          Search (employer name / BRN / audit ref)
+          <input type="search" formControlName="search" placeholder="Search…" />
+        </label>
+        <button type="submit" class="primary" [disabled]="loading()">Search</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="section-withbg">Simulate ingest (dev fallback)</h2>
+    <div class="section-body">
+      <p class="hint">
+        Prefer <a routerLink="/audit">Audit → New case → Create case</a> for the real officer path.
+        This button still posts <code>POST /sst-auto-registrations</code> directly.
+      </p>
+      <form class="ingest-bar" [formGroup]="ingestForm" (ngSubmit)="simulateIngest()">
+        <label>
+          Tax type
+          <select formControlName="taxType">
+            @for (option of taxTypes; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Employer name
+          <input type="text" formControlName="employerName" placeholder="Audit Co Sdn Bhd" />
+        </label>
+        <label>
+          BRN
+          <input type="text" formControlName="registrationNo" placeholder="201901234567" />
+        </label>
+        <label>
+          Postcode
+          <input type="text" formControlName="postCode" />
+        </label>
+        <label>
+          Audit ref
+          <input type="text" formControlName="cusAudRefNo" placeholder="AUD-001" />
+        </label>
+        <button type="submit" class="primary" [disabled]="ingesting()">
+          {{ ingesting() ? 'Ingesting…' : 'Ingest' }}
+        </button>
+      </form>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="message banner">{{ message() }}</p>
+  }
+
+  <section class="form-section">
+    <h2 class="section-withbg">Results</h2>
+    <div class="section-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employer name</th>
+              <th>BRN</th>
+              <th>Audit ref</th>
+              <th>Open case</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of results(); track row.sstInfoId) {
+              <tr>
+                <td>{{ row.employerName }}</td>
+                <td class="mono">{{ row.registrationNo }}</td>
+                <td class="mono">{{ row.cusAudRefNo || '—' }}</td>
+                <td class="mono">{{ row.openCaseRefNo || '—' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="link-btn"
+                    [disabled]="starting() === row.sstInfoId"
+                    (click)="complete(row)"
+                  >
+                    @if (starting() === row.sstInfoId) {
+                      Starting…
+                    } @else if (row.openCaseId) {
+                      Continue
+                    } @else {
+                      Complete
+                    }
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">
+                  @if (loading()) {
+                    Searching…
+                  } @else if (searched()) {
+                    No incomplete auto-reg records. Ingest one above, or wait for Audit.
+                  } @else {
+                    Search, or simulate an audit ingest first.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</section>

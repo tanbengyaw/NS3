@@ -34,6 +34,18 @@
 
       }
 
+      @if (isOfficer) {
+
+        <div class="nav-group">
+
+          <span class="nav-group-label">Audit</span>
+
+          <a routerLink="/audit" routerLinkActive="active">Audit cases</a>
+
+        </div>
+
+      }
+
       <div class="nav-group">
 
         <span class="nav-group-label">Registration</span>
@@ -53,6 +65,8 @@
         @if (isOfficer) {
 
           <a routerLink="/registration/update-tax-payer" routerLinkActive="active">Update tax payer</a>
+
+          <a routerLink="/registration/incomplete-auto-reg" routerLinkActive="active">Incomplete auto-reg</a>
 
           <a routerLink="/registration/discontinue-tax" routerLinkActive="active">Discontinue tax</a>
 

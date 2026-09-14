@@ -151,3 +151,4 @@ cd C:\Users\bengy\git\NS3_new_framewrok
 - Staff inbox by branch: `EmployerReadPlatformService.retrieveCaseSummaries`.
 - UO inbox section filter: `sectionIds=1103,1200,1201,1202,1203,1204` (or single `sectionId`) on `GET /registration-cases`.
 - SST discovery (legacy behaviour): [sst-discovery-questions.md](./sst-discovery-questions.md) §5.9.
+- Incomplete auto-reg (audit ingest + staff complete): [incomplete-auto-reg.md](./incomplete-auto-reg.md)

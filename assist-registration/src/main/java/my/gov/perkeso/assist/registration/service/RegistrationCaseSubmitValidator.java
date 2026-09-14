@@ -50,6 +50,14 @@ public class RegistrationCaseSubmitValidator {
             validateServiceTaxSubmit(regCase);
         } else if (RegistrationSectionRouting.isSstDigitalTaxNewReg(regCase.getSectionId())) {
             validateDigitalTaxSubmit(regCase);
+        } else if (RegistrationSectionRouting.isIncompleteTaxSection(regCase.getSectionId())) {
+            switch (RegistrationSectionRouting.taxTypeForIncompleteSection(regCase.getSectionId())) {
+                case SALES_TAX -> validateSalesTaxSubmit(regCase);
+                case SERVICE_TAX -> validateServiceTaxSubmit(regCase);
+                case TOURISM_TAX -> validateTourismTaxSubmit(regCase);
+                case DIGITAL_TAX -> validateDigitalTaxSubmit(regCase);
+                case DPSP_TAX -> validateDpspTaxSubmit(regCase);
+            }
         } else if (RegistrationSectionRouting.isDiscontinueTaxSection(regCase.getSectionId())) {
             validateDiscontinueTaxSubmit(regCase);
         }

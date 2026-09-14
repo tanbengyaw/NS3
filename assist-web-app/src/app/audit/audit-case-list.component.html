@@ -1,0 +1,72 @@
+<section class="page">
+  <header>
+    <p class="module-label">Audit</p>
+    <h1>Audit cases</h1>
+    <p>
+      Create Case for an unregistered taxpayer plants a partial SST row. Registration staff then
+      complete it under Incomplete auto-reg.
+    </p>
+  </header>
+
+  <section class="form-section search-panel">
+    <h2 class="section-withbg">Search</h2>
+    <div class="section-body">
+      <form class="search-bar" [formGroup]="form" (ngSubmit)="search()">
+        <label class="grow">
+          Search (case ref / taxpayer / BRN)
+          <input type="search" formControlName="search" placeholder="Search…" />
+        </label>
+        <button type="submit" class="primary" [disabled]="loading()">Search</button>
+        <button type="button" class="primary" [disabled]="creating()" (click)="create()">
+          {{ creating() ? 'Creating…' : 'New case' }}
+        </button>
+      </form>
+    </div>
+  </section>
+
+  @if (error()) {
+    <p class="error banner">{{ error() }}</p>
+  }
+
+  <section class="form-section">
+    <h2 class="section-withbg">Results</h2>
+    <div class="section-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Case ref</th>
+              <th>Taxpayer</th>
+              <th>BRN</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of results(); track row.id) {
+              <tr>
+                <td class="mono">{{ row.caseRefNo || '—' }}</td>
+                <td>{{ row.taxPayerName || '—' }}</td>
+                <td class="mono">{{ row.businessRegNo || '—' }}</td>
+                <td>{{ row.taskStatusLabel }}</td>
+                <td>
+                  <a [routerLink]="['/audit', row.id]">{{ row.submitted ? 'View' : 'Open' }}</a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">
+                  @if (loading()) {
+                    Searching…
+                  } @else if (searched()) {
+                    No audit cases. Click New case to start Create Case.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</section>

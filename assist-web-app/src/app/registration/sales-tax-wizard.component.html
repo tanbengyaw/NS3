@@ -1,7 +1,7 @@
 <section class="page" id="sales-tax-wizard-top">
   <header>
     <p class="module-label">Registration</p>
-    <h1>{{ isUpdateMode() ? 'Update tax payer' : config.pageTitle }}</h1>
+    <h1>{{ isUpdateMode() ? 'Update tax payer' : isIncompleteMode() ? 'Incomplete auto-registration' : config.pageTitle }}</h1>
     @if (caseRefNo()) {
       <p>
         Case: <strong>{{ caseRefNo() }}</strong> · Section <strong>{{ sectionId() ?? config.sectionId }}</strong> · Status:
@@ -12,6 +12,8 @@
       </p>
     } @else if (isUpdateMode()) {
       <p>Update tax payer — edit the existing {{ config.smkLabel }} details, then submit for UO approval.</p>
+    } @else if (isIncompleteMode()) {
+      <p>Complete the missing SST details from audit auto-registration, then submit (staff auto-approve).</p>
     } @else {
       <p>{{ config.pageSubtitle }}</p>
     }

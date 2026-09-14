@@ -25,7 +25,7 @@ If a legacy BASE screen is missing from the table below, assume **not in Phase 1
 | Role | Home | Navigation |
 |------|------|------------|
 | **Portal employer** | Tax Registrant 360 | Base → Tax Registrant 360; Registration → SST wizards only |
-| **Staff (officer / RO / UO / etc.)** | Employers list | Base → Portal ID registration, Case routing listing; Registration → SST wizards, Update/Discontinue tax, Officer inbox |
+| **Staff (officer / RO / UO / etc.)** | Employers list | Base → Portal ID registration, Case routing listing; Registration → SST wizards, Update/Incomplete auto-reg/Discontinue tax, Officer inbox |
 | **Admin** | Employers list | Same as staff, plus Administration → Staff users |
 
 Employers do **not** see staff-only items (employer list, portal enrollment admin, officer inbox, update/discontinue tax). Staff do **not** see employer-only Tax Registrant 360 in the sidebar (they use Employers and registration tools instead).
@@ -53,6 +53,7 @@ Employers do **not** see staff-only items (employer list, portal enrollment admi
 |-----------|-------|-------|
 | Sales / Tourism / DPSP / Service / Digital tax registration | `/registration/*` | SST new-registration wizards |
 | Update tax payer | `/registration/update-tax-payer` | Staff only |
+| Incomplete auto-reg | `/registration/incomplete-auto-reg` | Staff only — complete audit-ingested SST (1205–1209); see [incomplete-auto-reg.md](./incomplete-auto-reg.md) |
 | Discontinue tax | `/registration/discontinue-tax` | Staff only |
 | Officer inbox | `/registration/inbox` | Staff only |
 

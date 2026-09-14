@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Audit module schema — current Hibernate mapping only (May 2026 UI).
+
+        Source: live DB2 AUDIT dump + assist_tesing_only Hibernate hbm.xml.
+        SMALLINT flags → BOOLEAN. Sequences → identity. Intra-audit FKs added.
+        employer_id / sst_info_id stay soft FKs (null until Create Case auto-reg).
+
+        Kept legacy spellings used by Hibernate: extimated_tax_exposure_rm,
+        is_checked_input_tax_eligility, conclution, taxpaper_response.
+
+        Excluded leftover live-DB columns (not in current Hibernate):
+          AUDIT_CASE: task_status_date, ref_audit_type_id, offi/superv/revi rem*
+          AUDIT_CASE_TAX_PAYER: is_*_tax_audit flags
+          AUDIT_CASE_OFFICER: audit_case_id, is_assignee, site_visit_id
+          AUDIT_PLANNING_INFO: ref_proposed_case_type_id (commented out in hbm)
+
+        Excluded leftover live-DB tables (not current UI):
+          audit_case_scope, site_visit, visit_finding, pre_audit,
+          pre_audit_information, audit_sst02, audit_service_detail,
+          remark_chat, remark_status_info, ref_compliance, ref_record_type,
+          ref_risk_indicator, ref_site_visit_status, ref_verification_type,
+          ref_visit_type. No bod_information table exists in live DB.
+    -->
+
+    <changeSet id="0045-create-audit-schema" author="ns3">
+        <sql>CREATE SCHEMA IF NOT EXISTS audit;</sql>
+    </changeSet>
+
+    <changeSet id="0045-audit-case" author="ns3">
+        <createTable tableName="audit_case" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="process_instance_id" type="BIGINT"/>
+            <column name="case_ref_no" type="VARCHAR(30)"/>
+            <column name="task_status_id" type="BIGINT"/>
+            <column name="branch_id" type="BIGINT"/>
+            <column name="submit_date" type="DATE"/>
+            <column name="is_pre_audit_skip" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ref_case_source_id" type="BIGINT"/>
+            <column name="ref_risk_level_id" type="BIGINT"/>
+            <column name="ref_audit_reason_id" type="BIGINT"/>
+            <column name="extimated_tax_exposure_rm" type="DECIMAL(16,2)"/>
+            <column name="period_from" type="DATE"/>
+            <column name="period_to" type="DATE"/>
+            <column name="objective" type="VARCHAR(1000)"/>
+            <column name="exclusions" type="VARCHAR(1000)"/>
+            <column name="ref_proposed_next_action_id" type="BIGINT"/>
+            <column name="ref_proposed_case_type_id" type="BIGINT"/>
+            <column name="review_date" type="DATE"/>
+            <column name="justification" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_case" schemaName="audit" indexName="idx_audit_case_process_instance">
+            <column name="process_instance_id"/>
+        </createIndex>
+        <createIndex tableName="audit_case" schemaName="audit" indexName="idx_audit_case_case_ref_no">
+            <column name="case_ref_no"/>
+        </createIndex>
+        <createIndex tableName="audit_case" schemaName="audit" indexName="idx_audit_case_task_status">
+            <column name="task_status_id"/>
+        </createIndex>
+        <createIndex tableName="audit_case" schemaName="audit" indexName="idx_audit_case_branch">
+            <column name="branch_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-pre-audit-case" author="ns3">
+        <createTable tableName="pre_audit_case" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_pre_audit_case_audit_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="case_ref_no" type="VARCHAR(30)"/>
+            <column name="task_status_id" type="BIGINT"/>
+            <column name="branch_id" type="BIGINT"/>
+            <column name="submit_date" type="DATE"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="pre_audit_case" schemaName="audit" indexName="idx_pre_audit_case_audit_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-risk-indicators-details" author="ns3">
+        <createTable tableName="audit_risk_indicators_details" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_audit_risk_indicators_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="is_checked_reg_anomaly" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_filing_behaviour" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_payment_behaviour" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_return_tax" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_financial_anomaly" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_third_party_mismatch" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_his_compliance_issue" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_intelligence_based" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="risk_assessment_details" type="VARCHAR(1000)"/>
+            <column name="risk_indicators_remark" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_risk_indicators_details" schemaName="audit"
+                     indexName="idx_audit_risk_indicators_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-focus-area-details" author="ns3">
+        <createTable tableName="audit_focus_area_details" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_audit_focus_area_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="is_checked_output_tax" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_input_tax_eligility" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_refund" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_classification" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_exemption" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_import_reconciliation" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_revenue_reconciliation" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_others" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="others_input" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_focus_area_details" schemaName="audit" indexName="idx_audit_focus_area_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-limitation-disclosure-details" author="ns3">
+        <createTable tableName="audit_limitation_disclosure_details" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_audit_limitation_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="is_checked_data_incomplete" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_access_limitation" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_preliminary_assumptions" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_checked_others" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="others_input" type="VARCHAR(100)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_limitation_disclosure_details" schemaName="audit"
+                     indexName="idx_audit_limitation_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-pre-aud-data-exam-info" author="ns3">
+        <createTable tableName="pre_aud_data_exam_info" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_pre_aud_data_exam_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="ref_no" type="VARCHAR(30)"/>
+            <column name="ref_pre_aud_data_source_id" type="BIGINT"/>
+            <column name="taxable_period_from" type="DATE"/>
+            <column name="taxable_period_to" type="DATE"/>
+            <column name="sst_no" type="VARCHAR(50)"/>
+            <column name="submitted_date" type="DATE"/>
+            <column name="estimated_tax_exposure" type="DECIMAL(16,2)"/>
+            <column name="preliminary_variance" type="VARCHAR(1000)"/>
+            <column name="ref_pre_aud_confidence_lvl_id" type="BIGINT"/>
+            <column name="ref_status_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="pre_aud_data_exam_info" schemaName="audit" indexName="idx_pre_aud_data_exam_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-case-tax-payer" author="ns3">
+        <createTable tableName="audit_case_tax_payer" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_audit_case_tax_payer_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="tax_payer_name" type="VARCHAR(100)"/>
+            <column name="business_reg_no" type="VARCHAR(30)"/>
+            <column name="address_line_1" type="VARCHAR(150)"/>
+            <column name="address_line_2" type="VARCHAR(150)"/>
+            <column name="address_line_3" type="VARCHAR(150)"/>
+            <column name="ref_state_id" type="BIGINT"/>
+            <column name="ref_city_id" type="BIGINT"/>
+            <column name="postcode" type="VARCHAR(10)"/>
+            <column name="ns3_branch_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_case_tax_payer" schemaName="audit" indexName="idx_audit_case_tax_payer_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+        <createIndex tableName="audit_case_tax_payer" schemaName="audit" indexName="idx_audit_case_tax_payer_employer">
+            <column name="employer_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-tax-payer-tax-type-info" author="ns3">
+        <createTable tableName="tax_payer_tax_type_info" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_tax_payer_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_tax_type_info_tax_payer"
+                             references="audit.audit_case_tax_payer(id)"/>
+            </column>
+            <column name="sst_info_id" type="BIGINT"/>
+            <column name="ref_tax_reg_type_id" type="BIGINT"/>
+            <column name="business_com_date" type="DATE"/>
+            <column name="man_ser_com_date" type="DATE"/>
+            <column name="ref_fin_yr_end_month_id" type="BIGINT"/>
+            <column name="annual_ttl_tax_sal_ser_val" type="DECIMAL(16,2)"/>
+            <column name="is_selected_audit" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="tax_payer_tax_type_info" schemaName="audit" indexName="idx_tax_type_info_tax_payer">
+            <column name="audit_case_tax_payer_id"/>
+        </createIndex>
+        <createIndex tableName="tax_payer_tax_type_info" schemaName="audit" indexName="idx_tax_type_info_sst_info">
+            <column name="sst_info_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-planning-info" author="ns3">
+        <createTable tableName="audit_planning_info" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_audit_planning_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="timeline_from" type="DATE"/>
+            <column name="timeline_to" type="DATE"/>
+            <column name="activities_details" type="VARCHAR(1000)"/>
+            <column name="exclusions" type="VARCHAR(1000)"/>
+            <column name="limitation_disclosure" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_planning_info" schemaName="audit" indexName="idx_audit_planning_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-audit-case-officer" author="ns3">
+        <createTable tableName="audit_case_officer" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_planning_info_id" type="BIGINT">
+                <constraints foreignKeyName="fk_audit_case_officer_planning"
+                             references="audit.audit_planning_info(id)"/>
+            </column>
+            <column name="user_perkeso_id" type="BIGINT"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="audit_case_officer" schemaName="audit" indexName="idx_audit_case_officer_planning">
+            <column name="audit_planning_info_id"/>
+        </createIndex>
+        <createIndex tableName="audit_case_officer" schemaName="audit" indexName="idx_audit_case_officer_user">
+            <column name="user_perkeso_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-field-work" author="ns3">
+        <createTable tableName="field_work" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_field_work_audit_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="ref_visit_type_id" type="BIGINT"/>
+            <column name="other" type="VARCHAR(1000)"/>
+            <column name="observation" type="VARCHAR(1000)"/>
+            <column name="ref_site_visit_outcome_id" type="BIGINT"/>
+            <column name="officer_remark" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="field_work" schemaName="audit" indexName="idx_field_work_audit_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-working-paper" author="ns3">
+        <createTable tableName="working_paper" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_working_paper_audit_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="case_ref_no" type="VARCHAR(30)"/>
+            <column name="ref_working_paper_status_id" type="BIGINT"/>
+            <column name="finding_usage" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="table_name" type="VARCHAR(100)"/>
+            <column name="table_pk_id" type="BIGINT"/>
+            <column name="ref_focus_area_id" type="BIGINT"/>
+            <column name="procedures_detail" type="VARCHAR(1000)"/>
+            <column name="ref_test_performed_id" type="BIGINT"/>
+            <column name="test_performed_other" type="VARCHAR(1000)"/>
+            <column name="test_description" type="VARCHAR(1000)"/>
+            <column name="population_size" type="INT"/>
+            <column name="population_total_val" type="DECIMAL(16,2)"/>
+            <column name="population_period_from" type="TIMESTAMP"/>
+            <column name="population_period_to" type="TIMESTAMP"/>
+            <column name="population_description" type="VARCHAR(1000)"/>
+            <column name="ref_sampling_method_id" type="BIGINT"/>
+            <column name="sampling_method_other" type="VARCHAR(1000)"/>
+            <column name="sample_count" type="INT"/>
+            <column name="sample_value" type="DECIMAL(16,2)"/>
+            <column name="sample_period_from" type="TIMESTAMP"/>
+            <column name="sample_period_to" type="TIMESTAMP"/>
+            <column name="sampling_detail" type="VARCHAR(1000)"/>
+            <column name="declared_amount" type="DECIMAL(16,2)"/>
+            <column name="correct_amount" type="DECIMAL(16,2)"/>
+            <column name="total_error_in_sample" type="DECIMAL(16,2)"/>
+            <column name="error_rate" type="DECIMAL(16,2)"/>
+            <column name="error_sample_comp_detail" type="VARCHAR(1000)"/>
+            <column name="ref_projection_method_id" type="BIGINT"/>
+            <column name="projection_justification" type="VARCHAR(1000)"/>
+            <column name="business_stability_confirmed" type="BOOLEAN"/>
+            <column name="structural_charge_detected" type="BOOLEAN"/>
+            <column name="ref_tax_type_id" type="BIGINT"/>
+            <column name="sst_tariff_code_sales_category_id" type="BIGINT"/>
+            <column name="sst_service_category_id" type="BIGINT"/>
+            <column name="projected_adjustment" type="DECIMAL(16,2)"/>
+            <column name="applicable_tax_rate" type="DECIMAL(5,2)"/>
+            <column name="additional_tax" type="DECIMAL(16,2)"/>
+            <column name="projected_tax_impact" type="DECIMAL(16,2)"/>
+            <column name="ref_finding_type_id" type="BIGINT"/>
+            <column name="finding_type_other" type="VARCHAR(1000)"/>
+            <column name="conclution" type="VARCHAR(1000)"/>
+            <column name="assumptions" type="VARCHAR(1000)"/>
+            <column name="limitations" type="VARCHAR(1000)"/>
+            <column name="finding_analysis_ref_no" type="VARCHAR(30)"/>
+            <column name="finding_description" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="working_paper" schemaName="audit" indexName="idx_working_paper_audit_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-findings-analysis" author="ns3">
+        <createTable tableName="findings_analysis" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_findings_analysis_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="summary_detail" type="VARCHAR(1000)"/>
+            <column name="supervisor_status" type="INT"/>
+            <column name="supervisor_remark" type="VARCHAR(1000)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="findings_analysis" schemaName="audit" indexName="idx_findings_analysis_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="0045-taxpaper-response" author="ns3">
+        <createTable tableName="taxpaper_response" schemaName="audit">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="audit_case_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_taxpaper_response_case"
+                             references="audit.audit_case(id)"/>
+            </column>
+            <column name="response_id" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="response_date" type="DATE"/>
+            <column name="response_channel" type="INT"/>
+            <column name="response_type" type="INT"/>
+            <column name="employer_id" type="BIGINT"/>
+            <column name="taxpaper_comments" type="VARCHAR(1000)"/>
+            <column name="officers_status" type="INT"/>
+            <column name="officers_final_outcome" type="INT"/>
+            <column name="officers_remarks" type="VARCHAR(1000)"/>
+            <column name="is_activated" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revision_amount" type="DECIMAL(16,2)"/>
+            <column name="revision_reason" type="VARCHAR(1000)"/>
+            <column name="cancellation_id" type="VARCHAR(30)"/>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_by_id" type="BIGINT"/>
+            <column name="create_date" type="TIMESTAMP"/>
+            <column name="update_by_id" type="BIGINT"/>
+            <column name="update_date" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex tableName="taxpaper_response" schemaName="audit" indexName="idx_taxpaper_response_case">
+            <column name="audit_case_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
