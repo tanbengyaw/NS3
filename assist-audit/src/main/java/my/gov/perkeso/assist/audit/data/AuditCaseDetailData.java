@@ -25,9 +25,16 @@ public class AuditCaseDetailData {
     String exclusions;
     String justification;
     String cusAudRefNo;
+    Long refProposedCaseTypeId;
     AuditTaxpayerData taxpayer;
     List<AuditTaxTypeData> taxTypes;
     AuditRiskData risk;
     AuditFocusData focus;
     AuditLimitationData limitation;
+    AuditPlanningData planning;
+    AuditFieldWorkData fieldWork;
+    List<AuditWorkingPaperData> workingPapers;
+    AuditFindingsData findings;
+    AuditTaxpayerResponseData taxpayerResponse;
+    List<AuditTaxpayerResponseData> previousTaxpayerResponses;
 }

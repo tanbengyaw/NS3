@@ -32,4 +32,28 @@ export class AuditService {
       params: { command: 'submit' },
     });
   }
+
+  savePlanning(caseId: number, body: unknown): Observable<CommandProcessingResult> {
+    return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}/planning`, body);
+  }
+
+  saveFieldWork(caseId: number, body: unknown): Observable<CommandProcessingResult> {
+    return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}/field-work`, body);
+  }
+
+  createWorkingPaper(caseId: number): Observable<CommandProcessingResult> {
+    return this.http.post<CommandProcessingResult>(`${this.base}/${caseId}/working-papers`, {});
+  }
+
+  saveWorkingPaper(caseId: number, workingPaperId: number, body: unknown): Observable<CommandProcessingResult> {
+    return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}/working-papers/${workingPaperId}`, body);
+  }
+
+  saveFindings(caseId: number, body: unknown): Observable<CommandProcessingResult> {
+    return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}/findings`, body);
+  }
+
+  saveTaxpayerResponse(caseId: number, body: unknown): Observable<CommandProcessingResult> {
+    return this.http.put<CommandProcessingResult>(`${this.base}/${caseId}/taxpayer-response`, body);
+  }
 }

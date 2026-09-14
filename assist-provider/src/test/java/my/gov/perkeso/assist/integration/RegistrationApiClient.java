@@ -343,6 +343,30 @@ public class RegistrationApiClient {
         return exchangeJson(HttpMethod.GET, "/audit-cases/" + caseId, null);
     }
 
+    public JsonNode saveAuditPlanning(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId + "/planning", json);
+    }
+
+    public JsonNode saveAuditFieldWork(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId + "/field-work", json);
+    }
+
+    public JsonNode createAuditWorkingPaper(final long caseId) {
+        return exchangeJson(HttpMethod.POST, "/audit-cases/" + caseId + "/working-papers", "{}");
+    }
+
+    public JsonNode saveAuditWorkingPaper(final long caseId, final long workingPaperId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId + "/working-papers/" + workingPaperId, json);
+    }
+
+    public JsonNode saveAuditFindings(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId + "/findings", json);
+    }
+
+    public JsonNode saveAuditTaxpayerResponse(final long caseId, final String json) {
+        return exchangeJson(HttpMethod.PUT, "/audit-cases/" + caseId + "/taxpayer-response", json);
+    }
+
     public List<JsonNode> searchIncompleteAutoRegs(final String taxType, final String search) {
         final ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl + "/reference/incomplete-auto-regs?taxType=" + taxType + "&search=" + search,

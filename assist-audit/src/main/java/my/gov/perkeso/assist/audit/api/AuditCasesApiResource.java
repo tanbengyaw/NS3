@@ -20,6 +20,7 @@ import my.gov.perkeso.assist.audit.data.AuditCaseDetailData;
 import my.gov.perkeso.assist.audit.data.AuditCaseListingData;
 import my.gov.perkeso.assist.audit.service.AuditCaseReadPlatformService;
 import my.gov.perkeso.assist.audit.service.AuditCaseWritePlatformService;
+import my.gov.perkeso.assist.audit.service.AuditPostCreateWritePlatformService;
 import my.gov.perkeso.assist.core.infrastructure.data.CommandProcessingResult;
 import org.springframework.stereotype.Component;
 
@@ -27,11 +28,12 @@ import org.springframework.stereotype.Component;
 @Path("/v1/audit-cases")
 @Produces({ MediaType.APPLICATION_JSON })
 @Consumes({ MediaType.APPLICATION_JSON })
-@Tag(name = "Audit Cases", description = "Create Case slice — plants incomplete auto-reg on submit")
+@Tag(name = "Audit Cases", description = "Create Case plus planning / fieldwork / working papers / findings")
 @RequiredArgsConstructor
 public class AuditCasesApiResource {
 
     private final AuditCaseWritePlatformService writeService;
+    private final AuditPostCreateWritePlatformService postCreateWriteService;
     private final AuditCaseReadPlatformService readService;
     private final ObjectMapper objectMapper;
 
@@ -51,6 +53,7 @@ public class AuditCasesApiResource {
     @Path("{caseId}")
     @Operation(summary = "Get an audit case")
     public AuditCaseDetailData get(@PathParam("caseId") final Long caseId) {
+        postCreateWriteService.ensureTaxpayerResponseIfPending(caseId);
         return readService.get(caseId);
     }
 
@@ -71,6 +74,49 @@ public class AuditCasesApiResource {
             return writeService.submit(caseId, parseJson(json));
         }
         throw new IllegalArgumentException("Unsupported command: " + command);
+    }
+
+    @PUT
+    @Path("{caseId}/planning")
+    @Operation(summary = "Save audit planning and proposed case type")
+    public CommandProcessingResult savePlanning(@PathParam("caseId") final Long caseId, final String json) {
+        return postCreateWriteService.savePlanning(caseId, parseJson(json));
+    }
+
+    @PUT
+    @Path("{caseId}/field-work")
+    @Operation(summary = "Save fieldwork (Field case type only)")
+    public CommandProcessingResult saveFieldWork(@PathParam("caseId") final Long caseId, final String json) {
+        return postCreateWriteService.saveFieldWork(caseId, parseJson(json));
+    }
+
+    @POST
+    @Path("{caseId}/working-papers")
+    @Operation(summary = "Add a draft working paper")
+    public CommandProcessingResult createWorkingPaper(@PathParam("caseId") final Long caseId) {
+        return postCreateWriteService.createWorkingPaper(caseId);
+    }
+
+    @PUT
+    @Path("{caseId}/working-papers/{workingPaperId}")
+    @Operation(summary = "Save working-paper sampling and tax-impact fields")
+    public CommandProcessingResult saveWorkingPaper(@PathParam("caseId") final Long caseId,
+            @PathParam("workingPaperId") final Long workingPaperId, final String json) {
+        return postCreateWriteService.saveWorkingPaper(caseId, workingPaperId, parseJson(json));
+    }
+
+    @PUT
+    @Path("{caseId}/findings")
+    @Operation(summary = "Save findings, submit for approval, or record supervisor decision")
+    public CommandProcessingResult saveFindings(@PathParam("caseId") final Long caseId, final String json) {
+        return postCreateWriteService.saveFindings(caseId, parseJson(json));
+    }
+
+    @PUT
+    @Path("{caseId}/taxpayer-response")
+    @Operation(summary = "Record taxpayer reply or officer outcome")
+    public CommandProcessingResult saveTaxpayerResponse(@PathParam("caseId") final Long caseId, final String json) {
+        return postCreateWriteService.saveTaxpayerResponse(caseId, parseJson(json));
     }
 
     private JsonNode parseJson(final String json) {

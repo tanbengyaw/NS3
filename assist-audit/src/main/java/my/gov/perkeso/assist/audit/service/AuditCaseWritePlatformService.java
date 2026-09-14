@@ -46,6 +46,7 @@ public class AuditCaseWritePlatformService {
     private final AuditFocusAreaDetailsRepository focusRepository;
     private final AuditLimitationDisclosureDetailsRepository limitationRepository;
     private final AutoRegTaxPayerIngestService ingestService;
+    private final AuditPostCreateWritePlatformService postCreateWriteService;
     private final PlatformUserContext platformUserContext;
     private final ObjectMapper objectMapper;
 
@@ -131,11 +132,15 @@ public class AuditCaseWritePlatformService {
 
         auditCase.setTaskStatusId(AuditTaskStatus.FIELDWORK);
         auditCase.setSubmitDate(LocalDate.now());
+        if (auditCase.getRefProposedCaseTypeId() == null) {
+            auditCase.setRefProposedCaseTypeId(AuditTaskStatus.FIELD_CASE_TYPE);
+        }
         if (auditCase.getCaseRefNo() == null || auditCase.getCaseRefNo().isBlank()) {
             auditCase.setCaseRefNo(formatCaseRef(auditCase.getId()));
         }
         auditCase.setUpdateDate(LocalDateTime.now());
         auditCaseRepository.save(auditCase);
+        postCreateWriteService.ensurePlanning(auditCase);
 
         final Map<String, Object> changes = new LinkedHashMap<>();
         changes.put("taskStatusId", auditCase.getTaskStatusId());

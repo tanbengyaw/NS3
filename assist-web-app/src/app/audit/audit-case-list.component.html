@@ -3,8 +3,8 @@
     <p class="module-label">Audit</p>
     <h1>Audit cases</h1>
     <p>
-      Create Case for an unregistered taxpayer plants a partial SST row. Registration staff then
-      complete it under Incomplete auto-reg.
+      Create Case plants incomplete auto-reg for an unregistered BRN. After create, open the case
+      to continue planning, fieldwork, working papers, and findings.
     </p>
   </header>
 
@@ -50,7 +50,7 @@
                 <td class="mono">{{ row.businessRegNo || '—' }}</td>
                 <td>{{ row.taskStatusLabel }}</td>
                 <td>
-                  <a [routerLink]="['/audit', row.id]">{{ row.submitted ? 'View' : 'Open' }}</a>
+                  <a [routerLink]="['/audit', row.id]">Open</a>
                 </td>
               </tr>
             } @empty {

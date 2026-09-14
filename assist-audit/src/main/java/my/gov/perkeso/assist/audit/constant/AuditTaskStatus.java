@@ -7,6 +7,12 @@ public final class AuditTaskStatus {
 
     public static final long PENDING_CASE_CREATION = 1100L;
     public static final long FIELDWORK = 1101L;
+    public static final long PENDING_AUDIT_APPROVAL = 1102L;
+    public static final long AUDIT_APPROVED_PENDING_TAXPAYER = 1103L;
+    public static final long UNDER_REVIEW = 1104L;
+    public static final long CLOSED_FOR_APPEAL = 1106L;
+    public static final long CLOSED_CASE = 1107L;
+    public static final long FIELD_CASE_TYPE = 2L;
 
     private AuditTaskStatus() {
     }

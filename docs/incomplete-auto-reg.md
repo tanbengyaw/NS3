@@ -51,4 +51,4 @@ Audit tables: Liquibase `0045_audit_schema.xml` + `0046_audit_cus_aud_ref.xml` â
 
 - Submit routing: [submit-routing.md](./submit-routing.md)
 - Admin menu: [admin-menu-scope.md](./admin-menu-scope.md)
-- Audit Create Case: [audit-create-case.md](./audit-create-case.md)
+- Audit Create Case through taxpayer response: [audit-create-case.md](./audit-create-case.md)

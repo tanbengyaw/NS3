@@ -93,6 +93,7 @@ class AuditCreateCaseIT {
         assertThat(loaded.get("submitted").asBoolean()).isTrue();
         assertThat(loaded.get("taxpayer").get("employerId").asLong()).isEqualTo(employerId);
         assertThat(loaded.get("taxTypes").get(0).get("sstInfoId").asLong()).isEqualTo(sstInfoId);
+        assertThat(loaded.get("planning").get("id").asLong()).isPositive();
 
         final List<JsonNode> listing = officer.searchIncompleteAutoRegs("SALES_TAX", brn);
         assertThat(listing.stream().anyMatch(row -> row.get("sstInfoId").asLong() == sstInfoId)).isTrue();

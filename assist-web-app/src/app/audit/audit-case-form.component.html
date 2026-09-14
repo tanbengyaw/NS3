@@ -1,7 +1,7 @@
 <section class="page">
   <header>
     <p class="module-label">Audit</p>
-    <h1>Create audit case</h1>
+    <h1>{{ submitted ? 'Audit case' : 'Create audit case' }}</h1>
     <p>
       @if (detail(); as caseDetail) {
         {{ caseDetail.caseRefNo || 'Draft' }} — {{ caseDetail.taskStatusLabel }}
@@ -18,7 +18,7 @@
   @if (message()) {
     <p class="message banner">
       {{ message() }}
-      @if (submitted) {
+      @if (showIncompleteAutoRegLink()) {
         <a routerLink="/registration/incomplete-auto-reg">Open Incomplete auto-reg</a>
       }
     </p>
@@ -27,172 +27,753 @@
   @if (loading()) {
     <p>Loading…</p>
   } @else {
-    <form [formGroup]="form">
-      <section class="form-section">
-        <h2 class="section-withbg">Case information</h2>
-        <div class="section-body grid">
-          <label>
-            Case source
-            <select formControlName="refCaseSourceId">
-              @for (option of caseSources; track option.value) {
-                <option [ngValue]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Risk level
-            <select formControlName="refRiskLevelId">
-              @for (option of riskLevels; track option.value) {
-                <option [ngValue]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Estimated tax exposure (RM)
-            <input type="number" formControlName="extimatedTaxExposureRm" />
-          </label>
-          <label>
-            Period from
-            <input type="date" formControlName="periodFrom" />
-          </label>
-          <label>
-            Period to
-            <input type="date" formControlName="periodTo" />
-          </label>
-          <label>
-            Audit ref
-            <input type="text" formControlName="cusAudRefNo" placeholder="AUD-001" />
-          </label>
-          <label class="wide">
-            Objective
-            <input type="text" formControlName="objective" />
-          </label>
-          <label class="wide">
-            Exclusions
-            <input type="text" formControlName="exclusions" />
-          </label>
-          <label class="check">
-            <input type="checkbox" formControlName="preAuditSkip" />
-            Skip pre-audit
-          </label>
-        </div>
-      </section>
+    @if (submitted) {
+      <nav class="tabs" aria-label="Audit case steps">
+        <button type="button" [class.active]="activeTab() === 'case'" (click)="selectTab('case')">Case</button>
+        <button type="button" [class.active]="activeTab() === 'planning'" (click)="selectTab('planning')">Planning</button>
+        <button type="button" [class.active]="activeTab() === 'fieldwork'" (click)="selectTab('fieldwork')">Fieldwork</button>
+        <button type="button" [class.active]="activeTab() === 'workingPapers'" (click)="selectTab('workingPapers')">Working papers</button>
+        <button type="button" [class.active]="activeTab() === 'findings'" (click)="selectTab('findings')">Findings</button>
+        @if (showTaxpayerTab) {
+          <button type="button" [class.active]="activeTab() === 'taxpayer'" (click)="selectTab('taxpayer')">Taxpayer</button>
+        }
+      </nav>
+    }
 
-      <section class="form-section">
-        <h2 class="section-withbg">Taxpayer</h2>
-        <div class="section-body grid">
-          <label>
-            Taxpayer name
-            <input type="text" formControlName="taxPayerName" />
-          </label>
-          <label>
-            BRN
-            <input type="text" formControlName="businessRegNo" />
-          </label>
-          <label>
-            Postcode
-            <input type="text" formControlName="postcode" />
-          </label>
-          <label>
-            Branch id
-            <input type="number" formControlName="ns3BranchId" />
-          </label>
-          <label class="wide">
-            Address line 1
-            <input type="text" formControlName="addressLine1" />
-          </label>
-          <label>
-            Address line 2
-            <input type="text" formControlName="addressLine2" />
-          </label>
-          <label>
-            Address line 3
-            <input type="text" formControlName="addressLine3" />
-          </label>
-        </div>
-      </section>
-
-      <section class="form-section">
-        <h2 class="section-withbg">Tax type (audit popup fields)</h2>
-        <div class="section-body grid">
-          <label>
-            Tax type
-            <select formControlName="taxType">
-              @for (option of taxTypeOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            Business commencement
-            <input type="date" formControlName="businessComDate" />
-          </label>
-          @if (salesOrService) {
+    @if (!submitted || activeTab() === 'case') {
+      <form [formGroup]="form">
+        <section class="form-section">
+          <h2 class="section-withbg">Case information</h2>
+          <div class="section-body grid">
             <label>
-              Manufacturing / service commencement
-              <input type="date" formControlName="manSerComDate" />
+              Case source
+              <select formControlName="refCaseSourceId">
+                @for (option of caseSources; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
             </label>
             <label>
-              Annual taxable sales / service value
-              <input type="number" formControlName="annualTtlTaxSalSerVal" />
+              Risk level
+              <select formControlName="refRiskLevelId">
+                @for (option of riskLevels; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
             </label>
+            <label>
+              Estimated tax exposure (RM)
+              <input type="number" formControlName="extimatedTaxExposureRm" />
+            </label>
+            <label>
+              Period from
+              <input type="date" formControlName="periodFrom" />
+            </label>
+            <label>
+              Period to
+              <input type="date" formControlName="periodTo" />
+            </label>
+            <label>
+              Audit ref
+              <input type="text" formControlName="cusAudRefNo" placeholder="AUD-001" />
+            </label>
+            <label class="wide">
+              Objective
+              <input type="text" formControlName="objective" />
+            </label>
+            <label class="wide">
+              Exclusions
+              <input type="text" formControlName="exclusions" />
+            </label>
+            <label class="check">
+              <input type="checkbox" formControlName="preAuditSkip" />
+              Skip pre-audit
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h2 class="section-withbg">Taxpayer</h2>
+          <div class="section-body grid">
+            <label>
+              Taxpayer name
+              <input type="text" formControlName="taxPayerName" />
+            </label>
+            <label>
+              BRN
+              <input type="text" formControlName="businessRegNo" />
+            </label>
+            <label>
+              Postcode
+              <input type="text" formControlName="postcode" />
+            </label>
+            <label>
+              Branch id
+              <input type="number" formControlName="ns3BranchId" />
+            </label>
+            <label class="wide">
+              Address line 1
+              <input type="text" formControlName="addressLine1" />
+            </label>
+            <label>
+              Address line 2
+              <input type="text" formControlName="addressLine2" />
+            </label>
+            <label>
+              Address line 3
+              <input type="text" formControlName="addressLine3" />
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h2 class="section-withbg">Tax type (audit popup fields)</h2>
+          <div class="section-body grid">
+            <label>
+              Tax type
+              <select formControlName="taxType">
+                @for (option of taxTypeOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Business commencement
+              <input type="date" formControlName="businessComDate" />
+            </label>
+            @if (salesOrService) {
+              <label>
+                Manufacturing / service commencement
+                <input type="date" formControlName="manSerComDate" />
+              </label>
+              <label>
+                Annual taxable sales / service value
+                <input type="number" formControlName="annualTtlTaxSalSerVal" />
+              </label>
+            }
+            <label>
+              Financial year end month
+              <select formControlName="finYrEndMon">
+                @for (month of months; track month) {
+                  <option [ngValue]="month">{{ month }}</option>
+                }
+              </select>
+            </label>
+            <label class="check">
+              <input type="checkbox" formControlName="selectedAudit" />
+              Selected for audit
+            </label>
+          </div>
+          <p class="hint">
+            Create Case does not send date of sale value taxable — that is why the row stays incomplete.
+          </p>
+        </section>
+
+        <section class="form-section">
+          <h2 class="section-withbg">Risk / focus / limitation</h2>
+          <div class="section-body checks">
+            <label><input type="checkbox" formControlName="checkedRegAnomaly" /> Registration anomaly</label>
+            <label><input type="checkbox" formControlName="checkedFilingBehaviour" /> Filing behaviour</label>
+            <label><input type="checkbox" formControlName="checkedPaymentBehaviour" /> Payment behaviour</label>
+            <label><input type="checkbox" formControlName="checkedReturnTax" /> Return tax</label>
+            <label><input type="checkbox" formControlName="checkedFinancialAnomaly" /> Financial anomaly</label>
+            <label><input type="checkbox" formControlName="checkedThirdPartyMismatch" /> Third-party mismatch</label>
+            <label><input type="checkbox" formControlName="checkedHisComplianceIssue" /> Historical compliance</label>
+            <label><input type="checkbox" formControlName="checkedIntelligenceBased" /> Intelligence based</label>
+            <label class="wide">
+              Risk assessment
+              <input type="text" formControlName="riskAssessmentDetails" />
+            </label>
+            <label><input type="checkbox" formControlName="checkedOutputTax" /> Output tax</label>
+            <label><input type="checkbox" formControlName="checkedInputTaxEligility" /> Input tax eligibility</label>
+            <label><input type="checkbox" formControlName="checkedRefund" /> Refund</label>
+            <label><input type="checkbox" formControlName="checkedClassification" /> Classification</label>
+            <label><input type="checkbox" formControlName="checkedExemption" /> Exemption</label>
+            <label><input type="checkbox" formControlName="checkedImportReconciliation" /> Import reconciliation</label>
+            <label><input type="checkbox" formControlName="checkedRevenueReconciliation" /> Revenue reconciliation</label>
+            <label><input type="checkbox" formControlName="checkedDataIncomplete" /> Data incomplete</label>
+            <label><input type="checkbox" formControlName="checkedAccessLimitation" /> Access limitation</label>
+            <label><input type="checkbox" formControlName="checkedPreliminaryAssumptions" /> Preliminary assumptions</label>
+          </div>
+        </section>
+
+        @if (!submitted) {
+          <div class="actions">
+            <button type="button" (click)="save()" [disabled]="saving() || submitting()">
+              {{ saving() ? 'Saving…' : 'Save draft' }}
+            </button>
+            <button type="button" class="primary" (click)="createCase()" [disabled]="saving() || submitting()">
+              {{ submitting() ? 'Creating…' : 'Create case' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
+
+    @if (submitted && activeTab() === 'planning') {
+      <form [formGroup]="planningForm">
+        <section class="form-section">
+          <h2 class="section-withbg">Planning</h2>
+          <div class="section-body grid">
+            <label>
+              Proposed case type
+              <select formControlName="refProposedCaseTypeId" [compareWith]="compareId">
+                @for (option of caseTypes; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Timeline from
+              <input type="date" formControlName="timelineFrom" />
+            </label>
+            <label>
+              Timeline to
+              <input type="date" formControlName="timelineTo" />
+            </label>
+            <label class="wide">
+              Planned activities
+              <textarea formControlName="activitiesDetails" rows="3"></textarea>
+            </label>
+            <label class="wide">
+              Exclusions
+              <textarea formControlName="exclusions" rows="2"></textarea>
+            </label>
+            <label class="wide">
+              Limitation disclosure
+              <textarea formControlName="limitationDisclosure" rows="2"></textarea>
+            </label>
+          </div>
+          <p class="hint">
+            Fieldwork is editable only when case type is Field. Desk / Refund / Special stay read-only on that tab.
+          </p>
+        </section>
+        @if (canEditPlanning) {
+          <div class="actions">
+            <button type="button" class="primary" (click)="savePlanning()" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save planning' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
+
+    @if (submitted && activeTab() === 'fieldwork') {
+      <form [formGroup]="fieldWorkForm">
+        <section class="form-section">
+          <h2 class="section-withbg">Fieldwork</h2>
+          <div class="section-body grid">
+            <label>
+              Visit type
+              <select formControlName="refVisitTypeId">
+                <option [ngValue]="null">Select…</option>
+                @for (option of visitTypes; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            @if (visitTypeOther) {
+              <label class="wide">
+                Other visit type
+                <input type="text" formControlName="other" />
+              </label>
+            }
+            <label>
+              Site visit outcome
+              <select formControlName="refSiteVisitOutcomeId">
+                <option [ngValue]="null">Select…</option>
+                @for (option of siteVisitOutcomes; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="wide">
+              Observation
+              <textarea formControlName="observation" rows="3"></textarea>
+            </label>
+            <label class="wide">
+              Officer remark
+              <textarea formControlName="officerRemark" rows="3"></textarea>
+            </label>
+          </div>
+          @if (!fieldCaseType) {
+            <p class="hint">
+              Fieldwork is locked because case type is {{ proposedCaseTypeLabel }}. Site visit fields are only
+              editable for Field.
+            </p>
+            @if (inFieldwork) {
+              <div class="actions inline">
+                <button type="button" class="primary" (click)="useFieldCaseType()" [disabled]="saving()">
+                  Set case type to Field
+                </button>
+              </div>
+            }
           }
-          <label>
-            Financial year end month
-            <select formControlName="finYrEndMon">
-              @for (month of months; track month) {
-                <option [ngValue]="month">{{ month }}</option>
-              }
-            </select>
-          </label>
-          <label class="check">
-            <input type="checkbox" formControlName="selectedAudit" />
-            Selected for audit
-          </label>
-        </div>
-        <p class="hint">
-          Create Case does not send date of sale value taxable — that is why the row stays incomplete.
-        </p>
-      </section>
+        </section>
+        @if (canEditFieldWork) {
+          <div class="actions">
+            <button type="button" class="primary" (click)="saveFieldWork()" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save fieldwork' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
 
+    @if (submitted && activeTab() === 'workingPapers') {
       <section class="form-section">
-        <h2 class="section-withbg">Risk / focus / limitation</h2>
-        <div class="section-body checks">
-          <label><input type="checkbox" formControlName="checkedRegAnomaly" /> Registration anomaly</label>
-          <label><input type="checkbox" formControlName="checkedFilingBehaviour" /> Filing behaviour</label>
-          <label><input type="checkbox" formControlName="checkedPaymentBehaviour" /> Payment behaviour</label>
-          <label><input type="checkbox" formControlName="checkedReturnTax" /> Return tax</label>
-          <label><input type="checkbox" formControlName="checkedFinancialAnomaly" /> Financial anomaly</label>
-          <label><input type="checkbox" formControlName="checkedThirdPartyMismatch" /> Third-party mismatch</label>
-          <label><input type="checkbox" formControlName="checkedHisComplianceIssue" /> Historical compliance</label>
-          <label><input type="checkbox" formControlName="checkedIntelligenceBased" /> Intelligence based</label>
-          <label class="wide">
-            Risk assessment
-            <input type="text" formControlName="riskAssessmentDetails" />
-          </label>
-          <label><input type="checkbox" formControlName="checkedOutputTax" /> Output tax</label>
-          <label><input type="checkbox" formControlName="checkedInputTaxEligility" /> Input tax eligibility</label>
-          <label><input type="checkbox" formControlName="checkedRefund" /> Refund</label>
-          <label><input type="checkbox" formControlName="checkedClassification" /> Classification</label>
-          <label><input type="checkbox" formControlName="checkedExemption" /> Exemption</label>
-          <label><input type="checkbox" formControlName="checkedImportReconciliation" /> Import reconciliation</label>
-          <label><input type="checkbox" formControlName="checkedRevenueReconciliation" /> Revenue reconciliation</label>
-          <label><input type="checkbox" formControlName="checkedDataIncomplete" /> Data incomplete</label>
-          <label><input type="checkbox" formControlName="checkedAccessLimitation" /> Access limitation</label>
-          <label><input type="checkbox" formControlName="checkedPreliminaryAssumptions" /> Preliminary assumptions</label>
+        <h2 class="section-withbg">Working papers</h2>
+        <div class="section-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Status</th>
+                  <th>Finding</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (paper of workingPapers; track paper.id) {
+                  <tr [class.selected]="selectedWorkingPaperId() === paper.id">
+                    <td class="mono">{{ paper.caseRefNo || '—' }}</td>
+                    <td>{{ workingPaperStatusLabel(paper.refWorkingPaperStatusId) }}</td>
+                    <td>{{ paper.findingUsage ? 'Yes' : 'No' }}</td>
+                    <td>
+                      <button type="button" class="linkish" (click)="selectWorkingPaper(paper.id)">Open</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty">No working papers yet.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (canEditWorkingPapers) {
+            <div class="actions inline">
+              <button type="button" class="primary" (click)="addWorkingPaper()" [disabled]="saving()">
+                {{ saving() ? 'Adding…' : 'Add working paper' }}
+              </button>
+            </div>
+          }
         </div>
       </section>
 
-      @if (!submitted) {
-        <div class="actions">
-          <button type="button" (click)="save()" [disabled]="saving() || submitting()">
-            {{ saving() ? 'Saving…' : 'Save draft' }}
-          </button>
-          <button type="button" class="primary" (click)="createCase()" [disabled]="saving() || submitting()">
-            {{ submitting() ? 'Creating…' : 'Create case' }}
-          </button>
-        </div>
+      @if (selectedWorkingPaper; as paper) {
+        <form [formGroup]="workingPaperForm">
+          <section class="form-section">
+            <h2 class="section-withbg">{{ paper.caseRefNo || 'Working paper' }}</h2>
+            <div class="section-body grid">
+              <label>
+                Status
+                <select formControlName="refWorkingPaperStatusId">
+                  @for (option of workingPaperStatuses; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Focus area
+                <select formControlName="refFocusAreaId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of focusAreas; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Test performed
+                <select formControlName="refTestPerformedId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of testsPerformed; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="check">
+                <input type="checkbox" formControlName="findingUsage" />
+                Use in findings
+              </label>
+              @if (testPerformedOther) {
+                <label class="wide">
+                  Other test
+                  <input type="text" formControlName="testPerformedOther" />
+                </label>
+              }
+              <label class="wide">
+                Procedures
+                <textarea formControlName="proceduresDetail" rows="2"></textarea>
+              </label>
+              <label class="wide">
+                Test description
+                <textarea formControlName="testDescription" rows="2"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2 class="section-withbg">Population and sampling</h2>
+            <div class="section-body grid">
+              <label>
+                Population size
+                <input type="number" formControlName="populationSize" />
+              </label>
+              <label>
+                Population value
+                <input type="number" formControlName="populationTotalVal" />
+              </label>
+              <label>
+                Population from
+                <input type="date" formControlName="populationPeriodFrom" />
+              </label>
+              <label>
+                Population to
+                <input type="date" formControlName="populationPeriodTo" />
+              </label>
+              <label class="wide">
+                Population description
+                <textarea formControlName="populationDescription" rows="2"></textarea>
+              </label>
+              <label>
+                Sampling method
+                <select formControlName="refSamplingMethodId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of samplingMethods; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              @if (samplingMethodOther) {
+                <label class="wide">
+                  Other sampling method
+                  <input type="text" formControlName="samplingMethodOther" />
+                </label>
+              }
+              <label>
+                Sample count
+                <input type="number" formControlName="sampleCount" />
+              </label>
+              <label>
+                Sample value
+                <input type="number" formControlName="sampleValue" />
+              </label>
+              <label>
+                Sample from
+                <input type="date" formControlName="samplePeriodFrom" />
+              </label>
+              <label>
+                Sample to
+                <input type="date" formControlName="samplePeriodTo" />
+              </label>
+              <label class="wide">
+                Sampling detail
+                <textarea formControlName="samplingDetail" rows="2"></textarea>
+              </label>
+              <label>
+                Declared amount
+                <input type="number" formControlName="declaredAmount" />
+              </label>
+              <label>
+                Correct amount
+                <input type="number" formControlName="correctAmount" />
+              </label>
+              <label>
+                Error in sample
+                <input type="number" formControlName="totalErrorInSample" />
+              </label>
+              <label>
+                Error rate
+                <input type="number" formControlName="errorRate" />
+              </label>
+              <label class="wide">
+                Error comparison
+                <textarea formControlName="errorSampleCompDetail" rows="2"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2 class="section-withbg">Tax impact</h2>
+            <div class="section-body grid">
+              <label>
+                Projection method
+                <select formControlName="refProjectionMethodId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of projectionMethods; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Tax type
+                <select formControlName="refTaxTypeId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of wpTaxTypes; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Finding type
+                <select formControlName="refFindingTypeId">
+                  <option [ngValue]="null">Select…</option>
+                  @for (option of findingTypes; track option.value) {
+                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+              @if (findingTypeOther) {
+                <label class="wide">
+                  Other finding type
+                  <input type="text" formControlName="findingTypeOther" />
+                </label>
+              }
+              <label>
+                Projected adjustment
+                <input type="number" formControlName="projectedAdjustment" />
+              </label>
+              <label>
+                Tax rate
+                <input type="number" formControlName="applicableTaxRate" />
+              </label>
+              <label>
+                Additional tax
+                <input type="number" formControlName="additionalTax" />
+              </label>
+              <label>
+                Projected tax impact
+                <input type="number" formControlName="projectedTaxImpact" />
+              </label>
+              <label>
+                Business stability confirmed
+                <select formControlName="businessStabilityConfirmed">
+                  <option [ngValue]="null">Select…</option>
+                  <option [ngValue]="true">Yes</option>
+                  <option [ngValue]="false">No</option>
+                </select>
+              </label>
+              <label>
+                Structural change detected
+                <select formControlName="structuralChargeDetected">
+                  <option [ngValue]="null">Select…</option>
+                  <option [ngValue]="true">Yes</option>
+                  <option [ngValue]="false">No</option>
+                </select>
+              </label>
+              <label class="wide">
+                Projection justification
+                <textarea formControlName="projectionJustification" rows="2"></textarea>
+              </label>
+              <label>
+                Finding analysis ref
+                <input type="text" formControlName="findingAnalysisRefNo" />
+              </label>
+              <label class="wide">
+                Finding description
+                <textarea formControlName="findingDescription" rows="2"></textarea>
+              </label>
+              <label class="wide">
+                Conclusion
+                <textarea formControlName="conclution" rows="2"></textarea>
+              </label>
+              <label class="wide">
+                Assumptions
+                <textarea formControlName="assumptions" rows="2"></textarea>
+              </label>
+              <label class="wide">
+                Limitations
+                <textarea formControlName="limitations" rows="2"></textarea>
+              </label>
+            </div>
+          </section>
+          @if (canEditWorkingPapers) {
+            <div class="actions">
+              <button type="button" class="primary" (click)="saveWorkingPaper()" [disabled]="saving()">
+                {{ saving() ? 'Saving…' : 'Save working paper' }}
+              </button>
+            </div>
+          }
+        </form>
       }
-    </form>
+    }
+
+    @if (submitted && activeTab() === 'findings') {
+      <form [formGroup]="findingsForm">
+        <section class="form-section">
+          <h2 class="section-withbg">Findings summary</h2>
+          <div class="section-body grid">
+            <label class="wide">
+              Summary
+              <textarea formControlName="summaryDetail" rows="5"></textarea>
+            </label>
+          </div>
+          <p class="hint">
+            Submit for approval moves the case to Pending Audit Approval. After supervisor Approve, continue on Taxpayer.
+          </p>
+        </section>
+        @if (canEditFindingsOfficer) {
+          <div class="actions">
+            <button type="button" (click)="saveFindings(false)" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save findings' }}
+            </button>
+            <button type="button" class="primary" (click)="saveFindings(true)" [disabled]="saving()">
+              Submit for approval
+            </button>
+          </div>
+        }
+      </form>
+
+      @if (pendingApproval || approvedPendingTaxpayer) {
+        <form [formGroup]="supervisorForm">
+          <section class="form-section">
+            <h2 class="section-withbg">Supervisor review</h2>
+            <div class="section-body grid">
+              <label class="wide">
+                Supervisor remark
+                <textarea formControlName="supervisorRemark" rows="3"></textarea>
+              </label>
+            </div>
+            <p class="hint">No extra NS3 supervisor role yet — any staff user can record this decision.</p>
+          </section>
+          @if (canEditSupervisor) {
+            <div class="actions">
+              <button type="button" class="primary" (click)="decideFindings(1)" [disabled]="saving()">Approve</button>
+              <button type="button" (click)="decideFindings(2)" [disabled]="saving()">Insufficient information</button>
+            </div>
+          }
+        </form>
+      }
+    }
+
+    @if (submitted && activeTab() === 'taxpayer') {
+      <form [formGroup]="taxpayerForm">
+        <section class="form-section">
+          <h2 class="section-withbg">Taxpayer response</h2>
+          <div class="section-body grid">
+            <label>
+              Response id
+              <input type="text" [value]="detail()?.taxpayerResponse?.responseId || '—'" disabled />
+            </label>
+            <label>
+              Response date
+              <input type="text" [value]="detail()?.taxpayerResponse?.responseDate || '—'" disabled />
+            </label>
+            <label>
+              Channel
+              <select formControlName="responseChannel">
+                <option [ngValue]="null">Select…</option>
+                @for (option of responseChannels; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Response type
+              <select formControlName="responseType">
+                <option [ngValue]="null">Select…</option>
+                @for (option of responseTypes; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            @if (disputeSelected) {
+              <label>
+                Revised amount (RM)
+                <input type="number" formControlName="revisionAmount" />
+              </label>
+              <label class="wide">
+                Revision reason
+                <textarea formControlName="revisionReason" rows="2"></textarea>
+              </label>
+            }
+            <label class="wide">
+              Response details
+              <textarea formControlName="taxpayerComments" rows="4"></textarea>
+            </label>
+          </div>
+          <p class="hint">
+            No taxpayer portal yet — staff record the reply here (OTC / email / portal channel). Submit moves the case to Under Review.
+          </p>
+        </section>
+        @if (canEditTaxpayerReply) {
+          <div class="actions">
+            <button type="button" (click)="saveTaxpayerReply(false)" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save response' }}
+            </button>
+            <button type="button" class="primary" (click)="saveTaxpayerReply(true)" [disabled]="saving()">
+              Submit taxpayer response
+            </button>
+          </div>
+        }
+      </form>
+
+      @if (previousTaxpayerResponses.length) {
+        <section class="form-section">
+          <h2 class="section-withbg">Previous responses</h2>
+          <div class="section-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ref</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Officer outcome</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of previousTaxpayerResponses; track row.id) {
+                    <tr>
+                      <td class="mono">{{ row.responseId || '—' }}</td>
+                      <td>{{ row.responseDate || '—' }}</td>
+                      <td>{{ responseTypeLabel(row.responseType) }}</td>
+                      <td>{{ officerOutcomeLabel(row.officersFinalOutcome) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      }
+
+      <form [formGroup]="officerOutcomeForm">
+        <section class="form-section">
+          <h2 class="section-withbg">Officer outcome</h2>
+          <div class="section-body grid">
+            <label>
+              Status (from taxpayer type)
+              <input type="text" [value]="officersStatusLabel(detail()?.taxpayerResponse?.officersStatus)" disabled />
+            </label>
+            <label>
+              Final outcome
+              <select formControlName="officersFinalOutcome">
+                <option [ngValue]="null">Select…</option>
+                @for (option of availableOfficerOutcomes; track option.value) {
+                  <option [ngValue]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="wide">
+              Officer remarks
+              <textarea formControlName="officersRemarks" rows="3"></textarea>
+            </label>
+          </div>
+          <p class="hint">
+            Accept → BOD Confirmed or Cancelled (closes the case). Dispute → Amend (back to Fieldwork) or No Change (new taxpayer reply). Appeal → Closed for Appeal. BOD screen and ledger are not in this slice.
+          </p>
+        </section>
+        @if (canEditOfficerOutcome) {
+          <div class="actions">
+            <button type="button" class="primary" (click)="saveOfficerOutcome()" [disabled]="saving()">
+              Submit officer outcome
+            </button>
+          </div>
+        }
+      </form>
+    }
   }
 </section>
